@@ -1,45 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Code, Database, Layout, Briefcase, GraduationCap, FolderGit2, Moon, Sun, Calendar, MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Code, Briefcase, GraduationCap, FolderGit2 } from 'lucide-react';
 import DarkModeToggle from './components/DarkModeToggle';
 import SkillCard from './components/SkillCard';
 import ProgressBar from './components/ProgressBar';
 import TimelineItem from './components/TimelineItem';
 import Modal from './components/Modal';
-
-
-interface SkillCardProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  gradient?: string;
-  onClick?: () => void;
-  size?: 'small' | 'medium' | 'large';
-}
-
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  content: React.ReactNode;
-}
-
-interface ProgressBarProps {
-  skill: string;
-  percentage: number;
-  color?: string;
-}
-
-interface TimelineItemProps {
-  title: string;
-  company: string;
-  period: string;
-  description: string;
-  location?: string;
-  isLast?: boolean;
-}
 
 export default function Home() {
   const [modalContent, setModalContent] = useState<{ title: string; content: React.ReactNode } | null>(null);
@@ -132,7 +100,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            Holla! I'm <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Isyraf</span> 👋
+            Holla! {'I\'m'} <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Isyraf</span> 👋
           </motion.h1>
           <SkillCard
             title="Education"
@@ -175,7 +143,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             Sculptor of digital dimensions, forging web experiences that blend divine creativity with relentless functionality.
-            Dare to explore the masterpieces I've crafted? 🌀 Behold my portfolio!
+            Dare to explore the masterpieces {'I\'ve'} crafted? 🌀 Behold my portfolio!
           </motion.p>
         </div>
       </main>
