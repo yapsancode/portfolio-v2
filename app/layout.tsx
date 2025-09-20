@@ -10,13 +10,13 @@ export const metadata: Metadata = {
   description:
     "Explore Isyraf’s portfolio of modern, responsive web development projects. Specializing in frontend development, UI/UX design, and creative digital experiences.",
   keywords: [
-    'Isyraf',
+    'Muhammad Isyraf Afifi Bin Ismail',
+    'Isyraf Afifi',
     'portfolio',
     'web developer',
     'frontend developer',
     'UI/UX design',
-    'creative web development',
-    'responsive websites',
+    'software developer Malaysia'
   ],
   authors: [{ name: 'Isyraf', url: 'https://isyraf-afifi.com' }],
 
