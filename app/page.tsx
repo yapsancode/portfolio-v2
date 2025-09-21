@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Github, Globe, Code, Briefcase, GraduationCap, FolderGit2, Info } from 'lucide-react';
 import DarkModeToggle from './components/DarkModeToggle';
 import PageCard from './components/PageCard';
-import ProgressBar from './components/ProgressBar';
-import TimelineItem from './components/TimelineItem';
 import Modal from './components/Modal';
 import { portfolioSections, modalContents } from "./data/portfolio";
 
@@ -36,73 +33,9 @@ export default function Home() {
   const openModal = (title: string, content: React.ReactNode) => setModalContent({ title, content });
   const closeModal = () => setModalContent(null);
 
-  const skillsContent: React.ReactNode = (
-    <div className="space-y-4">
-      <ProgressBar skill="JavaScript" percentage={90} color="bg-blue-500" />
-      <ProgressBar skill="React" percentage={85} color="bg-indigo-500" />
-      <ProgressBar skill="TypeScript" percentage={80} color="bg-purple-500" />
-    </div>
-  );
-
-  const projectsContent: React.ReactNode = (
-    <div className="space-y-4">
-      <p>Project 1: Built a full-stack web app using React and Node.js.</p>
-      <p>Project 2: Developed a mobile app with React Native.</p>
-    </div>
-  );
-  const about: React.ReactNode = (
-    <motion.div
-      className="space-y-6 text-gray-700 dark:text-gray-300"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <p className="text-lg leading-relaxed">
-        Yo, welcome to my digital domain! Thanks for checking out my portfolio.
-      </p>
-      <p className="text-lg leading-relaxed">
-        I crafted this space to flex both <span className="font-semibold text-blue-500 dark:text-blue-400">skills</span> and <span className="font-semibold text-purple-500 dark:text-purple-400">soul</span>. Think sleek, intuitive design with an Apple-inspired edge—sharp, clean, and straight to the point.
-      </p>
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Code className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-          <p>Built with <span className="font-medium">Next.js</span> for a fast, modern dev experience.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Github className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          <p>Pushed to <a href="https://github.com" target="_blank" className="text-blue-500 hover:underline dark:text-blue-400">GitHub</a> for version control and collab.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Globe className="w-5 h-5 text-green-500 dark:text-green-400" />
-          <p>Deployed on <a href="https://vercel.com" target="_blank" className="text-blue-500 hover:underline dark:text-blue-400">Vercel</a> for seamless hosting.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Globe className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-          <p>Domain snagged from <a href="https://www.namecheap.com" target="_blank" className="text-blue-500 hover:underline dark:text-blue-400">Namecheap</a> for that personal touch.</p>
-        </div>
-      </div>
-      <p className="text-lg italic">
-        Keeping it lean—no backend or database needed (yet). Just pure front-end finesse.
-      </p>
-    </motion.div>
-  );
-
-  const experienceContent: React.ReactNode = (
-    <div className="space-y-4">
-      <TimelineItem
-        title="Software Developer"
-        company="Tech Corp"
-        period="2023 – Present"
-        description="Developed and maintained web applications using modern frameworks."
-      />
-    </div>
-  );
-
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
       <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
-
-
 
       <main className="max-w-7xl mx-auto px-4 pb-20 transition-colors duration-300">
         <div className="relative text-center py-16 md:py-24 px-6">
