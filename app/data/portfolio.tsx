@@ -4,6 +4,8 @@ import { Code, FolderGit2, Briefcase, GraduationCap, Info, Download, Github, Glo
 import ProgressBar from "../components/ProgressBar";
 import TimelineItem from "../components/TimelineItem";
 import { motion } from "framer-motion";
+import { FaLaravel, FaDatabase } from "react-icons/fa";
+import { SiFlutter } from "react-icons/si";
 
 // Section definition type
 export interface PortfolioSection {
@@ -20,11 +22,64 @@ export interface PortfolioSection {
 
 // Skills modal content
 const skillsContent: ReactNode = (
-    <div className="space-y-4">
-        <ProgressBar skill="JavaScript" percentage={90} color="bg-blue-500" />
-        <ProgressBar skill="React" percentage={85} color="bg-indigo-500" />
-        <ProgressBar skill="TypeScript" percentage={80} color="bg-purple-500" />
-    </div>
+    <motion.div
+        className="space-y-8"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true }}
+        variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: 0.2 } },
+        }}
+    >
+        {/* Frontend */}
+        <motion.div
+            variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+            className="space-y-4"
+        >
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1">
+                Frontend
+            </h3>
+            <ProgressBar
+                skill="Flutter"
+                percentage={65}
+                gradient="linear-gradient(to right, #38bdf8, #2563eb)"
+                icon={<SiFlutter className="text-sky-500" />}
+            />
+        </motion.div>
+
+        {/* Backend */}
+        <motion.div
+            variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+            className="space-y-4"
+        >
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1">
+                Backend
+            </h3>
+            <ProgressBar
+                skill="Laravel"
+                percentage={20}
+                gradient="linear-gradient(to right, #e11d48, #9333ea)"
+                icon={<FaLaravel className="text-red-500" />}
+            />
+        </motion.div>
+
+        {/* Database */}
+        <motion.div
+            variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+            className="space-y-4"
+        >
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1">
+                Database
+            </h3>
+            <ProgressBar
+                skill="MySQL"
+                percentage={50}
+                gradient="linear-gradient(to right, #14b8a6, #2563eb)"
+                icon={<FaDatabase className="text-emerald-500" />}
+            />
+        </motion.div>
+    </motion.div>
 );
 
 // Projects modal content
