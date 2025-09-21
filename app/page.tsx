@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Code, Briefcase, GraduationCap, FolderGit2 } from 'lucide-react';
+import { Github, Globe, Code, Briefcase, GraduationCap, FolderGit2, Info } from 'lucide-react';
 import DarkModeToggle from './components/DarkModeToggle';
 import SkillCard from './components/SkillCard';
 import ProgressBar from './components/ProgressBar';
@@ -36,7 +36,6 @@ export default function Home() {
 
   const skillsContent: React.ReactNode = (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold">Technical Skills</h3>
       <ProgressBar skill="JavaScript" percentage={90} color="bg-blue-500" />
       <ProgressBar skill="React" percentage={85} color="bg-indigo-500" />
       <ProgressBar skill="TypeScript" percentage={80} color="bg-purple-500" />
@@ -45,15 +44,49 @@ export default function Home() {
 
   const projectsContent: React.ReactNode = (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold">Projects</h3>
       <p>Project 1: Built a full-stack web app using React and Node.js.</p>
       <p>Project 2: Developed a mobile app with React Native.</p>
     </div>
   );
+  const about: React.ReactNode = (
+    <motion.div
+      className="space-y-6 text-gray-700 dark:text-gray-300"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <p className="text-lg leading-relaxed">
+        Yo, welcome to my digital domain! Thanks for checking out my portfolio.
+      </p>
+      <p className="text-lg leading-relaxed">
+        I crafted this space to flex both <span className="font-semibold text-blue-500 dark:text-blue-400">skills</span> and <span className="font-semibold text-purple-500 dark:text-purple-400">soul</span>. Think sleek, intuitive design with an Apple-inspired edge—sharp, clean, and straight to the point.
+      </p>
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Code className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+          <p>Built with <span className="font-medium">Next.js</span> for a fast, modern dev experience.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Github className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <p>Pushed to <a href="https://github.com" target="_blank" className="text-blue-500 hover:underline dark:text-blue-400">GitHub</a> for version control and collab.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Globe className="w-5 h-5 text-green-500 dark:text-green-400" />
+          <p>Deployed on <a href="https://vercel.com" target="_blank" className="text-blue-500 hover:underline dark:text-blue-400">Vercel</a> for seamless hosting.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Globe className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+          <p>Domain snagged from <a href="https://www.namecheap.com" target="_blank" className="text-blue-500 hover:underline dark:text-blue-400">Namecheap</a> for that personal touch.</p>
+        </div>
+      </div>
+      <p className="text-lg italic">
+        Keeping it lean—no backend or database needed (yet). Just pure front-end finesse.
+      </p>
+    </motion.div>
+  );
 
   const experienceContent: React.ReactNode = (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold">Work Experience</h3>
       <TimelineItem
         title="Software Developer"
         company="Tech Corp"
@@ -135,7 +168,7 @@ export default function Home() {
             ))}
           />
 
-          
+
           <motion.p
             className="relative text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto transition-colors duration-300"
             initial={{ opacity: 0, y: 20 }}
@@ -145,6 +178,14 @@ export default function Home() {
             Sculptor of digital dimensions, forging web experiences that blend divine creativity with relentless functionality.
             Dare to explore the masterpieces {'I\'ve'} crafted? 🌀 Behold my portfolio!
           </motion.p>
+
+          <SkillCard
+            title="About This Page"
+            description="Innovative Solutions"
+            icon={<Info className="w-12 h-12 text-green-500" />}
+            gradient="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20"
+            onClick={() => openModal("About This Page", about)}
+          />
         </div>
       </main>
 
