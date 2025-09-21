@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Github, Globe, Code, Briefcase, GraduationCap, FolderGit2, Info } from 'lucide-react';
+import { Download, Github, Globe, Code, Briefcase, GraduationCap, FolderGit2, Info } from 'lucide-react';
 import DarkModeToggle from './components/DarkModeToggle';
-import SkillCard from './components/SkillCard';
+import PageCard from './components/PageCard';
 import ProgressBar from './components/ProgressBar';
 import TimelineItem from './components/TimelineItem';
 import Modal from './components/Modal';
@@ -106,21 +106,21 @@ export default function Home() {
         <div className="relative text-center py-16 md:py-24 px-6">
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          <SkillCard
+          <PageCard
             title="Technical Skills"
             description="Programming & Frameworks"
             icon={<Code className="w-12 h-12 text-blue-500" />}
             gradient="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20"
             onClick={() => openModal("Technical Skills", skillsContent)}
           />
-          <SkillCard
+          <PageCard
             title="Projects"
             description="Innovative Solutions"
             icon={<FolderGit2 className="w-12 h-12 text-green-500" />}
             gradient="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20"
             onClick={() => openModal("Projects", projectsContent)}
           />
-          <SkillCard
+          <PageCard
             title="Experience"
             description="Professional Work"
             icon={<Briefcase className="w-12 h-12 text-orange-500" />}
@@ -135,7 +135,7 @@ export default function Home() {
           >
             Holla! {'I\'m'} <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Isyraf</span> 👋
           </motion.h1>
-          <SkillCard
+          <PageCard
             title="Education"
             description="Academic Background"
             icon={<GraduationCap className="w-12 h-12 text-purple-500" />}
@@ -179,12 +179,26 @@ export default function Home() {
             Dare to explore the masterpieces {'I\'ve'} crafted? 🌀 Behold my portfolio!
           </motion.p>
 
-          <SkillCard
+          <PageCard
             title="About This Page"
             description="Innovative Solutions"
             icon={<Info className="w-12 h-12 text-green-500" />}
             gradient="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20"
             onClick={() => openModal("About This Page", about)}
+          />
+          <PageCard
+            title="Download CV"
+            description="My skills, but make it PDF 🧩"
+            icon={<Download className="w-12 h-12 text-green-500" />}
+            gradient="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20"
+            onClick={() => {
+              const link = document.createElement("a");
+              link.href = "/resume.pdf"; // file in public folder
+              link.download = "Isyraf Afifi Resume.pdf"; // suggested download name
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
           />
         </div>
       </main>
