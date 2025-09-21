@@ -8,6 +8,8 @@ import PageCard from './components/PageCard';
 import ProgressBar from './components/ProgressBar';
 import TimelineItem from './components/TimelineItem';
 import Modal from './components/Modal';
+import { portfolioSections, modalContents } from "./data/portfolio";
+
 
 export default function Home() {
   const [modalContent, setModalContent] = useState<{ title: string; content: React.ReactNode } | null>(null);
@@ -106,27 +108,7 @@ export default function Home() {
         <div className="relative text-center py-16 md:py-24 px-6">
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          <PageCard
-            title="Technical Skills"
-            description="Programming & Frameworks"
-            icon={<Code className="w-12 h-12 text-blue-500" />}
-            gradient="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20"
-            onClick={() => openModal("Technical Skills", skillsContent)}
-          />
-          <PageCard
-            title="Projects"
-            description="Innovative Solutions"
-            icon={<FolderGit2 className="w-12 h-12 text-green-500" />}
-            gradient="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20"
-            onClick={() => openModal("Projects", projectsContent)}
-          />
-          <PageCard
-            title="Experience"
-            description="Professional Work"
-            icon={<Briefcase className="w-12 h-12 text-orange-500" />}
-            gradient="bg-gradient-to-br from-orange-50 to-red-100 dark:from-orange-900/20 dark:to-red-900/20"
-            onClick={() => openModal("Work Experience", experienceContent)}
-          />
+
           <motion.h1
             className="relative text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-300"
             initial={{ opacity: 0, y: -40 }}
@@ -135,71 +117,35 @@ export default function Home() {
           >
             Holla! {'I\'m'} <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Isyraf</span> 👋
           </motion.h1>
-          <PageCard
-            title="Education"
-            description="Academic Background"
-            icon={<GraduationCap className="w-12 h-12 text-purple-500" />}
-            gradient="bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20"
-            size="large"
-            onClick={() => openModal("Education", (
-              <div className="space-y-6">
-                <div className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6 rounded-2xl">
-                  <h3 className="text-xl font-bold mb-2">Education</h3>
-                  <p>Strong academic foundation in computer science.</p>
-                </div>
+          {portfolioSections.map((section) => {
+            if (section.modalKey) {
+              return (
+                <PageCard
+                  key={section.title}
+                  title={section.title}
+                  description={section.description}
+                  icon={section.icon}
+                  gradient={section.gradient}
+                  size={section.size}
+                  onClick={() => openModal(section.title, modalContents[section.modalKey!])}
+                />
+              );
+            }
 
-                <div className="space-y-4">
-                  <TimelineItem
-                    title="Bachelor's in Computer Science (Hons.)"
-                    company="Management and Science University"
-                    period="2021 – 2024"
-                    location="Shah Alam"
-                    description="CGPA: 3.45 - Specialized in software development, algorithms, and system design with hands-on experience in various programming languages and frameworks."
-                  />
-                  <TimelineItem
-                    title="Foundation in Information Technology"
-                    company="Management and Science University"
-                    period="2020 – 2021"
-                    location="Shah Alam"
-                    description="CGPA: 3.11 - Built fundamental knowledge in computing principles, mathematics, and basic programming concepts."
-                  />
-                </div>
-              </div>
-            ))}
-          />
+            return (
+              <PageCard
+                key={section.title}
+                title={section.title}
+                description={section.description}
+                icon={section.icon}
+                gradient={section.gradient}
+                size={section.size}
+                onClick={section.action}
+              />
+            );
+          })}
 
 
-          <motion.p
-            className="relative text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto transition-colors duration-300"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            Sculptor of digital dimensions, forging web experiences that blend divine creativity with relentless functionality.
-            Dare to explore the masterpieces {'I\'ve'} crafted? 🌀 Behold my portfolio!
-          </motion.p>
-
-          <PageCard
-            title="About This Page"
-            description="Innovative Solutions"
-            icon={<Info className="w-12 h-12 text-green-500" />}
-            gradient="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20"
-            onClick={() => openModal("About This Page", about)}
-          />
-          <PageCard
-            title="Download CV"
-            description="My skills, but make it PDF 🧩"
-            icon={<Download className="w-12 h-12 text-green-500" />}
-            gradient="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20"
-            onClick={() => {
-              const link = document.createElement("a");
-              link.href = "/resume.pdf"; // file in public folder
-              link.download = "Isyraf Afifi Resume.pdf"; // suggested download name
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-          />
         </div>
       </main>
 
