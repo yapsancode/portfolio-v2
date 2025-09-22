@@ -32,22 +32,6 @@ export default function Footer() {
             </svg>
           </a>
           <a
-            href="https://twitter.com/isyraf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200"
-            aria-label="Twitter"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M18.205 2.25h3.803l-8.327 9.513 9.785 12.987h-7.653l-5.999-7.842-6.863 7.842H.147l8.936-10.22-9.438-12.48h7.883l5.426 7.172 6.251-7.172zm-1.354 19.287h2.112L5.423 4.463H3.2l13.651 17.074z" />
-            </svg>
-          </a>
-          <a
             href="https://linkedin.com/in/muhammad-isyraf-afifi"
             target="_blank"
             rel="noopener noreferrer"
@@ -64,7 +48,7 @@ export default function Footer() {
             </svg>
           </a>
           <a
-            href="mailto:your.email@example.com"
+            href="mailto:muhammadisyrafafifi@gmail.com"
             className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200"
             aria-label="Email"
           >
