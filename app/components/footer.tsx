@@ -97,10 +97,10 @@ export default function Footer() {
             variants={itemVariants}
           >
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Let's Connect
+              {'Let\'s'} Connect
             </h4>
             <p className="text-gray-900 dark:text-gray-100 mb-6 text-sm">
-              Have a project in mind? Let's collaborate and create something amazing together.
+              Have a project in mind? {'Let\'s'} collaborate and create something amazing together.
             </p>
 
             {/* Social Links */}
@@ -123,7 +123,7 @@ export default function Footer() {
                 </motion.a>
               ))}
             </div>
-            
+
             <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-900 dark:text-gray-100">
               <Code className="w-4 h-4" />
               <span>Built with</span>
