@@ -1,77 +1,195 @@
 "use client"
-import { Mail } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
+import { Mail, Github, Linkedin, Heart, Code, Coffee } from 'lucide-react';
+import { FaGithub, FaLinkedin, FaEnvelope, FaHeart } from 'react-icons/fa';
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
+
+  const socialLinks = [
+    {
+      href: "https://github.com/yapsancode",
+      icon: FaGithub,
+      label: "GitHub",
+      color: "hover:text-gray-800 dark:hover:text-white"
+    },
+    {
+      href: "https://linkedin.com/in/muhammad-isyraf-afifi",
+      icon: FaLinkedin,
+      label: "LinkedIn",
+      color: "hover:text-blue-500"
+    },
+    {
+      href: "mailto:muhammadisyrafafifi@gmail.com",
+      icon: FaEnvelope,
+      label: "Mail",
+      color: "hover:text-red-500"
+    }
+  ];
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: [0.25, 0.1, 0.25, 1]
+      }
+    }
+  };
+
   return (
-    <footer
-      className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 py-8 opacity-0 animate-fade-in"
-      style={{
-        animation: 'fadeInUp 0.5s ease-out forwards'
-      }}
+    <motion.footer
+      className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-200/50 dark:border-gray-700/50 mt-20 overflow-hidden"
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-100px" }}
+      variants={containerVariants}
     >
-      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="text-center md:text-left">
-          <p className="text-lg font-semibold">Isyraf | Creative Web Developer</p>
-          <p className="text-sm">Crafting digital experiences with soul & precision.</p>
+      {/* Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-400/15 via-purple-400/10 to-pink-400/15 dark:from-blue-400/10 dark:via-purple-600/10 dark:to-pink-400/10 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+        <motion.div
+          className="absolute -bottom-20 -left-20 w-60 h-60 bg-gradient-to-r from-emerald-400/12 via-cyan-400/8 to-blue-400/12 dark:from-emerald-400/10 dark:via-cyan-600/10 dark:to-blue-400/10 rounded-full blur-3xl"
+          animate={{
+            scale: [1.2, 0.8, 1.2],
+            x: [0, 20, 0],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-blue-50/30 via-transparent to-purple-50/20 dark:from-transparent dark:via-transparent dark:to-transparent" />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 py-12">
+        {/* Main Footer Content */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <motion.div
+            className="text-center md:text-left"
+            variants={itemVariants}
+          >
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Let's Connect
+            </h4>
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
+              Have a project in mind? Let's collaborate and create something amazing together.
+            </p>
+
+            {/* Social Links */}
+            <div className="flex justify-center md:justify-start space-x-4 mb-6">
+              {socialLinks.map((social, index) => (
+                <motion.a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`p-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400 ${social.color} transition-all duration-300 shadow-md hover:shadow-lg`}
+                  whileHover={{ scale: 1.1, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
+                  aria-label={social.label}
+                >
+                  <social.icon className="w-5 h-5" />
+                </motion.a>
+              ))}
+            </div>
+            
+            <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-500 dark:text-gray-500">
+              <Code className="w-4 h-4" />
+              <span>Built with</span>
+              <FaHeart className="w-3 h-3 text-red-500 animate-pulse" />
+              <span>and</span>
+              <Coffee className="w-4 h-4" />
+            </div>
+          </motion.div>
         </div>
-        <div className="flex gap-6">
-          <a
-            href="https://github.com/yapsancode"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200"
-            aria-label="GitHub"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+
+        {/* Divider */}
+        <motion.div
+          className="border-t border-gray-200 dark:border-gray-700 pt-8"
+          variants={itemVariants}
+        >
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
+            {/* Copyright */}
+            <motion.p
+              className="text-sm text-gray-500 dark:text-gray-500"
+              whileHover={{ scale: 1.02 }}
             >
-              <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-            </svg>
-          </a>
-          <a
-            href="https://linkedin.com/in/muhammad-isyraf-afifi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200"
-            aria-label="LinkedIn"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+              © {currentYear} Isyraf. All rights reserved. Made with passion in Malaysia 🇲🇾
+            </motion.p>
+
+            {/* Status Badge */}
+            <motion.div
+              className="flex items-center space-x-2 text-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.2 }}
             >
-              <path d="M20.447 20.452h-3.554v-5.569c0-1.327-.024-3.037-1.85-3.037-1.852 0-2.136 1.445-2.136 2.939v5.667H9.352V9h3.414v1.561h.048c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-            </svg>
-          </a>
-          <a
-            href="mailto:muhammadisyrafafifi@gmail.com"
-            className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200"
-            aria-label="Email"
-          >
-            <Mail className="w-6 h-6" />
-          </a>
+              <motion.div
+                className="w-2 h-2 bg-red-500 rounded-full"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <span className="text-gray-600 dark:text-gray-400">
+                Not available for new projects
+              </span>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Floating Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(3)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-blue-400/50 rounded-full"
+              style={{
+                left: `${20 + i * 30}%`,
+                top: `${10 + i * 20}%`,
+              }}
+              animate={{
+                y: [-10, -30, -10],
+                opacity: [0.5, 1, 0.5],
+                scale: [1, 1.5, 1],
+              }}
+              transition={{
+                duration: 4 + i,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.5,
+              }}
+            />
+          ))}
         </div>
       </div>
-      <div className="text-center text-sm mt-4">
-        <p>© {new Date().getFullYear()} Isyraf. All rights reserved.</p>
-      </div>
-      
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
-    </footer>
+    </motion.footer>
   );
 }
