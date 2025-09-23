@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  
+
   title: 'Isyraf Portfolio',
   description:
     "Explore Isyraf’s portfolio of modern, responsive web development projects. Specializing in frontend development, UI/UX design, and creative digital experiences.",
@@ -39,9 +39,11 @@ export const metadata: Metadata = {
 
 
   openGraph: {
-    title: 'Isyraf Portfolio | Creative Web Developer & Frontend Specialist',
+    title: 'Isyraf Afifi | isyraf-afifi.com',
+
     description:
-      "Explore Isyraf’s professional portfolio, featuring innovative projects in frontend development, UI/UX design, and creative digital solutions.",
+      "I'm a software engineer and entrepreneur wannabe. Here's my dev portfolio website.",
+      // focused on modern web technologies and AI. Here's an ongoing autobiography.
     url: 'https://isyraf-afifi.com',
     siteName: 'Isyraf Portfolio',
     images: [
