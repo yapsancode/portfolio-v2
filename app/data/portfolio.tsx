@@ -533,13 +533,13 @@ export const portfolioSections: PortfolioSection[] = [
         gradient: "bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
         modalKey: "skills",
     },
-    {
-        title: "Projects",
-        description: "Innovative Solutions",
-        icon: <FolderGit2 className="w-12 h-12 text-green-500" />,
-        gradient: "bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20",
-        modalKey: "projects",
-    },
+    // {
+    //     title: "Projects",
+    //     description: "Innovative Solutions",
+    //     icon: <FolderGit2 className="w-12 h-12 text-green-500" />,
+    //     gradient: "bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20",
+    //     modalKey: "projects",
+    // },
     {
         title: "Experience",
         description: "Professional Work",
