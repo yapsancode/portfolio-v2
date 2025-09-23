@@ -9,6 +9,7 @@ import ScrollToTopButton from './components/ScrollToTopButton';
 import HeroSection from './components/HeroSection';
 import AnimatedBackground from './components/AnimatedBackground';
 import LoadingScreen from './components/LoadingScreen';
+import Footer from './components/footer';
 
 export default function Home() {
   const [modalContent, setModalContent] = useState<{ title: string; content: React.ReactNode } | null>(null);
@@ -82,7 +83,7 @@ export default function Home() {
       <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
 
       {/* Main content */}
-      <main className="relative max-w-7xl mx-auto px-4 pb-20 transition-colors duration-300">
+      <div className="relative max-w-7xl mx-auto px-4 pb-20 transition-colors duration-300">
         {/* Hero Section */}
         <HeroSection />
         {/* Portfolio grid */}
@@ -157,7 +158,9 @@ export default function Home() {
             </motion.div>
           ))}
         </motion.div> */}
-      </main>
+        
+      </div>
+        <Footer />
 
       {/* Scroll to top button */}
       <ScrollToTopButton isVisible={showScrollTop} onClick={scrollToTop} />
