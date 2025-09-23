@@ -2,10 +2,8 @@
 import { motion, Variants } from 'framer-motion';
 import { Mail, Github, Linkedin, Heart, Code, Coffee } from 'lucide-react';
 import { FaGithub, FaLinkedin, FaEnvelope, FaHeart } from 'react-icons/fa';
-import { useTheme } from 'next-themes';
 
 export default function Footer() {
-  const { theme, setTheme } = useTheme();
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
