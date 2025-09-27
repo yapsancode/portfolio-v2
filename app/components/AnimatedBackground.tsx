@@ -9,9 +9,7 @@ export default function AnimatedBackground({ mousePosition }: AnimatedBackground
     return (
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
             {/* Background Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 via-white/20 to-gray-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900" />
-
-
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900" />
 
             {/* Animated Color Clouds */}
             <motion.div
@@ -78,9 +76,9 @@ export default function AnimatedBackground({ mousePosition }: AnimatedBackground
 
             {/* Statue Element */}
             <motion.div
-                className="absolute bottom-0 right-8 md:right-16 lg:right-24 opacity-20 dark:opacity-30"
+                className="absolute bottom-0 right-8 md:right-16 lg:right-24 opacity-30"
                 initial={{ opacity: 0, y: 100, scale: 0.8 }}
-                animate={{ opacity: 0.2, y: 0, scale: 1 }}
+                animate={{ opacity: 0.3, y: 0, scale: 1 }}
                 transition={{ duration: 2, delay: 1, ease: "easeOut" }}
             >
                 <motion.img
@@ -115,9 +113,9 @@ export default function AnimatedBackground({ mousePosition }: AnimatedBackground
 
             {/* Geometric Frame Effect */}
             <motion.div
-                className="absolute bottom-0 right-8 md:right-16 lg:right-24 opacity-10 dark:opacity-20"
+                className="absolute bottom-0 right-8 md:right-16 lg:right-24 opacity-20"
                 initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 0.15, scale: 1 }}
+                animate={{ opacity: 0.2, scale: 1 }}
                 transition={{ duration: 2, delay: 1.5 }}
             >
                 <motion.div
@@ -164,7 +162,7 @@ export default function AnimatedBackground({ mousePosition }: AnimatedBackground
 
             {/* Grid Pattern Overlay */}
             <div
-                className="absolute inset-0 opacity-5 dark:opacity-10"
+                className="absolute inset-0 opacity-10"
                 style={{
                     backgroundImage: `
               linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),

@@ -17,7 +17,7 @@ export interface PortfolioSection {
     gradient: string;
     size?: "small" | "medium" | "large";
     modalKey?: string;
-    action?: () => void; // for buttons like Download CV
+    action?: () => void;
 }
 
 // === CONTENTS ===
@@ -39,7 +39,7 @@ const skillsContent: ReactNode = (
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
             className="space-y-4"
         >
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1">
+            <h3 className="text-lg font-bold text-white border-b border-gray-700 pb-1">
                 Frontend
             </h3>
             <ProgressBar
@@ -52,7 +52,7 @@ const skillsContent: ReactNode = (
                 skill="Next.js"
                 percentage={35}
                 gradient="linear-gradient(to right, #000000, #4a5568)"
-                icon={<SiNextdotjs className="text-black dark:text-white" />}
+                icon={<SiNextdotjs className="text-white" />}
             />
             <ProgressBar
                 skill="Tailwind CSS"
@@ -67,7 +67,7 @@ const skillsContent: ReactNode = (
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
             className="space-y-4"
         >
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1">
+            <h3 className="text-lg font-bold text-white border-b border-gray-700 pb-1">
                 Backend
             </h3>
             <ProgressBar
@@ -89,7 +89,7 @@ const skillsContent: ReactNode = (
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
             className="space-y-4"
         >
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1">
+            <h3 className="text-lg font-bold text-white border-b border-gray-700 pb-1">
                 Database
             </h3>
             <ProgressBar
@@ -105,7 +105,7 @@ const skillsContent: ReactNode = (
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
             className="space-y-4"
         >
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-1">
+            <h3 className="text-lg font-bold text-white border-b border-gray-700 pb-1">
                 Version Control
             </h3>
             <ProgressBar
@@ -139,63 +139,61 @@ const projectsContent: ReactNode = (
         {/* Project 1 */}
         <motion.div
             variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
-            className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 
-                       rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300
-                       hover:scale-[1.02] cursor-pointer"
+            className="group relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 border border-gray-700 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                        <FaGlobe className="text-blue-600 dark:text-blue-400 text-xl" />
+                    <div className="p-2 bg-blue-900/50 rounded-lg">
+                        <FaGlobe className="text-blue-400 text-xl" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
                             E-Commerce Platform
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Full-Stack Web Application</p>
+                        <p className="text-sm text-gray-400">Full-Stack Web Application</p>
                     </div>
                 </div>
                 <div className="flex space-x-2">
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
-                        className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
+                        className="p-2 bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
                     >
-                        <FaGithub className="text-gray-700 dark:text-gray-300" />
+                        <FaGithub className="text-gray-300" />
                     </motion.button>
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
-                        className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
+                        className="p-2 bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
                     >
-                        <FaExternalLinkAlt className="text-gray-700 dark:text-gray-300" />
+                        <FaExternalLinkAlt className="text-gray-300" />
                     </motion.button>
                 </div>
             </div>
 
-            <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+            <p className="text-gray-300 mb-4 leading-relaxed">
                 A comprehensive e-commerce solution built with React and Node.js, featuring user authentication,
                 payment processing, inventory management, and admin dashboard. Implemented responsive design
                 and optimized for performance.
             </p>
 
             <div className="flex flex-wrap gap-2 mb-4">
-                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-blue-900/50 text-blue-200 rounded-full text-sm font-medium">
                     React
                 </span>
-                <span className="px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-green-900/50 text-green-200 rounded-full text-sm font-medium">
                     Node.js
                 </span>
-                <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-purple-900/50 text-purple-200 rounded-full text-sm font-medium">
                     MongoDB
                 </span>
-                <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-orange-900/50 text-orange-200 rounded-full text-sm font-medium">
                     Stripe API
                 </span>
             </div>
 
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center space-x-4 text-sm text-gray-400">
                     <div className="flex items-center space-x-1">
                         <FaCalendarAlt className="text-xs" />
                         <span>2024</span>
@@ -207,7 +205,7 @@ const projectsContent: ReactNode = (
                 </div>
                 <div className="flex items-center space-x-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-600 dark:text-green-400 font-medium">Completed</span>
+                    <span className="text-sm text-green-400 font-medium">Completed</span>
                 </div>
             </div>
         </motion.div>
@@ -215,63 +213,61 @@ const projectsContent: ReactNode = (
         {/* Project 2 */}
         <motion.div
             variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
-            className="group relative bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-900 
-                       rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300
-                       hover:scale-[1.02] cursor-pointer"
+            className="group relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 border border-gray-700 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
-                        <FaMobile className="text-purple-600 dark:text-purple-400 text-xl" />
+                    <div className="p-2 bg-purple-900/50 rounded-lg">
+                        <FaMobile className="text-purple-400 text-xl" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        <h3 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">
                             Fitness Tracker App
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Mobile Application</p>
+                        <p className="text-sm text-gray-400">Mobile Application</p>
                     </div>
                 </div>
                 <div className="flex space-x-2">
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
-                        className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
+                        className="p-2 bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
                     >
-                        <FaGithub className="text-gray-700 dark:text-gray-300" />
+                        <FaGithub className="text-gray-300" />
                     </motion.button>
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
-                        className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
+                        className="p-2 bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
                     >
-                        <FaGooglePlay className="text-gray-700 dark:text-gray-300" />
+                        <FaGooglePlay className="text-gray-300" />
                     </motion.button>
                 </div>
             </div>
 
-            <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+            <p className="text-gray-300 mb-4 leading-relaxed">
                 A cross-platform mobile application developed with React Native for tracking workouts,
                 monitoring progress, and maintaining fitness goals. Features include offline support,
                 data synchronization, and social sharing capabilities.
             </p>
 
             <div className="flex flex-wrap gap-2 mb-4">
-                <span className="px-3 py-1 bg-cyan-100 dark:bg-cyan-900/50 text-cyan-800 dark:text-cyan-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-cyan-900/50 text-cyan-200 rounded-full text-sm font-medium">
                     React Native
                 </span>
-                <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-yellow-900/50 text-yellow-200 rounded-full text-sm font-medium">
                     Firebase
                 </span>
-                <span className="px-3 py-1 bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-red-900/50 text-red-200 rounded-full text-sm font-medium">
                     Redux
                 </span>
-                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-indigo-900/50 text-indigo-200 rounded-full text-sm font-medium">
                     SQLite
                 </span>
             </div>
 
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center space-x-4 text-sm text-gray-400">
                     <div className="flex items-center space-x-1">
                         <FaCalendarAlt className="text-xs" />
                         <span>2024</span>
@@ -283,71 +279,69 @@ const projectsContent: ReactNode = (
                 </div>
                 <div className="flex items-center space-x-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-600 dark:text-green-400 font-medium">Completed</span>
+                    <span className="text-sm text-green-400 font-medium">Completed</span>
                 </div>
             </div>
         </motion.div>
 
-        {/* Project 3 - New Addition */}
+        {/* Project 3 */}
         <motion.div
             variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
-            className="group relative bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-800 dark:to-gray-900 
-                       rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300
-                       hover:scale-[1.02] cursor-pointer"
+            className="group relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 border border-gray-700 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-                        <FaChartLine className="text-emerald-600 dark:text-emerald-400 text-xl" />
+                    <div className="p-2 bg-emerald-900/50 rounded-lg">
+                        <FaChartLine className="text-emerald-400 text-xl" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
                             Analytics Dashboard
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Data Visualization Platform</p>
+                        <p className="text-sm text-gray-400">Data Visualization Platform</p>
                     </div>
                 </div>
                 <div className="flex space-x-2">
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
-                        className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
+                        className="p-2 bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
                     >
-                        <FaGithub className="text-gray-700 dark:text-gray-300" />
+                        <FaGithub className="text-gray-300" />
                     </motion.button>
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
-                        className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
+                        className="p-2 bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all"
                     >
-                        <FaExternalLinkAlt className="text-gray-700 dark:text-gray-300" />
+                        <FaExternalLinkAlt className="text-gray-300" />
                     </motion.button>
                 </div>
             </div>
 
-            <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+            <p className="text-gray-300 mb-4 leading-relaxed">
                 An interactive dashboard built with Next.js and D3.js for real-time data visualization
                 and analytics. Features customizable charts, filters, and export capabilities for
                 business intelligence and reporting.
             </p>
 
             <div className="flex flex-wrap gap-2 mb-4">
-                <span className="px-3 py-1 bg-black dark:bg-gray-700 text-white dark:text-gray-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-gray-700 text-gray-200 rounded-full text-sm font-medium">
                     Next.js
                 </span>
-                <span className="px-3 py-1 bg-cyan-100 dark:bg-cyan-900/50 text-cyan-800 dark:text-cyan-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-cyan-900/50 text-cyan-200 rounded-full text-sm font-medium">
                     Tailwind CSS
                 </span>
-                <span className="px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-green-900/50 text-green-200 rounded-full text-sm font-medium">
                     D3.js
                 </span>
-                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-blue-900/50 text-blue-200 rounded-full text-sm font-medium">
                     PostgreSQL
                 </span>
             </div>
 
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center space-x-4 text-sm text-gray-400">
                     <div className="flex items-center space-x-1">
                         <FaCalendarAlt className="text-xs" />
                         <span>2024</span>
@@ -359,7 +353,7 @@ const projectsContent: ReactNode = (
                 </div>
                 <div className="flex items-center space-x-1">
                     <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">In Progress</span>
+                    <span className="text-sm text-yellow-400 font-medium">In Progress</span>
                 </div>
             </div>
         </motion.div>
@@ -372,9 +366,7 @@ const projectsContent: ReactNode = (
             <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 
-                           text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl
-                           flex items-center justify-center space-x-2"
+                className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
             >
                 <FaGithub />
                 <span>View All Projects on GitHub</span>
@@ -420,7 +412,6 @@ const experienceContent = (
     </motion.div>
 );
 
-
 // Education modal content
 const educationContent: ReactNode = (
     <div className="space-y-6">
@@ -451,7 +442,7 @@ const educationContent: ReactNode = (
 // About modal content
 const aboutContent: ReactNode = (
     <motion.div
-        className="space-y-6 text-gray-700 dark:text-gray-300"
+        className="space-y-6 text-gray-300"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -461,11 +452,11 @@ const aboutContent: ReactNode = (
         </p>
         <p className="text-lg leading-relaxed">
             I crafted this space to flex both{" "}
-            <span className="font-semibold text-blue-500 dark:text-blue-400">
+            <span className="font-semibold text-blue-400">
                 skills
             </span>{" "}
             and{" "}
-            <span className="font-semibold text-purple-500 dark:text-purple-400">
+            <span className="font-semibold text-purple-400">
                 soul
             </span>
             . Think sleek, intuitive design with an Apple-inspired edge—sharp, clean,
@@ -473,20 +464,20 @@ const aboutContent: ReactNode = (
         </p>
         <div className="space-y-4">
             <div className="flex items-center gap-3">
-                <Code className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+                <Code className="w-5 h-5 text-blue-400" />
                 <p>
                     Built with <span className="font-medium">Next.js</span> for a fast,
                     modern dev experience.
                 </p>
             </div>
             <div className="flex items-center gap-3">
-                <Github className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <Github className="w-5 h-5 text-gray-400" />
                 <p>
                     Pushed to{" "}
                     <a
                         href="https://github.com"
                         target="_blank"
-                        className="text-blue-500 hover:underline dark:text-blue-400"
+                        className="text-blue-400 hover:underline"
                     >
                         GitHub
                     </a>{" "}
@@ -494,13 +485,13 @@ const aboutContent: ReactNode = (
                 </p>
             </div>
             <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-green-500 dark:text-green-400" />
+                <Globe className="w-5 h-5 text-green-400" />
                 <p>
                     Deployed on{" "}
                     <a
                         href="https://vercel.com"
                         target="_blank"
-                        className="text-blue-500 hover:underline dark:text-blue-400"
+                        className="text-blue-400 hover:underline"
                     >
                         Vercel
                     </a>{" "}
@@ -530,28 +521,21 @@ export const portfolioSections: PortfolioSection[] = [
         title: "Technical Skills",
         description: "Programming & Frameworks",
         icon: <Code className="w-12 h-12 text-blue-500" />,
-        gradient: "bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
+        gradient: "bg-gradient-to-br from-blue-900/20 to-indigo-900/20",
         modalKey: "skills",
     },
-    // {
-    //     title: "Projects",
-    //     description: "Innovative Solutions",
-    //     icon: <FolderGit2 className="w-12 h-12 text-green-500" />,
-    //     gradient: "bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20",
-    //     modalKey: "projects",
-    // },
     {
         title: "Experience",
         description: "Professional Work",
         icon: <Briefcase className="w-12 h-12 text-orange-500" />,
-        gradient: "bg-gradient-to-br from-orange-50 to-red-100 dark:from-orange-900/20 dark:to-red-900/20",
+        gradient: "bg-gradient-to-br from-orange-900/20 to-red-900/20",
         modalKey: "experience",
     },
     {
         title: "Education",
         description: "Academic Background",
         icon: <GraduationCap className="w-12 h-12 text-purple-500" />,
-        gradient: "bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20",
+        gradient: "bg-gradient-to-br from-purple-900/20 to-indigo-900/20",
         modalKey: "education",
         size: "large",
     },
@@ -559,17 +543,17 @@ export const portfolioSections: PortfolioSection[] = [
         title: "About This Page",
         description: "How it was built",
         icon: <Info className="w-12 h-12 text-green-500" />,
-        gradient: "bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20",
+        gradient: "bg-gradient-to-br from-green-900/20 to-teal-900/20",
         modalKey: "about",
     },
     {
         title: "Download CV",
         description: "My skills, but make it PDF 🧩",
         icon: <Download className="w-12 h-12 text-green-500" />,
-        gradient: "bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20",
+        gradient: "bg-gradient-to-br from-green-900/20 to-teal-900/20",
         action: () => {
             const link = document.createElement("a");
-            link.href = "/resume.pdf"; // ensure this file is in public/
+            link.href = "/resume.pdf";
             link.download = "Isyraf Afifi Resume.pdf";
             document.body.appendChild(link);
             link.click();

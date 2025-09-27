@@ -11,7 +11,7 @@ export default function Footer() {
       href: "https://github.com/yapsancode",
       icon: FaGithub,
       label: "GitHub",
-      color: "hover:text-gray-800 dark:hover:text-white"
+      color: "hover:text-white"
     },
     {
       href: "https://linkedin.com/in/muhammad-isyraf-afifi",
@@ -52,7 +52,7 @@ export default function Footer() {
 
   return (
     <motion.footer
-      className="relative backdrop-blur-lg border-t border-gray-200/50 dark:border-gray-700/50"
+      className="relative backdrop-blur-lg border-t border-gray-700/50"
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: "-100px" }}
@@ -61,7 +61,7 @@ export default function Footer() {
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-400/15 via-purple-400/10 to-pink-400/15 dark:from-blue-400/10 dark:via-purple-600/10 dark:to-pink-400/10 rounded-full blur-3xl"
+          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-400/10 via-purple-600/10 to-pink-400/10 rounded-full blur-3xl"
           animate={{
             scale: [1, 1.2, 1],
             rotate: [0, 180, 360],
@@ -73,7 +73,7 @@ export default function Footer() {
           }}
         />
         <motion.div
-          className="absolute -bottom-20 -left-20 w-60 h-60 bg-gradient-to-r from-emerald-400/12 via-cyan-400/8 to-blue-400/12 dark:from-emerald-400/10 dark:via-cyan-600/10 dark:to-blue-400/10 rounded-full blur-3xl"
+          className="absolute -bottom-20 -left-20 w-60 h-60 bg-gradient-to-r from-emerald-400/10 via-cyan-600/10 to-blue-400/10 rounded-full blur-3xl"
           animate={{
             scale: [1.2, 0.8, 1.2],
             x: [0, 20, 0],
@@ -84,7 +84,7 @@ export default function Footer() {
             ease: "easeInOut"
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-blue-50/30 via-transparent to-purple-50/20 dark:from-transparent dark:via-transparent dark:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-transparent" />
       </div>
 
       <div className="relative w-full px-12 py-12">
@@ -94,11 +94,11 @@ export default function Footer() {
             className="text-center md:text-left"
             variants={itemVariants}
           >
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              {'Let\'s'} Connect
+            <h4 className="text-lg font-semibold text-white mb-4">
+              Let's Connect
             </h4>
-            <p className="text-gray-900 dark:text-gray-100 mb-6 text-sm">
-              Have a project in mind? {'Let\'s'} collaborate and create something amazing together.
+            <p className="text-gray-100 mb-6 text-sm">
+              Have a project in mind? Let's collaborate and create something amazing together.
             </p>
 
             {/* Social Links */}
@@ -109,7 +109,7 @@ export default function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`p-3 bg-gray-100/80 dark:bg-gray-800/80 rounded-full text-gray-600 dark:text-gray-100 ${social.color} transition-all duration-300 shadow-md hover:shadow-lg`}
+                  className={`p-3 bg-gray-800/80 rounded-full text-gray-100 ${social.color} transition-all duration-300 shadow-md hover:shadow-lg`}
                   whileHover={{ scale: 1.1, y: -3 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, y: 20 }}
@@ -122,7 +122,7 @@ export default function Footer() {
               ))}
             </div>
 
-            <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-900 dark:text-gray-100">
+            <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-100">
               <Code className="w-4 h-4" />
               <span>Built with</span>
               <FaHeart className="w-3 h-3 text-red-500 animate-pulse" />
@@ -134,13 +134,13 @@ export default function Footer() {
 
         {/* Divider */}
         <motion.div
-          className="border-t border-gray-200 dark:border-gray-700 pt-8"
+          className="border-t border-gray-700 pt-8"
           variants={itemVariants}
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
             {/* Copyright */}
             <motion.p
-              className="text-sm text-gray-900 dark:text-gray-100"
+              className="text-sm text-gray-100"
               whileHover={{ scale: 1.02 }}
             >
               © {currentYear} Isyraf. All rights reserved. Made with passion in Malaysia 🇲🇾
@@ -158,7 +158,7 @@ export default function Footer() {
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              <span className="text-gray-900 dark:text-gray-100">
+              <span className="text-gray-100">
                 Not available for new projects
               </span>
             </motion.div>
