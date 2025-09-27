@@ -95,10 +95,10 @@ export default function Footer() {
             variants={itemVariants}
           >
             <h4 className="text-lg font-semibold text-white mb-4">
-              Let's Connect
+              {'Let\'s'} Connect
             </h4>
             <p className="text-gray-100 mb-6 text-sm">
-              Have a project in mind? Let's collaborate and create something amazing together.
+              Have a project in mind? {'Let\'s'} collaborate and create something amazing together.
             </p>
 
             {/* Social Links */}
