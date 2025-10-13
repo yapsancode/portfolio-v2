@@ -83,12 +83,12 @@ export default function Home() {
       <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
 
       {/* Main content */}
-      <div className="relative max-w-7xl mx-auto px-4 pb-20 transition-colors duration-300">
+      <div className="relative w-full pb-20 px-10 transition-colors duration-300">
         {/* Hero Section */}
         <HeroSection />
         {/* Portfolio grid */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.4 }}
@@ -125,39 +125,6 @@ export default function Home() {
             </motion.div>
           ))}
         </motion.div>
-
-        {/* Stats section */}
-        {/* <motion.div
-          className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-        >
-          {[
-            { number: "2+", label: "Years Experience", color: "from-blue-500 to-cyan-500" },
-            { number: "15+", label: "Projects Completed", color: "from-purple-500 to-pink-500" },
-            { number: "5+", label: "Technologies", color: "from-emerald-500 to-teal-500" },
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              className="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg"
-              whileHover={{ scale: 1.05, y: -5 }}
-              transition={{ duration: 0.3 }}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <motion.div
-                className={`text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent mb-2`}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 1.6 + index * 0.1, type: "spring" }}
-              >
-                {stat.number}
-              </motion.div>
-              <p className="text-gray-600 dark:text-gray-400 font-medium">{stat.label}</p>
-            </motion.div>
-          ))}
-        </motion.div> */}
         
       </div>
         <Footer />
