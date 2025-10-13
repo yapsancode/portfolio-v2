@@ -5,6 +5,7 @@ import { experienceContent } from "./experience";
 import { educationContent } from "./educations";
 import { aboutContent } from "./about";
 import { flutterJourneyContent } from "./flutter-journey";
+import { nextjsJourneyContent } from "./nextjs-journey";
 
 export const modalContents: Record<string, ReactNode> = {
     skills: skillsContent,
@@ -13,4 +14,5 @@ export const modalContents: Record<string, ReactNode> = {
     education: educationContent,
     about: aboutContent,
     flutter: flutterJourneyContent,
+    nextjs: nextjsJourneyContent,
 };

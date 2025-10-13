@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { Code, Briefcase, GraduationCap, Info, Download } from "lucide-react";
+import { Code, Briefcase, GraduationCap, Info, Download, Globe } from "lucide-react";
+import { SiNextdotjs } from "react-icons/si";
 
 export interface PortfolioSection {
     title: string;
@@ -18,6 +19,14 @@ export const portfolioSections: PortfolioSection[] = [
         icon: <Code className="w-12 h-12 text-blue-500" />,
         gradient: "bg-gradient-to-br from-blue-900/20 to-indigo-900/20",
         modalKey: "flutter",
+    },
+    {
+        title: "Next.js Journey",
+        description: "First real collaboration project",
+        icon: <SiNextdotjs className="w-12 h-12 text-gray-800" />, // or use SiNextdotjs
+        gradient: "bg-gradient-to-br from-gray-900/20 to-black/20",
+        modalKey: "nextjs",
+        size: "large", // optional
     },
     {
         title: "Technical Skills",
