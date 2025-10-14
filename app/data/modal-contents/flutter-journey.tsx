@@ -244,7 +244,7 @@ export const flutterJourneyContent: ReactNode = (
         >
             <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-yellow-400" />
-                Tech Stack I've Mastered
+                Tech Stack {'I\'ve'} Mastered
             </h4>
             <div className="flex flex-wrap gap-3">
                 <div className="flex items-center gap-2 bg-blue-900/30 border border-blue-700/50 rounded-lg px-4 py-2">
@@ -275,7 +275,7 @@ export const flutterJourneyContent: ReactNode = (
             className="mt-6 text-center"
         >
             <p className="text-gray-400 italic">
-                "Every line of code is a step forward. Every bug is a lesson. Every app is a milestone."
+                Every line of code is a step forward. Every bug is a lesson. Every app is a milestone.
             </p>
             <p className="text-blue-400 font-semibold mt-2">
                 — My Flutter Philosophy

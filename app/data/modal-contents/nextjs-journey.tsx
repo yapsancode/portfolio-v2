@@ -254,7 +254,7 @@ export const nextjsJourneyContent: ReactNode = (
                 <div>
                     <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                         <Server className="w-5 h-5 text-green-400" />
-                        Friend's Stack (Backend)
+                        {'Friend\'s'} Stack (Backend)
                     </h4>
                     <div className="space-y-2">
                         <div className="flex items-center gap-3 bg-gray-900/50 rounded-lg p-3">
@@ -388,7 +388,7 @@ export const nextjsJourneyContent: ReactNode = (
             className="mt-6 text-center"
         >
             <p className="text-gray-400 italic">
-                "This project taught me more than any tutorial ever could. Real problems, real deadlines, real teamwork."
+                This project taught me more than any tutorial ever could. Real problems, real deadlines, real teamwork.
             </p>
             <p className="text-indigo-400 font-semibold mt-2">
                 — The best way to learn is by building.
