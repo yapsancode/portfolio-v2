@@ -50,6 +50,36 @@ const PAPER = "#f4f7e8";
 const damp = (cur: number, target: number, lambda: number, dt: number) =>
   cur + (target - cur) * (1 - Math.exp(-lambda * dt));
 
+// ---- facial expressions ------------------------------------------------------
+// Reusable named presets built from a few simple eye/brow/mouth params. Reassign
+// which expression a state wears in STATE_EXPRESSION below. All values are damped
+// toward their target each frame, so expressions blend smoothly (never snap).
+type ExprName = "neutral" | "happy" | "focused" | "concentrated" | "content";
+type Expression = {
+  eyeOpen: number; // eye vertical scale: 1 = wide, lower = narrowed, ~0.2 = squint/closed
+  pupilY: number; // pupil vertical look offset: negative = looking down
+  browY: number; // brow vertical offset from rest
+  browTilt: number; // inner-end tilt: positive = furrow (concentration), negative = soft/raised
+  mouthSmile: number; // 0 = flat line, 1 = full smile (crossfades the two mouth shapes)
+  mouthWidth: number; // horizontal mouth scale: lower = pressed/tight
+};
+const EXPRESSIONS: Record<ExprName, Expression> = {
+  neutral: { eyeOpen: 1.0, pupilY: 0, browY: 0, browTilt: 0, mouthSmile: 0.35, mouthWidth: 1 },
+  happy: { eyeOpen: 0.82, pupilY: 0.005, browY: 0.02, browTilt: -0.04, mouthSmile: 1, mouthWidth: 1 },
+  focused: { eyeOpen: 0.85, pupilY: -0.035, browY: -0.012, browTilt: 0.1, mouthSmile: 0.2, mouthWidth: 0.92 },
+  concentrated: { eyeOpen: 0.6, pupilY: -0.008, browY: -0.03, browTilt: 0.26, mouthSmile: 0, mouthWidth: 0.78 },
+  content: { eyeOpen: 0.2, pupilY: 0, browY: 0.015, browTilt: -0.06, mouthSmile: 0.85, mouthWidth: 1 },
+};
+// Which expression each animation state wears — reassign freely.
+const STATE_EXPRESSION: Record<"idle" | Behavior, ExprName> = {
+  idle: "happy", // cursor-follow resting face
+  wave: "happy",
+  reading: "focused",
+  coding: "concentrated",
+  music: "content",
+};
+const BROW_Y = 0.16; // brow rest height (matches the JSX position below)
+
 // Two-segment arm (shoulder upper + elbow forearm) so it can bend naturally.
 function Arm({
   shoulder,
@@ -118,6 +148,16 @@ export default function Character3D() {
   const laptop = useRef<Group>(null);
   const notes = useRef<Group>(null);
   const screen = useRef<Mesh>(null);
+  // facial features (driven by the expression presets)
+  const lEye = useRef<Group>(null);
+  const rEye = useRef<Group>(null);
+  const lPupil = useRef<Mesh>(null);
+  const rPupil = useRef<Mesh>(null);
+  const lBrow = useRef<Mesh>(null);
+  const rBrow = useRef<Mesh>(null);
+  const mouthGrp = useRef<Group>(null);
+  const mouthSmileMesh = useRef<Mesh>(null);
+  const mouthFlatMesh = useRef<Mesh>(null);
 
   const [greeting, setGreeting] = useState(true);
   useEffect(() => {
@@ -263,10 +303,10 @@ export default function Character3D() {
       bodyZ = -0.1; // slight right lean while coding
     } else if (active === "music") {
       // right hand raised to ear cup; natural shoulder lift + elbow bend
-      rShX = -0.15;
-      rShZ = 1.75; // arm past horizontal, angling up toward the headphone cup
-      rElX = -1.05; // elbow bends to bring hand to ear
-      // rElZ stays 0 — no Z-twist (that was causing the broken-arm look)
+      rShX = -0.1;
+      rShZ = 2.5; // raise the upper arm near-vertical so the elbow comes up to head height
+      rElX = -1.3; // fold the forearm
+      rElZ = 0.9; // swing the forearm inward so the hand lands by the headphone cup
       headR = Math.sin(t * 5) * 0.22;
       headP = Math.sin(t * 10) * 0.05 - 0.02;
       bodyY = Math.sin(t * 2.5) * 0.08;
@@ -305,6 +345,34 @@ export default function Character3D() {
     }
     if (lLeg.current) lLeg.current.rotation.x = damp(lLeg.current.rotation.x, legX, 7, d);
     if (rLeg.current) rLeg.current.rotation.x = damp(rLeg.current.rotation.x, legX, 7, d);
+
+    // ----- facial expression (damped toward the active state's preset) -----
+    const ex = EXPRESSIONS[STATE_EXPRESSION[active ?? "idle"]];
+    const fl = 9; // facial damping rate
+    const setEye = (g: Group | null) => {
+      if (g) g.scale.y = damp(g.scale.y, ex.eyeOpen, fl, d);
+    };
+    setEye(lEye.current);
+    setEye(rEye.current);
+    if (lPupil.current) lPupil.current.position.y = damp(lPupil.current.position.y, ex.pupilY, fl, d);
+    if (rPupil.current) rPupil.current.position.y = damp(rPupil.current.position.y, ex.pupilY, fl, d);
+    const setBrow = (g: Mesh | null, sign: number) => {
+      if (!g) return;
+      g.position.y = damp(g.position.y, BROW_Y + ex.browY, fl, d);
+      g.rotation.z = damp(g.rotation.z, sign * ex.browTilt, fl, d);
+    };
+    setBrow(lBrow.current, -1);
+    setBrow(rBrow.current, 1);
+    if (mouthGrp.current)
+      mouthGrp.current.scale.x = damp(mouthGrp.current.scale.x, ex.mouthWidth, fl, d);
+    if (mouthSmileMesh.current) {
+      const m = mouthSmileMesh.current.material as MeshStandardMaterial;
+      m.opacity = damp(m.opacity, ex.mouthSmile, fl, d);
+    }
+    if (mouthFlatMesh.current) {
+      const m = mouthFlatMesh.current.material as MeshStandardMaterial;
+      m.opacity = damp(m.opacity, 1 - ex.mouthSmile, fl, d);
+    }
 
     // sit: ease the whole character down (legs already bend forward via legX)
     c.seat = damp(c.seat, sit, 6, d);
@@ -378,41 +446,49 @@ export default function Character3D() {
             <sphereGeometry args={[0.515, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.42]} />
             <meshStandardMaterial color="#14150f" roughness={0.85} />
           </mesh>
-          {/* eyes — the focal point: white sclera + dark pupil */}
-          <group position={[-0.17, 0.02, 0.44]}>
+          {/* eyes — the focal point: white sclera + dark pupil. eyeOpen scales group.y */}
+          <group ref={lEye} position={[-0.17, 0.02, 0.44]}>
             <mesh scale={[1, 1, 0.5]}>
               <sphereGeometry args={[0.1, 16, 16]} />
               <meshStandardMaterial color={PAPER} roughness={0.4} />
             </mesh>
-            <mesh position={[0, 0, 0.07]}>
+            <mesh ref={lPupil} position={[0, 0, 0.07]}>
               <sphereGeometry args={[0.055, 14, 14]} />
               <meshStandardMaterial color="#14150f" />
             </mesh>
           </group>
-          <group position={[0.17, 0.02, 0.44]}>
+          <group ref={rEye} position={[0.17, 0.02, 0.44]}>
             <mesh scale={[1, 1, 0.5]}>
               <sphereGeometry args={[0.1, 16, 16]} />
               <meshStandardMaterial color={PAPER} roughness={0.4} />
             </mesh>
-            <mesh position={[0, 0, 0.07]}>
+            <mesh ref={rPupil} position={[0, 0, 0.07]}>
               <sphereGeometry args={[0.055, 14, 14]} />
               <meshStandardMaterial color="#14150f" />
             </mesh>
           </group>
-          {/* brows for a touch of expression */}
-          <mesh position={[-0.17, 0.16, 0.47]}>
+          {/* brows — position.y + rotation.z driven by the expression */}
+          <mesh ref={lBrow} position={[-0.17, 0.16, 0.47]}>
             <boxGeometry args={[0.16, 0.03, 0.03]} />
             <meshStandardMaterial color="#14150f" />
           </mesh>
-          <mesh position={[0.17, 0.16, 0.47]}>
+          <mesh ref={rBrow} position={[0.17, 0.16, 0.47]}>
             <boxGeometry args={[0.16, 0.03, 0.03]} />
             <meshStandardMaterial color="#14150f" />
           </mesh>
-          {/* mouth */}
-          <mesh position={[0, -0.2, 0.45]}>
-            <boxGeometry args={[0.2, 0.035, 0.04]} />
-            <meshStandardMaterial color="#9a6b3f" />
-          </mesh>
+          {/* mouth — two shapes crossfaded by mouthSmile (0 = flat line, 1 = smile) */}
+          <group ref={mouthGrp} position={[0, -0.2, 0.45]}>
+            {/* smile arc (fades in for happy / content); offset so its curve centers on the line */}
+            <mesh ref={mouthSmileMesh} position={[0, 0.102, 0]} rotation={[0, 0, -Math.PI / 2 - 0.8]}>
+              <torusGeometry args={[0.12, 0.02, 8, 20, 1.6]} />
+              <meshStandardMaterial color="#9a6b3f" roughness={0.6} transparent opacity={1} depthWrite={false} />
+            </mesh>
+            {/* flat line (fades in for focused / concentrated / neutral) */}
+            <mesh ref={mouthFlatMesh}>
+              <boxGeometry args={[0.18, 0.035, 0.04]} />
+              <meshStandardMaterial color="#9a6b3f" roughness={0.6} transparent opacity={0} depthWrite={false} />
+            </mesh>
+          </group>
           {/* headphones */}
           <mesh position={[0, 0.05, 0]}>
             <torusGeometry args={[0.54, 0.055, 12, 32, Math.PI]} />
