@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { site } from "@/config/site";
+import { Analytics } from "@vercel/analytics/next"
 
 // Brand background — mirrors `--lime` in globals.css (theme-color/manifest need a
 // literal hex; meta tags can't read CSS custom properties).
@@ -95,6 +96,7 @@ export default function RootLayout({
       className={`${archivo.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>
+      < Analytics />
     </html>
   );
 }
