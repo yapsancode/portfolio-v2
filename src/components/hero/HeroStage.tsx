@@ -8,7 +8,11 @@ import HeroAvatar from "./HeroAvatar";
 // Until it resolves (and on any failure) we show the flat SVG character.
 const Scene3D = dynamic(() => import("./Scene3D"), {
   ssr: false,
-  loading: () => <HeroAvatar />,
+  loading: () => <div className="flex h-full w-full items-center justify-center">
+      <span className="text-xl font-extrabold uppercase tracking-widest text-charcoal/60">
+        Loading...
+      </span>
+    </div>,
 });
 
 /**

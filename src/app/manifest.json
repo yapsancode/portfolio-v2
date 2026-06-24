@@ -1,0 +1,24 @@
+{
+  "name": "Isyraf Afifi — Software Engineer",
+  "short_name": "Isyraf Afifi",
+  "description": "Portfolio of Isyraf Afifi, Software Engineer.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#C6F432",
+  "background_color": "#C6F432",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

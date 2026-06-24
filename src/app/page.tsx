@@ -1,4 +1,5 @@
 import HeroStage from "@/components/hero/HeroStage";
+import JsonLd from "@/components/seo/JsonLd";
 import { site } from "@/config/site";
 
 /* External-link safety helper. */
@@ -7,6 +8,9 @@ const ext = { target: "_blank", rel: "noopener noreferrer" } as const;
 export default function Home() {
   return (
     <>
+      {/* Schema.org structured data for search + answer engines. */}
+      <JsonLd />
+
       {/* ===================== HERO ===================== */}
       <section
         id="top"
