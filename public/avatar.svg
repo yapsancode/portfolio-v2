@@ -1,0 +1,65 @@
+<svg viewBox="0 0 280 620" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <!-- Stylized placeholder character. Swap this file (or point site.avatar.src
+       to your own PNG) to use a real avatar. Drawn in the brand palette:
+       charcoal figure, lime accents. -->
+  <defs>
+    <clipPath id="hoodie"><rect x="60" y="150" width="160" height="230" rx="40" /></clipPath>
+  </defs>
+
+  <!-- ground shadow -->
+  <ellipse cx="140" cy="598" rx="86" ry="14" fill="#1a1b16" opacity="0.14" />
+
+  <!-- ===== legs / pants ===== -->
+  <rect x="98" y="350" width="40" height="218" rx="17" fill="#16170f" />
+  <rect x="142" y="350" width="40" height="218" rx="17" fill="#1d1e15" />
+
+  <!-- ===== shoes ===== -->
+  <g>
+    <rect x="84" y="556" width="60" height="34" rx="15" fill="#f4f7e8" />
+    <rect x="84" y="578" width="60" height="14" rx="7" fill="#c6f432" />
+    <path d="M104 560 l18 0 M102 568 l22 0" stroke="#cfd3bb" stroke-width="3" stroke-linecap="round" />
+    <rect x="136" y="556" width="60" height="34" rx="15" fill="#f4f7e8" />
+    <rect x="136" y="578" width="60" height="14" rx="7" fill="#c6f432" />
+    <path d="M156 560 l18 0 M154 568 l22 0" stroke="#cfd3bb" stroke-width="3" stroke-linecap="round" />
+  </g>
+
+  <!-- ===== hood collar behind neck ===== -->
+  <path d="M104 150 q36 34 72 0 l6 26 q-42 30 -84 0 z" fill="#1a1b16" />
+
+  <!-- ===== head ===== -->
+  <circle cx="140" cy="96" r="46" fill="#a4703f" />
+  <path d="M94 96 a46 46 0 0 0 92 0 q-2 30 -46 30 q-44 0 -46 -30 z" fill="#90602f" opacity="0.35" />
+  <!-- hair -->
+  <path d="M96 86 q-4 -52 44 -54 q48 2 44 54 q-10 -20 -44 -20 q-34 0 -44 20 z" fill="#14150f" />
+  <!-- simple face -->
+  <circle cx="126" cy="96" r="3.4" fill="#14150f" />
+  <circle cx="154" cy="96" r="3.4" fill="#14150f" />
+  <path d="M128 114 q12 9 24 0" stroke="#5e3c1c" stroke-width="3" stroke-linecap="round" fill="none" />
+
+  <!-- ===== headphones ===== -->
+  <path d="M88 96 a52 52 0 0 1 104 0" stroke="#1a1b16" stroke-width="9" fill="none" stroke-linecap="round" />
+  <rect x="80" y="80" width="20" height="40" rx="9" fill="#1a1b16" />
+  <rect x="180" y="80" width="20" height="40" rx="9" fill="#1a1b16" />
+  <rect x="85" y="92" width="10" height="16" rx="5" fill="#c6f432" />
+
+  <!-- ===== sleeves ===== -->
+  <rect x="52" y="168" width="44" height="170" rx="22" fill="#22231b" transform="rotate(6 74 250)" />
+  <rect x="184" y="168" width="44" height="170" rx="22" fill="#2a2b22" transform="rotate(-6 206 250)" />
+
+  <!-- ===== hoodie body ===== -->
+  <rect x="60" y="150" width="160" height="230" rx="40" fill="#26271f" />
+  <g clip-path="url(#hoodie)">
+    <rect x="60" y="150" width="80" height="230" fill="#2c2d24" />
+    <!-- pocket -->
+    <rect x="86" y="296" width="108" height="46" rx="20" fill="#1c1d17" />
+    <rect x="86" y="296" width="108" height="10" fill="#171810" opacity="0.6" />
+  </g>
+  <!-- hands tucked in pocket -->
+  <ellipse cx="98" cy="312" rx="13" ry="11" fill="#a4703f" />
+  <ellipse cx="182" cy="312" rx="13" ry="11" fill="#90602f" />
+  <!-- drawstrings -->
+  <path d="M132 158 l-4 46" stroke="#d8dcc4" stroke-width="4" stroke-linecap="round" />
+  <path d="M148 158 l4 46" stroke="#d8dcc4" stroke-width="4" stroke-linecap="round" />
+  <circle cx="128" cy="206" r="4" fill="#c6f432" />
+  <circle cx="152" cy="206" r="4" fill="#c6f432" />
+</svg>

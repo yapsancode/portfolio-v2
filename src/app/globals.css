@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* ============================================================================
+ *  Design tokens — ART DIRECTION (intentional, bold & bright).
+ *  Electric lime field, near-black charcoal ink, muted-lime ghost.
+ * ========================================================================== */
+:root {
+  --lime: #c6f432; /* electric lime — hero background */
+  --charcoal: #1a1b16; /* near-black — text + 3D element */
+  --ghost: #abce2c; /* muted lime — giant background name */
+  --paper: #f4f7e8; /* calm off-white — sections below the hero */
+
+  --background: var(--lime);
+  --foreground: var(--charcoal);
+}
+
+@theme inline {
+  --color-lime: var(--lime);
+  --color-charcoal: var(--charcoal);
+  --color-ghost: var(--ghost);
+  --color-paper: var(--paper);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-display: var(--font-archivo);
+  --font-sans: var(--font-space-grotesk);
+}
+
+* {
+  border-color: color-mix(in srgb, var(--charcoal) 14%, transparent);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Visible, high-contrast keyboard focus everywhere. */
+:focus-visible {
+  outline: 3px solid var(--charcoal);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Screen-reader-only utility. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Honor reduced-motion globally: kill smooth scroll + decorative transitions. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
