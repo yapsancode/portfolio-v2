@@ -1,5 +1,6 @@
 import HeroStage from "@/components/hero/HeroStage";
 import JsonLd from "@/components/seo/JsonLd";
+import NowPlaying from "@/components/NowPlaying";
 import { site } from "@/config/site";
 
 /* External-link safety helper. */
@@ -38,17 +39,21 @@ export default function Home() {
           <span className="font-display text-sm font-extrabold tracking-tight uppercase">
             {site.fullName}
           </span>
-          <nav aria-label="Sections" className="hidden gap-6 text-sm font-semibold sm:flex">
-            <a className="hover:underline underline-offset-4" href="#about">
-              About
-            </a>
-            <a className="hover:underline underline-offset-4" href="#work">
-              Work
-            </a>
-            <a className="hover:underline underline-offset-4" href="#contact">
-              Contact
-            </a>
-          </nav>
+          <div className="flex items-center gap-4 sm:gap-6">
+            <nav aria-label="Sections" className="hidden gap-6 text-sm font-semibold sm:flex">
+              <a className="hover:underline underline-offset-4" href="#about">
+                About
+              </a>
+              <a className="hover:underline underline-offset-4" href="#work">
+                Work
+              </a>
+              <a className="hover:underline underline-offset-4" href="#contact">
+                Contact
+              </a>
+            </nav>
+            {/* Live "what I'm listening to" pill. Self-hides until configured. */}
+            <NowPlaying />
+          </div>
         </header>
 
         {/* Focal stage: giant ghost name behind, 3D / fallback initials in front */}

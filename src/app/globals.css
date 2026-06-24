@@ -63,6 +63,22 @@ body {
   border: 0;
 }
 
+/* Spotify "now playing" equalizer bars (NowPlaying.tsx).
+   Frozen automatically by the reduced-motion block below. */
+@keyframes np-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.np-bar {
+  transform-origin: bottom;
+  animation: np-bar 1s ease-in-out infinite;
+}
+
 /* Honor reduced-motion globally: kill smooth scroll + decorative transitions. */
 @media (prefers-reduced-motion: reduce) {
   html {

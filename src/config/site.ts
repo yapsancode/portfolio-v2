@@ -76,6 +76,16 @@ export const site = {
   /** Contact email. */
   email: "muhammadisyrafafifi@gmail.com",
 
+  /**
+   * Spotify "now playing" header pill. The live track is fetched server-side
+   * via env vars (SPOTIFY_CLIENT_ID / _SECRET / _REFRESH_TOKEN — see
+   * .env.example); nothing secret lives here. `profileUrl` is just where the
+   * pill links when nothing is playing. Leave it null to skip that link.
+   */
+  spotify: {
+    profileUrl: null as string | null,
+  },
+
   /** Social / meta-row links. Edit, reorder, or remove freely. */
   socials: [
     { label: "GitHub", href: "https://github.com/yapsancode" },
