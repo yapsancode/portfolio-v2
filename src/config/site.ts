@@ -92,11 +92,11 @@ export const site = {
 
   /** About section copy. Each string is a paragraph. */
   about: [
-    "Currently SWE, transitioning to AI Engineer, which, if I'm being honest, mostly means surviving chaos and believing in things before the results bother to show up. I build web applications end to end: the data models, the APIs, the AI bits in the middle, and the pixels people actually touch. And I almost certainly have a song stuck in your head right now.",
+    "Currently SWE, transitioning to AI Engineer, which if I'm being honest, mostly means surviving chaos and believing in things before the results bother to show up lol XD. Right now, I build web applications end to end: the data models, the APIs, the AI bits in the middle, and the pixels people actually touch.",
 
-    "My music taste? It has no theme and no shame. Phonk on the way to debug something, jazz when the bug wins, Malay indie when I'm feeling sentimental, some random brainrot songs 'du bisqut genunggg' when the algorithm gives up on me lol. If it slaps, it's in the rotation. I think the same way I listen, a little of everything, all at once.",
+    "My music taste? It has no theme and no shame. Phonk on the way to debug something, jazz when the bug wins, Malay indie when I'm feeling sentimental, some random brainrot songs 'du bisqut genunggg' when the algorithm gives up on me lmao. If it slaps, it's in the rotation.",
 
-    "I also think out loud, constantly. Half my best ideas start as something dumb I said mid-sentence; the other half are just FastAPI and Postgres quietly holding everything together while I overthink the front-end. Somewhere between the random thoughts and the late-night refactors, things actually ship: esports platforms, AI deployment tools, booking systems serving real people.",
+    "I also think out loud, constantly. Half my best ideas start as something dumb I said mid-sentence; the other half are just FastAPI and Postgres quietly holding everything together while I overthink the front-end. Somewhere between the random thoughts and the late-night refactors",
   ],
 
   /** Résumé link (PDF in /public, or an external URL). */

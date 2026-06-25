@@ -117,7 +117,7 @@ export default function Home() {
       <section id="about" className="bg-paper px-6 py-24 text-charcoal sm:px-10 sm:py-32">
         <div className="mx-auto max-w-3xl">
           <h2 className="font-display text-sm font-extrabold uppercase tracking-widest text-charcoal/50">
-            About
+            The name is Isyraf
           </h2>
           <div className="mt-6 space-y-6 text-lg leading-relaxed sm:text-xl">
             {site.about.map((p, i) => (
@@ -195,7 +195,7 @@ export default function Home() {
       >
         <div className="mx-auto max-w-4xl">
           <h2 className="font-display text-sm font-extrabold uppercase tracking-widest text-lime/60">
-            Contact
+            Want to know me more?
           </h2>
           <a
             href={`mailto:${site.email}`}
