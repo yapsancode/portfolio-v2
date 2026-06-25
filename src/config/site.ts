@@ -55,6 +55,30 @@ export const site = {
     alt: "Illustrated portrait of Isyraf Afifi wearing headphones and a hoodie",
   },
 
+  /**
+   * Collage revealed by the scroll "slide-up" section after the hero
+   * (src/components/ScrollReveal.tsx). Drop images in /public/images and list
+   * them here; the grid lays them out automatically (2×2 on mobile, a 4-wide
+   * strip on desktop). Add/remove freely — the layout adapts.
+   */
+  reveal: {
+    images: [
+      { src: "/images/isyraf-afifi.jpg", alt: "Portrait of Isyraf Afifi" },
+      {
+        src: "/images/work.jpeg",
+        alt: "Coding on a laptop at a café, screens showing a code editor",
+      },
+      {
+        src: "/images/tech-gear.jpeg",
+        alt: "A backpack with a laptop and over-ear headphones",
+      },
+      {
+        src: "/images/signboard.jpeg",
+        alt: "Road sign for Shah Alam and Klang against a sunset sky in Malaysia",
+      },
+    ],
+  },
+
   /** Short role label shown in the header / meta row. */
   role: "Software Engineer",
 

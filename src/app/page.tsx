@@ -1,6 +1,7 @@
 import HeroStage from "@/components/hero/HeroStage";
 import JsonLd from "@/components/seo/JsonLd";
 import NowPlaying from "@/components/NowPlaying";
+import ScrollReveal from "@/components/ScrollReveal";
 import { site } from "@/config/site";
 
 /* External-link safety helper. */
@@ -108,6 +109,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ============ SCROLL REVEAL (slide-up image panel) ============ */}
+      <ScrollReveal />
 
       {/* ===================== ABOUT ===================== */}
       <section id="about" className="bg-paper px-6 py-24 text-charcoal sm:px-10 sm:py-32">

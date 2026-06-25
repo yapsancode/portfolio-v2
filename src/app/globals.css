@@ -43,6 +43,30 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* ----------------------------------------------------------------------------
+ * Lenis smooth scroll (used by src/components/ScrollReveal.tsx).
+ * Mirrors node_modules/lenis/dist/lenis.css. These classes are only added to
+ * <html> while Lenis is running — never under prefers-reduced-motion, since we
+ * don't initialize Lenis in that case.
+ * -------------------------------------------------------------------------- */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+/* Lenis sets scroll position itself — disable native smooth so they don't fight. */
+html.lenis {
+  scroll-behavior: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
 /* Visible, high-contrast keyboard focus everywhere. */
 :focus-visible {
   outline: 3px solid var(--charcoal);
