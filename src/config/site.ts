@@ -19,7 +19,9 @@ export const site = {
    * `NEXT_PUBLIC_SITE_URL` in the project's env vars and it wins automatically
    * (e.g. a custom domain) without editing code. No trailing slash.
    */
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://my-website-portfolio.vercel.app",
+  url:
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "https://my-website-portfolio.vercel.app",
 
   /** BCP-47-ish locale for <html lang> stays "en"; this is the OG/HTML locale. */
   locale: "en_US",
@@ -85,13 +87,16 @@ export const site = {
   /** Hero tagline: a light intro line + a heavy statement line. */
   tagline: {
     intro: "I'm a software engineer",
-    statement: "building fast, thoughtful interfaces for the web.",
+    statement: "leveling up into AI, shipping fast things for the web.",
   },
 
   /** About section copy. Each string is a paragraph. */
   about: [
-    "I design and build web applications end to end — from data models and APIs to the pixels people actually touch. I care about systems that stay simple as they grow.",
-    "Lately I've been working at the intersection of performant front-end engineering and 3D on the web, where craft and constraints meet.",
+    "Currently SWE, transitioning to AI Engineer, which, if I'm being honest, mostly means surviving chaos and believing in things before the results bother to show up. I build web applications end to end: the data models, the APIs, the AI bits in the middle, and the pixels people actually touch. And I almost certainly have a song stuck in your head right now.",
+
+    "My music taste? It has no theme and no shame. Phonk on the way to debug something, jazz when the bug wins, Malay indie when I'm feeling sentimental, some random brainrot songs 'du bisqut genunggg' when the algorithm gives up on me lol. If it slaps, it's in the rotation. I think the same way I listen, a little of everything, all at once.",
+
+    "I also think out loud, constantly. Half my best ideas start as something dumb I said mid-sentence; the other half are just FastAPI and Postgres quietly holding everything together while I overthink the front-end. Somewhere between the random thoughts and the late-night refactors, things actually ship: esports platforms, AI deployment tools, booking systems serving real people.",
   ],
 
   /** Résumé link (PDF in /public, or an external URL). */
@@ -113,7 +118,10 @@ export const site = {
   /** Social / meta-row links. Edit, reorder, or remove freely. */
   socials: [
     { label: "GitHub", href: "https://github.com/yapsancode" },
-    { label: "LinkedIn", href: "https://www.linkedin.com/in/muhammad-isyraf-afifi" },
+    {
+      label: "LinkedIn",
+      href: "https://www.linkedin.com/in/muhammad-isyraf-afifi",
+    },
     { label: "Email", href: "mailto:muhammadisyrafafifi@gmail.com" },
   ],
 
