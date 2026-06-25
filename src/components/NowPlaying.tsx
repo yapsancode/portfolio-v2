@@ -163,7 +163,6 @@ export default function NowPlaying() {
           alt=""
           width={28}
           height={28}
-          unoptimized
           className="h-7 w-7 shrink-0 rounded-sm object-cover"
         />
       )}

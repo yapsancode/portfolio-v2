@@ -102,7 +102,16 @@ export async function getNowPlaying(): Promise<NowPlaying> {
     });
 
     // 204 = nothing playing; 200 with body = something playing.
-    if (res.status === 204 || res.status > 400) {
+    if (res.status === 204) {
+      return { configured: true, isPlaying: false };
+    }
+    // Any non-OK status (401 bad/expired token, 403, 429 rate limit, …) is a
+    // real fault, not "nothing playing" — surface it in the server logs so we
+    // can tell a config/credential problem apart from an idle player.
+    if (!res.ok) {
+      console.error(
+        `[now-playing] Spotify currently-playing returned ${res.status} ${res.statusText}`,
+      );
       return { configured: true, isPlaying: false };
     }
 
@@ -128,8 +137,11 @@ export async function getNowPlaying(): Promise<NowPlaying> {
       albumImageUrl,
       songUrl: item.external_urls?.spotify ?? null,
     };
-  } catch {
-    // Network hiccup, expired creds, rate limit — fail soft.
+  } catch (err) {
+    // Network hiccup, expired creds, rate limit — fail soft for the UI, but log
+    // the cause server-side (e.g. "token request failed (400)") so it's
+    // diagnosable. Never logs the tokens themselves.
+    console.error("[now-playing]", err instanceof Error ? err.message : err);
     return { configured: true, isPlaying: false };
   }
 }
