@@ -199,7 +199,7 @@ export default function Home() {
           </h2>
           <a
             href={`mailto:${site.email}`}
-            className="mt-6 inline-block cursor-pointer font-display text-4xl font-black tracking-tight underline-offset-8 hover:underline sm:text-6xl"
+            className="mt-6 inline-block max-w-full break-words cursor-pointer font-display text-3xl font-black tracking-tight underline-offset-8 hover:underline sm:text-6xl"
           >
             {site.email}
           </a>
