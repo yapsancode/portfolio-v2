@@ -1,10 +1,9 @@
 "use client";
 
 import { type RefObject, useEffect, useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Html, RoundedBox } from "@react-three/drei";
 import type { Group, Mesh, MeshStandardMaterial } from "three";
-import { site } from "@/config/site";
 import { onAvatarBehavior, playAvatarBehavior, type AvatarBehavior } from "./avatarBus";
 
 /**
@@ -28,14 +27,19 @@ const WAVE_SECONDS = 2.8;
 const READING_SECONDS = 8; // "reads for about 8 seconds"
 const CODING_SECONDS = 8;
 const MUSIC_SECONDS = 6;
+const FALL_SECONDS = 5.5; // click-to-fall: buckle/plop to a floor-sit → hold seated → get up
 
+// Auto-cycled idle behaviors. "fall" is click-only (never auto), so it lives in
+// AllBehavior but not in this list.
 const BEHAVIORS = ["wave", "reading", "coding", "music"] as const;
 type Behavior = (typeof BEHAVIORS)[number];
-const DURATION: Record<Behavior, number> = {
+type AllBehavior = Behavior | "fall";
+const DURATION: Record<AllBehavior, number> = {
   wave: WAVE_SECONDS,
   reading: READING_SECONDS,
   coding: CODING_SECONDS,
   music: MUSIC_SECONDS,
+  fall: FALL_SECONDS,
 };
 
 // ---- palette (matte) ---------------------------------------------------------
@@ -49,6 +53,13 @@ const PAPER = "#f4f7e8";
 
 const damp = (cur: number, target: number, lambda: number, dt: number) =>
   cur + (target - cur) * (1 - Math.exp(-lambda * dt));
+
+// 0→1 eased ramp as x crosses [a, b] (clamped outside). Subtracting two of these
+// makes a 0→1→0 pulse — used to choreograph the multi-phase fall from one timer.
+const smooth = (a: number, b: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
 
 // ---- facial expressions ------------------------------------------------------
 // Reusable named presets built from a few simple eye/brow/mouth params. Reassign
@@ -133,6 +144,29 @@ function Leg({ legRef, x, color }: { legRef: RefObject<Group | null>; x: number;
   );
 }
 
+// Floating eighth-note (♪) for the "music" behavior: note head + stem + flag.
+function MusicNote({ color }: { color: string }) {
+  return (
+    <group>
+      {/* note head — flattened, tilted oval like a real note head */}
+      <mesh rotation={[0, 0, -0.35]} scale={[1, 0.78, 0.6]}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color={color} roughness={0.6} transparent />
+      </mesh>
+      {/* stem rising from the head's right side */}
+      <mesh position={[0.073, 0.18, 0]}>
+        <boxGeometry args={[0.024, 0.36, 0.024]} />
+        <meshStandardMaterial color={color} roughness={0.6} transparent />
+      </mesh>
+      {/* flag off the top of the stem */}
+      <mesh position={[0.12, 0.33, 0]} rotation={[0, 0, -0.6]}>
+        <boxGeometry args={[0.11, 0.05, 0.022]} />
+        <meshStandardMaterial color={color} roughness={0.6} transparent />
+      </mesh>
+    </group>
+  );
+}
+
 export default function Character3D() {
   const root = useRef<Group>(null);
   const body = useRef<Group>(null);
@@ -147,6 +181,7 @@ export default function Character3D() {
   const book = useRef<Group>(null);
   const laptop = useRef<Group>(null);
   const notes = useRef<Group>(null);
+  const stars = useRef<Group>(null);
   const screen = useRef<Mesh>(null);
   // facial features (driven by the expression presets)
   const lEye = useRef<Group>(null);
@@ -166,19 +201,23 @@ export default function Character3D() {
   }, []);
 
   const ctl = useRef({
-    behavior: null as Behavior | null,
+    behavior: null as AllBehavior | null,
     last: null as Behavior | null,
     forced: false,
     elapsed: 0,
     gap: 1.4,
     seat: 0, // 0 standing → 1 sitting
-    lastMove: performance.now(),
+    lastMove: 0, // seeded to performance.now() on mount (see effect below)
     px: 0,
     py: 0,
   });
 
   // pointer + trigger wiring
   useEffect(() => {
+    // Seed the idle timer at mount (kept out of render to stay pure). This runs
+    // before the first useFrame, so the character isn't treated as idle at load.
+    ctl.current.lastMove = performance.now();
+
     const onMove = (e: PointerEvent) => {
       const c = ctl.current;
       c.px = (e.clientX / window.innerWidth) * 2 - 1;
@@ -211,6 +250,15 @@ export default function Character3D() {
     // console convenience in dev
     (window as unknown as { playAvatarBehavior?: typeof playAvatarBehavior }).playAvatarBehavior =
       playAvatarBehavior;
+    // dev convenience: knock the character over from the console (real users click it)
+    (window as unknown as { fallDown?: () => void }).fallDown = () => {
+      const c = ctl.current;
+      if (c.behavior === "fall") return;
+      c.behavior = "fall";
+      c.elapsed = 0;
+      c.forced = true;
+      c.lastMove = performance.now();
+    };
 
     return () => {
       window.removeEventListener("pointermove", onMove);
@@ -264,7 +312,7 @@ export default function Character3D() {
     let rShX = 0;
     let rShZ = -0.12;
     let rElX = -0.08;
-    let lElZ = 0;
+    const lElZ = 0;
     let rElZ = 0;
     let bookT = 0;
     let laptopT = 0;
@@ -311,6 +359,24 @@ export default function Character3D() {
       headP = Math.sin(t * 10) * 0.05 - 0.02;
       bodyY = Math.sin(t * 2.5) * 0.08;
       notesT = 1;
+    } else if (active === "fall") {
+      // lose balance → buckle at the knees → plop down to sit on the floor. The limbs
+      // are damped (apply section) so this cross-fades smoothly out of whatever pose
+      // was playing; the body's vertical drop is driven on the root, below.
+      const e = c.elapsed;
+      const seated = smooth(0, 0.42, e) - smooth(4.0, 4.9, e); // 0→1 plop, hold, →0 get-up
+      const buckle = (smooth(0.04, 0.16, e) - smooth(0.16, 0.44, e)) * 0.35; // quick knee give-way
+      const brace = smooth(0, 0.22, e) - smooth(0.22, 0.6, e); // arms shoot out to catch balance
+      legX = seated * -1.5 - buckle; // fold the legs forward so they rest on the floor
+      const splay = seated * 0.32 + brace * 0.5;
+      rShZ = -0.12 + splay; // hands brace, then settle out by the hips on the floor
+      lShZ = 0.12 - splay;
+      rShX = -0.1 * brace;
+      lShX = -0.1 * brace;
+      rElX = -0.2 - seated * 0.2;
+      lElX = -0.2 - seated * 0.2;
+      headP = seated * 0.12 + brace * 0.1; // head dips as it settles down
+      headR = seated * Math.sin(t * 3.5) * 0.1; // gentle woozy sway while seated
     } else {
       // cursor-follow
       headY = c.px * 0.5;
@@ -346,38 +412,115 @@ export default function Character3D() {
     if (lLeg.current) lLeg.current.rotation.x = damp(lLeg.current.rotation.x, legX, 7, d);
     if (rLeg.current) rLeg.current.rotation.x = damp(rLeg.current.rotation.x, legX, 7, d);
 
-    // ----- facial expression (damped toward the active state's preset) -----
-    const ex = EXPRESSIONS[STATE_EXPRESSION[active ?? "idle"]];
-    const fl = 9; // facial damping rate
-    const setEye = (g: Group | null) => {
-      if (g) g.scale.y = damp(g.scale.y, ex.eyeOpen, fl, d);
-    };
-    setEye(lEye.current);
-    setEye(rEye.current);
-    if (lPupil.current) lPupil.current.position.y = damp(lPupil.current.position.y, ex.pupilY, fl, d);
-    if (rPupil.current) rPupil.current.position.y = damp(rPupil.current.position.y, ex.pupilY, fl, d);
-    const setBrow = (g: Mesh | null, sign: number) => {
-      if (!g) return;
-      g.position.y = damp(g.position.y, BROW_Y + ex.browY, fl, d);
-      g.rotation.z = damp(g.rotation.z, sign * ex.browTilt, fl, d);
-    };
-    setBrow(lBrow.current, -1);
-    setBrow(rBrow.current, 1);
-    if (mouthGrp.current)
-      mouthGrp.current.scale.x = damp(mouthGrp.current.scale.x, ex.mouthWidth, fl, d);
-    if (mouthSmileMesh.current) {
-      const m = mouthSmileMesh.current.material as MeshStandardMaterial;
-      m.opacity = damp(m.opacity, ex.mouthSmile, fl, d);
-    }
-    if (mouthFlatMesh.current) {
-      const m = mouthFlatMesh.current.material as MeshStandardMaterial;
-      m.opacity = damp(m.opacity, 1 - ex.mouthSmile, fl, d);
+    // ----- facial expression -----
+    if (active !== "fall") {
+      // damped toward the active state's preset
+      const ex = EXPRESSIONS[STATE_EXPRESSION[active ?? "idle"]];
+      const fl = 9; // facial damping rate
+      const setEye = (g: Group | null) => {
+        if (g) g.scale.y = damp(g.scale.y, ex.eyeOpen, fl, d);
+      };
+      setEye(lEye.current);
+      setEye(rEye.current);
+      // damp pupil-X back to centered (the fall swirls it) and look up/down via pupil-Y
+      if (lPupil.current) {
+        lPupil.current.position.x = damp(lPupil.current.position.x, 0, fl, d);
+        lPupil.current.position.y = damp(lPupil.current.position.y, ex.pupilY, fl, d);
+      }
+      if (rPupil.current) {
+        rPupil.current.position.x = damp(rPupil.current.position.x, 0, fl, d);
+        rPupil.current.position.y = damp(rPupil.current.position.y, ex.pupilY, fl, d);
+      }
+      const setBrow = (g: Mesh | null, sign: number) => {
+        if (!g) return;
+        g.position.y = damp(g.position.y, BROW_Y + ex.browY, fl, d);
+        g.rotation.z = damp(g.rotation.z, sign * ex.browTilt, fl, d);
+      };
+      setBrow(lBrow.current, -1);
+      setBrow(rBrow.current, 1);
+      if (mouthGrp.current) {
+        mouthGrp.current.scale.x = damp(mouthGrp.current.scale.x, ex.mouthWidth, fl, d);
+        mouthGrp.current.scale.y = damp(mouthGrp.current.scale.y, 1, fl, d); // close the fall's open mouth
+      }
+      if (mouthSmileMesh.current) {
+        const m = mouthSmileMesh.current.material as MeshStandardMaterial;
+        m.opacity = damp(m.opacity, ex.mouthSmile, fl, d);
+      }
+      if (mouthFlatMesh.current) {
+        const m = mouthFlatMesh.current.material as MeshStandardMaterial;
+        m.opacity = damp(m.opacity, 1 - ex.mouthSmile, fl, d);
+      }
+    } else {
+      // fall reaction: quick "oof" surprise → woozy daze while seated → sheepish smile getting up
+      const e = c.elapsed;
+      const oof = smooth(0, 0.16, e) - smooth(0.45, 0.85, e);
+      const dazed = smooth(0.7, 1.05, e) - smooth(3.55, 3.95, e);
+      const relief = smooth(4.3, 4.7, e) - smooth(5.3, 5.5, e);
+      const ff = 13; // snappier than normal so the "oof" lands fast
+      const eyeOpenT = 1 + oof * 0.35 - dazed * 0.4; // pops, then half-lidded daze
+      const pxT = Math.cos(t * 7) * 0.04 * dazed; // pupils drift woozily while seated
+      const pyT = Math.sin(t * 7) * 0.03 * dazed + oof * 0.025;
+      const browYt = oof * 0.05 + relief * 0.03;
+      const browTiltT = -0.2 * oof - 0.05 * relief; // raised inner = surprise/sheepish
+      const mouthOpenT = 1 + oof * 1.8 + dazed * (0.6 + Math.sin(t * 9) * 0.25);
+      const mouthSmileT = relief * 0.7;
+      const mouthWidthT = 1 - oof * 0.15 + dazed * 0.08;
+      if (lEye.current) lEye.current.scale.y = damp(lEye.current.scale.y, eyeOpenT, ff, d);
+      if (rEye.current) rEye.current.scale.y = damp(rEye.current.scale.y, eyeOpenT, ff, d);
+      if (lPupil.current) {
+        lPupil.current.position.x = damp(lPupil.current.position.x, pxT, ff, d);
+        lPupil.current.position.y = damp(lPupil.current.position.y, pyT, ff, d);
+      }
+      if (rPupil.current) {
+        rPupil.current.position.x = damp(rPupil.current.position.x, pxT, ff, d);
+        rPupil.current.position.y = damp(rPupil.current.position.y, pyT, ff, d);
+      }
+      const setBrowF = (g: Mesh | null, sign: number) => {
+        if (!g) return;
+        g.position.y = damp(g.position.y, BROW_Y + browYt, ff, d);
+        g.rotation.z = damp(g.rotation.z, sign * browTiltT, ff, d);
+      };
+      setBrowF(lBrow.current, -1);
+      setBrowF(rBrow.current, 1);
+      if (mouthGrp.current) {
+        mouthGrp.current.scale.x = damp(mouthGrp.current.scale.x, mouthWidthT, ff, d);
+        mouthGrp.current.scale.y = damp(mouthGrp.current.scale.y, mouthOpenT, ff, d);
+      }
+      if (mouthSmileMesh.current) {
+        const m = mouthSmileMesh.current.material as MeshStandardMaterial;
+        m.opacity = damp(m.opacity, mouthSmileT, ff, d);
+      }
+      if (mouthFlatMesh.current) {
+        const m = mouthFlatMesh.current.material as MeshStandardMaterial;
+        m.opacity = damp(m.opacity, 1 - mouthSmileT, ff, d);
+      }
     }
 
     // sit: ease the whole character down (legs already bend forward via legX)
     c.seat = damp(c.seat, sit, 6, d);
     const bob = Math.sin(t * 1.4) * 0.04 * (1 - c.seat * 0.6);
-    if (root.current) root.current.position.y = -c.seat * 0.7 + bob;
+    if (root.current) {
+      if (active === "fall") {
+        // buckle + plop straight down to a floor-sit (no topple). Damping toward the
+        // target is the cross-fade — it eases the body down over ~0.4s.
+        const e = c.elapsed;
+        const seated = smooth(0, 0.42, e) - smooth(4.0, 4.9, e);
+        const land = (smooth(0.36, 0.44, e) - smooth(0.44, 0.78, e)) * 0.08; // little rebound on impact
+        const getupLean = (smooth(4.0, 4.3, e) - smooth(4.3, 4.9, e)) * 0.18; // lean in to push up
+        const wobble = Math.sin(t * 2) * 0.014 * seated; // subtle alive-while-seated settle
+        const floorY = seated * -0.9 + land + wobble + bob * (1 - seated);
+        root.current.position.y = damp(root.current.position.y, floorY, 14, d);
+        root.current.rotation.x = damp(root.current.rotation.x, seated * -0.08 + getupLean, 11, d);
+        root.current.rotation.z = damp(root.current.rotation.z, 0, 10, d);
+        root.current.position.x = damp(root.current.position.x, 0, 10, d);
+      } else {
+        root.current.position.y = -c.seat * 0.7 + bob;
+        // ease any leftover fall transform back to standing
+        root.current.rotation.z = damp(root.current.rotation.z, 0, 8, d);
+        root.current.rotation.x = damp(root.current.rotation.x, 0, 8, d);
+        root.current.position.x = damp(root.current.position.x, 0, 8, d);
+      }
+    }
     if (body.current) body.current.scale.y = 1 + Math.sin(t * 1.8) * 0.012;
 
     const pop = (g: Group | null, target: number) => {
@@ -394,11 +537,15 @@ export default function Character3D() {
       notes.current.scale.setScalar(s);
       notes.current.visible = s > 0.02;
       notes.current.children.forEach((child, i) => {
-        const m = child as Mesh;
         const phase = (t * 0.6 + i * 0.45) % 1.5;
-        m.position.y = 0.1 + phase * 1.4;
-        m.position.x = 0.35 + Math.sin((t + i) * 2) * 0.12;
-        (m.material as MeshStandardMaterial).opacity = Math.max(0, 1 - phase / 1.5);
+        child.position.y = 0.1 + phase * 1.4;
+        child.position.x = 0.35 + Math.sin((t + i) * 2) * 0.12;
+        child.rotation.z = Math.sin((t + i) * 1.6) * 0.25; // gentle sway as they rise
+        const op = Math.max(0, 1 - phase / 1.5);
+        child.traverse((o) => {
+          const mm = (o as Mesh).material as MeshStandardMaterial | undefined;
+          if (mm) mm.opacity = op;
+        });
       });
     }
     if (screen.current) {
@@ -406,10 +553,47 @@ export default function Character3D() {
       const want = laptopT > 0.5 ? 0.7 + Math.sin(t * 8) * 0.25 : 0.25;
       mat.emissiveIntensity = damp(mat.emissiveIntensity, want, 8, d);
     }
+
+    // "seeing stars" — sparkles orbit the head during the fall's dizzy phase
+    if (stars.current) {
+      const dizzyStars =
+        active === "fall" ? smooth(1.0, 1.4, c.elapsed) - smooth(3.4, 3.8, c.elapsed) : 0;
+      const s = damp(stars.current.scale.x, dizzyStars, 12, d);
+      stars.current.scale.setScalar(s);
+      stars.current.visible = s > 0.02;
+      const n = stars.current.children.length;
+      stars.current.children.forEach((star, i) => {
+        const a = t * 3 + (i / n) * Math.PI * 2;
+        star.position.set(Math.cos(a) * 0.5, 0.45 + Math.sin(a) * 0.16, 0.2);
+        star.rotation.z = t * 4 + i;
+        star.scale.setScalar(0.7 + Math.sin(t * 6 + i) * 0.3); // twinkle
+      });
+    }
   });
 
+  // Click/tap the character to knock it over. Forced so it plays the full
+  // topple→dizzy→get-up sequence; extra clicks mid-fall are ignored.
+  const triggerFall = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    const c = ctl.current;
+    if (c.behavior === "fall") return;
+    c.behavior = "fall";
+    c.elapsed = 0;
+    c.forced = true;
+    c.lastMove = performance.now();
+  };
+
   return (
-    <group ref={root}>
+    <group
+      ref={root}
+      onPointerDown={triggerFall}
+      onPointerOver={() => {
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = "auto";
+      }}
+    >
       <group ref={body}>
         {/* ===== legs ===== */}
         <Leg legRef={lLeg} x={-0.22} color={CHARCOAL_DK} />
@@ -521,6 +705,17 @@ export default function Character3D() {
               </div>
             </Html>
           )}
+
+          {/* "seeing stars" sparkles — orbit the head during the fall's dizzy phase.
+              Off-white so they read against the lime background (lime would vanish). */}
+          <group ref={stars} scale={0}>
+            {[0, 1, 2, 3].map((i) => (
+              <mesh key={i} rotation={[0, 0, Math.PI / 4]}>
+                <boxGeometry args={[0.12, 0.12, 0.03]} />
+                <meshStandardMaterial color={PAPER} emissive={PAPER} emissiveIntensity={0.45} transparent />
+              </mesh>
+            ))}
+          </group>
         </group>
 
         {/* ===== arms (two-segment) ===== */}
@@ -571,13 +766,10 @@ export default function Character3D() {
           </mesh>
         </group>
 
-        {/* music notes */}
+        {/* music notes — charcoal ♪ symbols that rise and fade as the character listens */}
         <group ref={notes} position={[0.2, 2.7, 0.2]} scale={0}>
           {[0, 1, 2].map((i) => (
-            <mesh key={i}>
-              <sphereGeometry args={[0.07, 12, 12]} />
-              <meshStandardMaterial color={LIME} emissive={LIME} emissiveIntensity={0.7} transparent opacity={1} />
-            </mesh>
+            <MusicNote key={i} color={CHARCOAL} />
           ))}
         </group>
       </group>
