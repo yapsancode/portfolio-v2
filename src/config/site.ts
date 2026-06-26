@@ -58,25 +58,63 @@ export const site = {
   },
 
   /**
-   * Collage revealed by the scroll "slide-up" section after the hero
-   * (src/components/ScrollReveal.tsx). Drop images in /public/images and list
-   * them here; the grid lays them out automatically (2×2 on mobile, a 4-wide
-   * strip on desktop). Add/remove freely — the layout adapts.
+   * Interactive bento gallery (src/components/PhotoGallery.tsx →
+   * components/ui/interactive-bento-gallery). Edit titles/desc/order here.
+   * `type` is "image" or "video"; `span` controls each tile's footprint in the
+   * bento grid (Tailwind col-/row-span classes at the sm/md breakpoints).
    */
-  reveal: {
-    images: [
-      { src: "/images/isyraf-afifi.jpg", alt: "Portrait of Isyraf Afifi" },
+  gallery: {
+    title: "Beyond the code",
+    description: "A few frames from life in Malaysia — drag to rearrange, tap to expand.",
+    items: [
       {
+        type: "image",
+        title: "Isyraf Afifi",
+        desc: "The person behind the code",
+        src: "/images/isyraf-afifi.jpg",
+        span: "md:col-span-1 md:row-span-3 sm:col-span-1 sm:row-span-2",
+      },
+      {
+        type: "image",
+        title: "Deep work",
+        desc: "Shipping features over coffee",
         src: "/images/work.jpeg",
-        alt: "Coding on a laptop at a café, screens showing a code editor",
+        span: "md:col-span-2 md:row-span-2 col-span-1 sm:col-span-2 sm:row-span-2",
       },
       {
+        type: "image",
+        title: "Stillness",
+        desc: "A quiet moment at the mosque",
+        src: "/images/masjid.jpeg",
+        span: "md:col-span-1 md:row-span-3 sm:col-span-2 sm:row-span-2",
+      },
+      {
+        type: "image",
+        title: "Off the grid",
+        desc: "Chasing waterfalls with the crew",
+        src: "/images/waterfall.jpeg",
+        span: "md:col-span-2 md:row-span-2 sm:col-span-1 sm:row-span-2",
+      },
+      {
+        type: "image",
+        title: "Everyday carry",
+        desc: "Laptop, headphones, anywhere",
         src: "/images/tech-gear.jpeg",
-        alt: "A backpack with a laptop and over-ear headphones",
+        span: "md:col-span-1 md:row-span-3 sm:col-span-1 sm:row-span-2",
       },
       {
+        type: "image",
+        title: "Home roads",
+        desc: "Shah Alam to Klang at golden hour",
         src: "/images/signboard.jpeg",
-        alt: "Road sign for Shah Alam and Klang against a sunset sky in Malaysia",
+        span: "md:col-span-2 md:row-span-2 sm:col-span-1 sm:row-span-2",
+      },
+      {
+        type: "image",
+        title: "Throttle therapy",
+        desc: "Two wheels, open road",
+        src: "/images/motor.jpeg",
+        span: "md:col-span-1 md:row-span-3 sm:col-span-1 sm:row-span-2",
       },
     ],
   },

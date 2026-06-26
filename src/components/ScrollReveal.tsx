@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * ScrollReveal — a stacked-sticky "slide-up reveal" section.
+ * ScrollReveal — a stacked-sticky "slide-up reveal" wrapper.
  *
- * The hero is PINNED in place (via GSAP ScrollTrigger), and this full-bleed
- * image section scrolls UP over it — the image slides up to cover the hero with
- * no empty gap, because the hero stays visible behind the rising image. The
- * image never scales.
+ * The hero is PINNED in place (via GSAP ScrollTrigger), and this section —
+ * holding whatever `children` you pass — scrolls UP over it. The content slides
+ * up to cover the hero with no empty gap, because the hero stays visible behind
+ * the rising content.
  *
  * Mechanics:
  *  - ScrollTrigger pins the hero (`pinTargetId`, default "top") with
- *    `pinSpacing: false`, so the following image section overlaps it instead of
- *    being pushed down. This section sits above the pinned hero via `z-10`, so
- *    the natural upward scroll reads as the image translating up over the hero.
+ *    `pinSpacing: false`, so this section overlaps it instead of being pushed
+ *    down. The section sits above the pinned hero via `z-10`, so the natural
+ *    upward scroll reads as the content translating up over the hero.
  *  - Lenis provides smooth scroll, wired into GSAP's ticker + ScrollTrigger so
  *    they share one clock. Modern Lenis updates the real scroll position (not a
  *    CSS transform on <body>), so it does NOT fight the hero's React Three Fiber
@@ -20,17 +20,15 @@
  *    hero is fully scrolled past.
  *  - GSAP + Lenis are dynamically imported, keeping them out of the hero's
  *    critical JS bundle.
- *  - prefers-reduced-motion: no pin, no smooth scroll — the image is just a
+ *  - prefers-reduced-motion: no pin, no smooth scroll — the content is just a
  *    normal section below the hero.
  *  - Everything (the ScrollTrigger/pin, the Lenis instance, the ticker
  *    callback) is torn down on unmount, so fast refresh can't leak or
  *    double-register.
  */
 
-import { useEffect, useRef } from "react";
-import Image from "next/image";
+import { useEffect, useRef, type ReactNode } from "react";
 import type Lenis from "lenis";
-import { site } from "@/config/site";
 
 // Module-scoped guard so the page is only ever driven by ONE Lenis instance,
 // even if this component is mounted more than once. (Verified: no other Lenis
@@ -38,14 +36,20 @@ import { site } from "@/config/site";
 let activeLenis: Lenis | null = null;
 
 type ScrollRevealProps = {
-  /** Collage images to reveal. Defaults to the configured set in site.ts. */
-  images?: readonly { src: string; alt: string }[];
-  /** id of the section to pin behind the rising collage (the hero). */
+  /** Content revealed as it slides up over the pinned hero. */
+  children: ReactNode;
+  /** Optional id for the revealed section (anchor links). */
+  id?: string;
+  /** Extra classes for the section (background, padding, etc.). */
+  className?: string;
+  /** id of the section to pin behind the rising content (the hero). */
   pinTargetId?: string;
 };
 
 export default function ScrollReveal({
-  images = site.reveal.images,
+  children,
+  id,
+  className = "",
   pinTargetId = "top",
 }: ScrollRevealProps) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -65,7 +69,7 @@ export default function ScrollReveal({
 
       if (disposed || !sectionRef.current) return;
       const hero = document.getElementById(pinTargetId);
-      if (!hero) return; // Degrades to a normal image section if the hero is absent.
+      if (!hero) return; // Degrades to a normal section if the hero is absent.
 
       // Idempotent — safe to re-run on every mount / fast refresh.
       gsap.registerPlugin(ScrollTrigger);
@@ -87,8 +91,8 @@ export default function ScrollReveal({
           gsap.ticker.lagSmoothing(0);
         }
 
-        // Pin the hero; this image section (z-10) scrolls up over it. The hero
-        // stays visible behind the image the whole time — no empty gap.
+        // Pin the hero; this section (z-10) scrolls up over it. The hero stays
+        // visible behind the content the whole time — no empty gap.
         const st = ScrollTrigger.create({
           trigger: hero,
           start: "top top",
@@ -122,22 +126,10 @@ export default function ScrollReveal({
   return (
     <section
       ref={sectionRef}
-      aria-label="Photo collage"
-      className="relative z-10 h-dvh w-full overflow-hidden bg-charcoal"
+      id={id}
+      className={`relative z-10 min-h-dvh w-full ${className}`}
     >
-      <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-2 sm:grid-cols-4 sm:grid-rows-1">
-        {images.map((img) => (
-          <div key={img.src} className="relative overflow-hidden">
-            <Image
-              src={img.src}
-              alt={img.alt}
-              fill
-              sizes="(min-width: 640px) 25vw, 50vw"
-              className="object-cover"
-            />
-          </div>
-        ))}
-      </div>
+      {children}
     </section>
   );
 }

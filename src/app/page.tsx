@@ -1,6 +1,7 @@
 import HeroStage from "@/components/hero/HeroStage";
 import JsonLd from "@/components/seo/JsonLd";
 import NowPlaying from "@/components/NowPlaying";
+import PhotoGallery from "@/components/PhotoGallery";
 import ScrollReveal from "@/components/ScrollReveal";
 import { site } from "@/config/site";
 
@@ -110,8 +111,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ============ SCROLL REVEAL (slide-up image panel) ============ */}
-      <ScrollReveal />
+      {/* ===== GALLERY slides up over the pinned hero (ScrollReveal) ===== */}
+      <ScrollReveal id="gallery" className="bg-charcoal py-16 sm:py-24">
+        <PhotoGallery />
+      </ScrollReveal>
 
       {/* ===================== ABOUT ===================== */}
       <section id="about" className="bg-paper px-6 py-24 text-charcoal sm:px-10 sm:py-32">
