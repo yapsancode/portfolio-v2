@@ -23,11 +23,11 @@ import { onAvatarBehavior, playAvatarBehavior, type AvatarBehavior } from "./ava
 
 // ---- tunables ----------------------------------------------------------------
 const IDLE_MS = 2400; // cursor-still time before auto behaviors begin
-const WAVE_SECONDS = 2.8;
+const WAVE_SECONDS = 8;
 const READING_SECONDS = 8; // "reads for about 8 seconds"
 const CODING_SECONDS = 8;
 const MUSIC_SECONDS = 6;
-const FALL_SECONDS = 5.5; // click-to-fall: buckle/plop to a floor-sit → hold seated → get up
+const FALL_SECONDS = 6; // click-to-fall: buckle/plop to a floor-sit → hold seated → get up
 
 // Auto-cycled idle behaviors. "fall" is click-only (never auto), so it lives in
 // AllBehavior but not in this list.
@@ -78,7 +78,8 @@ const EXPRESSIONS: Record<ExprName, Expression> = {
   neutral: { eyeOpen: 1.0, pupilY: 0, browY: 0, browTilt: 0, mouthSmile: 0.35, mouthWidth: 1 },
   happy: { eyeOpen: 0.82, pupilY: 0.005, browY: 0.02, browTilt: -0.04, mouthSmile: 1, mouthWidth: 1 },
   focused: { eyeOpen: 0.85, pupilY: -0.035, browY: -0.012, browTilt: 0.1, mouthSmile: 0.2, mouthWidth: 0.92 },
-  concentrated: { eyeOpen: 0.6, pupilY: -0.008, browY: -0.03, browTilt: 0.26, mouthSmile: 0, mouthWidth: 0.78 },
+  // browTilt kept mild (0.16) — the old 0.26 furrow read as ANGRY, not focused
+  concentrated: { eyeOpen: 0.6, pupilY: -0.008, browY: -0.03, browTilt: 0.16, mouthSmile: 0.15, mouthWidth: 0.85 },
   content: { eyeOpen: 0.2, pupilY: 0, browY: 0.015, browTilt: -0.06, mouthSmile: 0.85, mouthWidth: 1 },
 };
 // Which expression each animation state wears — reassign freely.
@@ -92,6 +93,9 @@ const STATE_EXPRESSION: Record<"idle" | Behavior, ExprName> = {
 const BROW_Y = 0.16; // brow rest height (matches the JSX position below)
 
 // Two-segment arm (shoulder upper + elbow forearm) so it can bend naturally.
+// Filler spheres at both pivots keep the joints visually connected at any bend:
+// they sit AT the rotation origins, so they never move — the capsules rotate
+// around them and the seam stays covered (no lime gap at shoulder or elbow).
 function Arm({
   shoulder,
   elbow,
@@ -105,11 +109,21 @@ function Arm({
 }) {
   return (
     <group ref={shoulder} position={[x, 1.95, 0.05]}>
+      {/* deltoid — bridges torso and upper arm when the arm raises */}
+      <mesh>
+        <sphereGeometry args={[0.17, 16, 16]} />
+        <meshStandardMaterial color={color} roughness={0.75} />
+      </mesh>
       <mesh position={[0, -0.28, 0]}>
         <capsuleGeometry args={[0.14, 0.34, 6, 14]} />
         <meshStandardMaterial color={color} roughness={0.75} />
       </mesh>
       <group ref={elbow} position={[0, -0.56, 0]}>
+        {/* elbow filler — covers the bend seam between the two capsules */}
+        <mesh>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshStandardMaterial color={color} roughness={0.75} />
+        </mesh>
         <mesh position={[0, -0.26, 0]}>
           <capsuleGeometry args={[0.135, 0.32, 6, 14]} />
           <meshStandardMaterial color={color} roughness={0.75} />
@@ -135,33 +149,89 @@ function Leg({ legRef, x, color }: { legRef: RefObject<Group | null>; x: number;
         <RoundedBox args={[0.32, 0.17, 0.48]} radius={0.08} smoothness={3}>
           <meshStandardMaterial color={PAPER} roughness={0.5} />
         </RoundedBox>
+        {/* sole — dark, NOT lime: when the character sits, the sole points at
+            the camera and a lime sole vanishes into the lime background */}
         <mesh position={[0, -0.08, 0]}>
           <boxGeometry args={[0.34, 0.06, 0.5]} />
-          <meshStandardMaterial color={LIME} emissive={LIME} emissiveIntensity={0.15} />
+          <meshStandardMaterial color={CHARCOAL_DK} roughness={0.7} />
         </mesh>
       </group>
     </group>
   );
 }
 
-// Floating eighth-note (♪) for the "music" behavior: note head + stem + flag.
-function MusicNote({ color }: { color: string }) {
+// Floating notes for the "music" behavior. Three glyph shapes — eighth (♪),
+// beamed pair (♫) and quarter — so the rising stream reads as varied music,
+// not one repeated symbol. `scale` varies the size per instance.
+function MusicNote({
+  color,
+  variant = "eighth",
+  scale = 1,
+}: {
+  color: string;
+  variant?: "eighth" | "beamed" | "quarter";
+  scale?: number;
+}) {
+  if (variant === "beamed") {
+    return (
+      <group scale={scale}>
+        {/* two note heads */}
+        <mesh rotation={[0, 0, -0.35]} scale={[1, 0.78, 0.6]}>
+          <sphereGeometry args={[0.07, 16, 16]} />
+          <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
+        </mesh>
+        <mesh position={[0.19, 0.03, 0]} rotation={[0, 0, -0.35]} scale={[1, 0.78, 0.6]}>
+          <sphereGeometry args={[0.07, 16, 16]} />
+          <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
+        </mesh>
+        {/* stems */}
+        <mesh position={[0.063, 0.16, 0]}>
+          <boxGeometry args={[0.022, 0.32, 0.022]} />
+          <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
+        </mesh>
+        <mesh position={[0.253, 0.19, 0]}>
+          <boxGeometry args={[0.022, 0.32, 0.022]} />
+          <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
+        </mesh>
+        {/* beam joining the stem tops */}
+        <mesh position={[0.158, 0.335, 0]} rotation={[0, 0, 0.15]}>
+          <boxGeometry args={[0.24, 0.05, 0.022]} />
+          <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
+        </mesh>
+      </group>
+    );
+  }
+  if (variant === "quarter") {
+    return (
+      <group scale={scale}>
+        <mesh rotation={[0, 0, -0.35]} scale={[1, 0.78, 0.6]}>
+          <sphereGeometry args={[0.075, 16, 16]} />
+          <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
+        </mesh>
+        <mesh position={[0.068, 0.17, 0]}>
+          <boxGeometry args={[0.022, 0.34, 0.022]} />
+          <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
+        </mesh>
+      </group>
+    );
+  }
+  // eighth (♪): head + stem + flag
   return (
-    <group>
+    <group scale={scale}>
       {/* note head — flattened, tilted oval like a real note head */}
       <mesh rotation={[0, 0, -0.35]} scale={[1, 0.78, 0.6]}>
         <sphereGeometry args={[0.08, 16, 16]} />
-        <meshStandardMaterial color={color} roughness={0.6} transparent />
+        <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
       </mesh>
       {/* stem rising from the head's right side */}
       <mesh position={[0.073, 0.18, 0]}>
         <boxGeometry args={[0.024, 0.36, 0.024]} />
-        <meshStandardMaterial color={color} roughness={0.6} transparent />
+        <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
       </mesh>
       {/* flag off the top of the stem */}
       <mesh position={[0.12, 0.33, 0]} rotation={[0, 0, -0.6]}>
         <boxGeometry args={[0.11, 0.05, 0.022]} />
-        <meshStandardMaterial color={color} roughness={0.6} transparent />
+        <meshStandardMaterial color={color} roughness={0.6} transparent depthWrite={false} />
       </mesh>
     </group>
   );
@@ -194,14 +264,25 @@ export default function Character3D() {
   const mouthSmileMesh = useRef<Mesh>(null);
   const mouthFlatMesh = useRef<Mesh>(null);
 
-  const [greeting, setGreeting] = useState(true);
+  // Speech bubble: greets on load, says "Hola!" on EVERY wave, and shows a
+  // line of code while coding. State is set only on behavior TRANSITIONS
+  // (never per frame), so the no-React-state-in-the-loop rule still holds.
+  const [bubble, setBubble] = useState<"hola" | "code" | null>("hola");
+  const bubbleSrc = useRef<"greet" | "behavior" | null>("greet");
   useEffect(() => {
-    const t = setTimeout(() => setGreeting(false), 3600);
+    const t = setTimeout(() => {
+      // only auto-hide the LOAD greeting — never a behavior-driven bubble
+      if (bubbleSrc.current === "greet") {
+        bubbleSrc.current = null;
+        setBubble(null);
+      }
+    }, 3600);
     return () => clearTimeout(t);
   }, []);
 
   const ctl = useRef({
     behavior: null as AllBehavior | null,
+    prevBehavior: null as AllBehavior | null, // last frame's value — drives bubble transitions
     last: null as Behavior | null,
     forced: false,
     elapsed: 0,
@@ -297,6 +378,23 @@ export default function Character3D() {
     }
     const active = c.behavior;
 
+    // ----- speech bubble (updated only when the behavior CHANGES) -----
+    if (c.behavior !== c.prevBehavior) {
+      c.prevBehavior = c.behavior;
+      if (c.behavior === "wave") {
+        bubbleSrc.current = "behavior";
+        setBubble("hola");
+      } else if (c.behavior === "coding") {
+        bubbleSrc.current = "behavior";
+        setBubble("code");
+      } else if (bubbleSrc.current !== "greet") {
+        // any other behavior (or back to idle) hides a behavior bubble, but
+        // never cuts the on-load greeting short
+        bubbleSrc.current = null;
+        setBubble(null);
+      }
+    }
+
     // ----- pose targets -----
     let headP = 0;
     let headY = 0;
@@ -304,6 +402,7 @@ export default function Character3D() {
     let bodyY = 0;
     let bodyZ = 0;
     let legX = 0;
+    let legSplay = 0; // knees apart while seated so the legs read at an angle
     let sit = 0;
     // arm targets: shoulder {x,z} + elbow {x}
     let lShX = 0;
@@ -319,36 +418,44 @@ export default function Character3D() {
     let notesT = 0;
 
     if (active === "wave") {
-      // raised, brought FORWARD and out so the hand reads in front of the body
-      rShX = -0.6; // forward (+z)
-      rShZ = 2.0; // up and out to the side (positive lifts the right arm)
-      rElX = -1.0 + Math.sin(t * 7) * 0.45; // forearm bent up, waving
+      // classic overhead wave: upper arm raised past the shoulder, forearm
+      // folded UP in the same plane (elbow-Z, not elbow-X — an X fold tips the
+      // forearm toward the camera, which foreshortens it into a "bent down"
+      // look from the front). Slight shoulder-X keeps the hand in front.
+      rShX = 0.25;
+      rShZ = 2.25; // upper arm up and out
+      rElX = -0.15;
+      rElZ = 1.15 + Math.sin(t * 7) * 0.35; // hand above the head, waving side to side
       headY = 0.14;
       headP = -0.05;
     } else if (active === "reading") {
       sit = 1;
-      legX = -1.35;
-      lShX = -0.95;
-      lShZ = 0.18;
-      lElX = -1.0;
-      rShX = -0.95;
-      rShZ = -0.18;
-      rElX = -1.0;
+      legX = -1.05;
+      legSplay = 0.22;
+      lShX = -0.65;
+      lShZ = 0.35;
+      lElX = -0.9;
+      rShX = -0.65;
+      rShZ = -0.35;
+      rElX = -0.9;
       headP = 0.32;
       bookT = 1;
       bodyZ = 0.1; // slight left lean while reading
     } else if (active === "coding") {
       sit = 1;
-      legX = -1.35;
-      lShX = -0.82;
-      lShZ = 0.12;
-      lElX = -1.2 + Math.sin(t * 16 + Math.PI) * 0.1;
-      rShX = -0.82;
-      rShZ = -0.12;
-      rElX = -1.2 + Math.sin(t * 16) * 0.12;
+      legX = -1.05;
+      legSplay = 0.22;
+      // hands type BEHIND the lid, folded just enough that the fingertips
+      // peek above the keyboard base (more fold pokes them through the screen)
+      lShX = -0.35;
+      lShZ = 0.45;
+      lElX = -0.65 + Math.sin(t * 16 + Math.PI) * 0.12;
+      rShX = -0.35;
+      rShZ = -0.45;
+      rElX = -0.65 + Math.sin(t * 16) * 0.12;
       headP = 0.26;
       laptopT = 1;
-      bodyZ = -0.1; // slight right lean while coding
+      bodyZ = 0.12; // slight LEFT lean while coding (positive = left, as in reading)
     } else if (active === "music") {
       // right hand raised to ear cup; natural shoulder lift + elbow bend
       rShX = -0.1;
@@ -367,7 +474,8 @@ export default function Character3D() {
       const seated = smooth(0, 0.42, e) - smooth(4.0, 4.9, e); // 0→1 plop, hold, →0 get-up
       const buckle = (smooth(0.04, 0.16, e) - smooth(0.16, 0.44, e)) * 0.35; // quick knee give-way
       const brace = smooth(0, 0.22, e) - smooth(0.22, 0.6, e); // arms shoot out to catch balance
-      legX = seated * -1.5 - buckle; // fold the legs forward so they rest on the floor
+      legX = seated * -1.1 - buckle; // fold the legs forward so they rest on the floor
+      legSplay = seated * 0.28; // knees apart so the legs don't foreshorten into stumps
       const splay = seated * 0.32 + brace * 0.5;
       rShZ = -0.12 + splay; // hands brace, then settle out by the hips on the floor
       lShZ = 0.12 - splay;
@@ -409,8 +517,14 @@ export default function Character3D() {
       rEl.current.rotation.x = damp(rEl.current.rotation.x, rElX, 12, d);
       rEl.current.rotation.z = damp(rEl.current.rotation.z, rElZ, 12, d);
     }
-    if (lLeg.current) lLeg.current.rotation.x = damp(lLeg.current.rotation.x, legX, 7, d);
-    if (rLeg.current) rLeg.current.rotation.x = damp(rLeg.current.rotation.x, legX, 7, d);
+    if (lLeg.current) {
+      lLeg.current.rotation.x = damp(lLeg.current.rotation.x, legX, 7, d);
+      lLeg.current.rotation.z = damp(lLeg.current.rotation.z, -legSplay, 7, d);
+    }
+    if (rLeg.current) {
+      rLeg.current.rotation.x = damp(rLeg.current.rotation.x, legX, 7, d);
+      rLeg.current.rotation.z = damp(rLeg.current.rotation.z, legSplay, 7, d);
+    }
 
     // ----- facial expression -----
     if (active !== "fall") {
@@ -438,9 +552,22 @@ export default function Character3D() {
       };
       setBrow(lBrow.current, -1);
       setBrow(rBrow.current, 1);
+      // "Hola" lip-sync at the start of a wave: two mouth-open pulses timed to
+      // the syllables (Ho… la), synced with the bubble popping in. The mouth
+      // also narrows while open so the big pulse reads as an "O".
+      let mouthOpenT = 1;
+      if (active === "wave") {
+        const we = c.elapsed;
+        mouthOpenT =
+          1 +
+          (smooth(0.05, 0.2, we) - smooth(0.3, 0.5, we)) * 1.7 + // "Ho"
+          (smooth(0.55, 0.7, we) - smooth(0.8, 1.05, we)) * 1.2; // "la"
+      }
       if (mouthGrp.current) {
-        mouthGrp.current.scale.x = damp(mouthGrp.current.scale.x, ex.mouthWidth, fl, d);
-        mouthGrp.current.scale.y = damp(mouthGrp.current.scale.y, 1, fl, d); // close the fall's open mouth
+        const widthT = ex.mouthWidth * (1 - (mouthOpenT - 1) * 0.15);
+        mouthGrp.current.scale.x = damp(mouthGrp.current.scale.x, widthT, fl, d);
+        // snappier rate than the rest of the face so the syllables don't blur
+        mouthGrp.current.scale.y = damp(mouthGrp.current.scale.y, mouthOpenT, 14, d);
       }
       if (mouthSmileMesh.current) {
         const m = mouthSmileMesh.current.material as MeshStandardMaterial;
@@ -537,9 +664,13 @@ export default function Character3D() {
       notes.current.scale.setScalar(s);
       notes.current.visible = s > 0.02;
       notes.current.children.forEach((child, i) => {
-        const phase = (t * 0.6 + i * 0.45) % 1.5;
-        child.position.y = 0.1 + phase * 1.4;
-        child.position.x = 0.35 + Math.sin((t + i) * 2) * 0.12;
+        // 0.37 stagger over a 1.5 cycle → 2–3 notes visible at once, at
+        // different heights, so the varied glyphs actually read as a stream
+        const phase = (t * 0.6 + i * 0.37) % 1.5;
+        // short rise: keeps the notes inside the camera frame — they fade out
+        // around head height instead of clipping at the canvas top
+        child.position.y = 0.08 + phase * 0.55;
+        child.position.x = 0.3 + (i % 2) * 0.18 + Math.sin((t + i) * 2) * 0.1;
         child.rotation.z = Math.sin((t + i) * 1.6) * 0.25; // gentle sway as they rise
         const op = Math.max(0, 1 - phase / 1.5);
         child.traverse((o) => {
@@ -695,13 +826,29 @@ export default function Character3D() {
             <meshStandardMaterial color={LIME} emissive={LIME} emissiveIntensity={0.6} />
           </mesh>
 
-          {greeting && (
-            <Html position={[0.8, 0.55, 0]} center distanceFactor={8} occlude={false}>
+          {bubble && (
+            <Html position={[-0.8, 0.6, 0]} center distanceFactor={8} occlude={false}>
+              {/* grey bubble with a solid under-lip shadow so it reads as a
+                  chunky 3D element floating with the character, not flat UI */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none whitespace-nowrap rounded-2xl bg-charcoal px-4 py-2 font-display text-base font-extrabold text-lime shadow-[0_8px_20px_rgba(26,27,22,0.3)]"
+                className="pointer-events-none relative whitespace-nowrap rounded-2xl px-4 py-2"
+                style={{
+                  background: "#d9dad6",
+                  color: "#1a1b16",
+                  boxShadow: "0 4px 0 #a9aaa4, 0 12px 22px rgba(26,27,22,0.25)",
+                }}
               >
-                hola
+                {bubble === "hola" ? (
+                  <span className="font-display text-base font-extrabold">Hola!</span>
+                ) : (
+                  <span className="font-mono text-sm font-bold">{`print("Hello World")`}</span>
+                )}
+                {/* tail sits bottom-right, pointing back toward the head */}
+                <span
+                  className="absolute -bottom-1 right-4 h-3 w-3 rotate-45"
+                  style={{ background: "#d9dad6" }}
+                />
               </div>
             </Html>
           )}
@@ -719,58 +866,115 @@ export default function Character3D() {
         </group>
 
         {/* ===== arms (two-segment) ===== */}
-        <Arm shoulder={lSh} elbow={lEl} color={SLEEVE_L} x={-0.62} />
-        <Arm shoulder={rSh} elbow={rEl} color={SLEEVE_R} x={0.62} />
+        <Arm shoulder={lSh} elbow={lEl} color={SLEEVE_L} x={-0.6} />
+        <Arm shoulder={rSh} elbow={rEl} color={SLEEVE_R} x={0.6} />
 
         {/* ===== behavior props ===== */}
-        {/* book */}
-        <group ref={book} position={[0, 1.44, 0.72]} scale={0}>
-          {/* cover — warm red so it reads clearly against the dark character */}
-          <mesh rotation={[Math.PI / 2.6, 0, 0]}>
-            <boxGeometry args={[0.78, 0.58, 0.07]} />
-            <meshStandardMaterial color="#bf3f3f" roughness={0.7} />
-          </mesh>
-          {/* pages */}
-          <mesh position={[0, 0.03, 0.035]} rotation={[Math.PI / 2.6, 0, 0]}>
-            <boxGeometry args={[0.68, 0.50, 0.04]} />
-            <meshStandardMaterial color={PAPER} />
-          </mesh>
-          {/* spine line */}
-          <mesh position={[0, 0.06, 0.045]} rotation={[Math.PI / 2.6, 0, 0]}>
-            <boxGeometry args={[0.012, 0.50, 0.05]} />
-            <meshStandardMaterial color="#bdbfa8" />
+        {/* book — held open with the red COVERS toward the camera (so the
+            title is visible) and the pages toward the character's lowered
+            gaze. The "C++" title is built from primitive boxes to match the
+            low-poly style (no font asset needed). */}
+        <group ref={book} position={[0, 1.5, 0.74]} rotation={[0.45, 0, 0]} scale={0}>
+          {/* left half — outer edge folds back toward the reader */}
+          <group rotation={[0, -0.3, 0]}>
+            <mesh position={[-0.2, 0, 0.02]}>
+              <boxGeometry args={[0.42, 0.52, 0.03]} />
+              <meshStandardMaterial color="#bf3f3f" roughness={0.7} />
+            </mesh>
+            <mesh position={[-0.19, 0, -0.005]}>
+              <boxGeometry args={[0.38, 0.48, 0.025]} />
+              <meshStandardMaterial color={PAPER} />
+            </mesh>
+          </group>
+          {/* right half — carries the front-cover title */}
+          <group rotation={[0, 0.3, 0]}>
+            <mesh position={[0.2, 0, 0.02]}>
+              <boxGeometry args={[0.42, 0.52, 0.03]} />
+              <meshStandardMaterial color="#bf3f3f" roughness={0.7} />
+            </mesh>
+            <mesh position={[0.19, 0, -0.005]}>
+              <boxGeometry args={[0.38, 0.48, 0.025]} />
+              <meshStandardMaterial color="#e6ead4" />
+            </mesh>
+            {/* "C++" — C */}
+            <mesh position={[0.07, 0.02, 0.045]}>
+              <boxGeometry args={[0.028, 0.13, 0.02]} />
+              <meshStandardMaterial color={PAPER} roughness={0.5} />
+            </mesh>
+            <mesh position={[0.1, 0.072, 0.045]}>
+              <boxGeometry args={[0.065, 0.028, 0.02]} />
+              <meshStandardMaterial color={PAPER} roughness={0.5} />
+            </mesh>
+            <mesh position={[0.1, -0.032, 0.045]}>
+              <boxGeometry args={[0.065, 0.028, 0.02]} />
+              <meshStandardMaterial color={PAPER} roughness={0.5} />
+            </mesh>
+            {/* "C++" — first + */}
+            <mesh position={[0.185, 0.02, 0.045]}>
+              <boxGeometry args={[0.075, 0.026, 0.02]} />
+              <meshStandardMaterial color={PAPER} roughness={0.5} />
+            </mesh>
+            <mesh position={[0.185, 0.02, 0.045]}>
+              <boxGeometry args={[0.026, 0.075, 0.02]} />
+              <meshStandardMaterial color={PAPER} roughness={0.5} />
+            </mesh>
+            {/* "C++" — second + */}
+            <mesh position={[0.27, 0.02, 0.045]}>
+              <boxGeometry args={[0.075, 0.026, 0.02]} />
+              <meshStandardMaterial color={PAPER} roughness={0.5} />
+            </mesh>
+            <mesh position={[0.27, 0.02, 0.045]}>
+              <boxGeometry args={[0.026, 0.075, 0.02]} />
+              <meshStandardMaterial color={PAPER} roughness={0.5} />
+            </mesh>
+          </group>
+          {/* spine */}
+          <mesh position={[0, 0, 0.02]}>
+            <boxGeometry args={[0.02, 0.5, 0.045]} />
+            <meshStandardMaterial color="#992f2f" />
           </mesh>
         </group>
 
-        {/* laptop on the lap */}
-        <group ref={laptop} position={[0, 1.16, 0.65]} scale={0}>
-          {/* keyboard base — flat horizontal slab */}
+        {/* laptop on the lap — the group is flipped 180° so the LID BACK faces
+            the camera and the screen faces the character (the old orientation
+            aimed the lime emissive screen at the viewer, which read as a hole
+            punched through the torso against the lime background). */}
+        <group ref={laptop} position={[0, 1.16, 0.65]} rotation={[0, Math.PI, 0]} scale={0}>
+          {/* keyboard base — flat horizontal slab (light grey, MacBook-ish) */}
           <mesh>
             <boxGeometry args={[0.76, 0.04, 0.54]} />
-            <meshStandardMaterial color="#2a2b22" roughness={0.8} />
+            <meshStandardMaterial color="#8e8e96" roughness={0.6} />
           </mesh>
-          {/* touchpad detail */}
+          {/* touchpad detail (nearest the character after the flip) */}
           <mesh position={[0, 0.025, 0.1]}>
             <boxGeometry args={[0.26, 0.01, 0.16]} />
-            <meshStandardMaterial color="#222318" roughness={0.6} />
+            <meshStandardMaterial color="#7c7c84" roughness={0.5} />
           </mesh>
-          {/* screen — hinges from back edge, angled up toward viewer (L-shape) */}
-          <mesh ref={screen} position={[0, 0.24, -0.19]} rotation={[0.52, 0, 0]}>
+          {/* screen — hinged at the camera-side edge, tilted to face the
+              character's lowered gaze; its glow spills up toward the face */}
+          <mesh ref={screen} position={[0, 0.24, -0.19]} rotation={[-0.52, 0, 0]}>
             <boxGeometry args={[0.70, 0.46, 0.025]} />
             <meshStandardMaterial color="#0a0b08" emissive={LIME} emissiveIntensity={0.6} />
           </mesh>
-          {/* screen bezel / lid back */}
-          <mesh position={[0, 0.235, -0.205]} rotation={[0.52, 0, 0]}>
+          {/* screen bezel / lid back (this face is what the camera sees) */}
+          <mesh position={[0, 0.235, -0.205]} rotation={[-0.52, 0, 0]}>
             <boxGeometry args={[0.76, 0.52, 0.018]} />
-            <meshStandardMaterial color="#1a1b12" roughness={0.75} />
+            <meshStandardMaterial color="#84848c" roughness={0.55} />
+          </mesh>
+          {/* little glowing logo so the lid back isn't a featureless slab */}
+          <mesh position={[0, 0.235, -0.218]} rotation={[-0.52, 0, 0]}>
+            <boxGeometry args={[0.1, 0.1, 0.015]} />
+            <meshStandardMaterial color={LIME} emissive={LIME} emissiveIntensity={0.5} />
           </mesh>
         </group>
 
-        {/* music notes — charcoal ♪ symbols that rise and fade as the character listens */}
-        <group ref={notes} position={[0.2, 2.7, 0.2]} scale={0}>
-          {[0, 1, 2].map((i) => (
-            <MusicNote key={i} color={CHARCOAL} />
-          ))}
+        {/* music notes — a varied charcoal stream (♪ ♫ quarter) that rises and
+            fades as the character listens; staggered so several show at once */}
+        <group ref={notes} position={[0.2, 2.6, 0.2]} scale={0}>
+          <MusicNote color={CHARCOAL} variant="eighth" />
+          <MusicNote color={CHARCOAL} variant="beamed" scale={1.1} />
+          <MusicNote color={CHARCOAL} variant="quarter" scale={0.9} />
+          <MusicNote color={CHARCOAL} variant="eighth" scale={0.75} />
         </group>
       </group>
     </group>
