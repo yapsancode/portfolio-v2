@@ -3,6 +3,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import NowPlaying from "@/components/NowPlaying";
 import PhotoGallery from "@/components/PhotoGallery";
 import ScrollReveal from "@/components/ScrollReveal";
+import SelectedProjects from "@/components/SelectedProjects";
 import { site } from "@/config/site";
 
 /* External-link safety helper. */
@@ -132,63 +133,7 @@ export default function Home() {
 
       {/* ===================== WORK ===================== */}
       <section id="work" className="bg-paper px-6 pb-24 text-charcoal sm:px-10 sm:pb-32">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="font-display text-sm font-extrabold uppercase tracking-widest text-charcoal/50">
-            Selected work
-          </h2>
-          <ul className="mt-10 divide-y divide-charcoal/15 border-y border-charcoal/15">
-            {site.projects.map((project) => (
-              <li key={project.title}>
-                <article className="grid gap-4 py-8 md:grid-cols-[1fr_auto] md:items-start md:gap-10">
-                  <div>
-                    <div className="flex items-baseline gap-3">
-                      <h3 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
-                        {project.title}
-                      </h3>
-                      <span className="text-sm font-semibold text-charcoal/50 tabular-nums">
-                        {project.year}
-                      </span>
-                    </div>
-                    <p className="mt-2 max-w-xl text-charcoal/80">{project.description}</p>
-                    <ul className="mt-4 flex flex-wrap gap-2">
-                      {project.stack.map((tag) => (
-                        <li
-                          key={tag}
-                          className="rounded-full border border-charcoal/25 px-3 py-1 text-xs font-semibold"
-                        >
-                          {tag}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="flex gap-4 text-sm font-bold md:flex-col md:items-end md:gap-2">
-                    {project.live && (
-                      <a
-                        href={project.live}
-                        {...ext}
-                        className="cursor-pointer underline-offset-4 hover:underline"
-                        aria-label={`${project.title} — view live site`}
-                      >
-                        Live ↗
-                      </a>
-                    )}
-                    {project.code && (
-                      <a
-                        href={project.code}
-                        {...ext}
-                        className="cursor-pointer underline-offset-4 hover:underline"
-                        aria-label={`${project.title} — view source code`}
-                      >
-                        Code ↗
-                      </a>
-                    )}
-                  </div>
-                </article>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <SelectedProjects />
       </section>
 
       {/* ===================== CONTACT ===================== */}

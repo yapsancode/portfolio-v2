@@ -163,32 +163,73 @@ export const site = {
     { label: "Email", href: "mailto:muhammadisyrafafifi@gmail.com" },
   ],
 
-  /** Projects — a clean, scannable list. `live`/`code` are optional. */
+  /**
+   * Projects — rendered by the Work section (src/components/SelectedProjects.tsx).
+   *
+   * - `tagline` is the SHORT one-liner shown in the list. Keep it to one line;
+   *   long copy wraps badly against the giant display type.
+   * - `description` is the longer version — it feeds the JSON-LD structured data
+   *   (along with `year` and `stack`), so keep it accurate even though the Work
+   *   section doesn't render it.
+   * - `live: null` means there's no public link: the row renders inert (not
+   *   clickable, no hover preview). Give it a URL to light it up.
+   * - `badge` is the free-text pill shown next to the year — ✏️ WRITE YOUR OWN.
+   *   It's whatever you want to say about a row ("Private", "NDA", "Case study
+   *   on request", "In progress"). Set it to `null` for no pill at all.
+   * - `image` is the hover preview — a local file in /public/projects or a
+   *   remote URL. It's only ever loaded for live projects on hover-capable
+   *   pointers. `imageFallback` renders if `image` 404s.
+   */
   projects: [
     {
       title: "Esportorium",
       year: "2026",
+      tagline: "Malaysia's curated home for Mobile Legends tournaments",
       description:
         "Full-stack MLBB esports tournament platform — bracket management, team registration, and live match tracking for competitive play.",
       stack: ["Next.js", "FastAPI", "PostgreSQL", "Cloud Run"],
-      live: null,
+      badge: null,
+      /**
+       * Esportorium's own live OG image — so this preview tracks that site
+       * instead of going stale against a checked-in screenshot.
+       *
+       * ⚠️ As of 2026-07-16 this 404s: esportorium.com ships og:title and
+       * og:description but NO og:image (and declares twitter:card=
+       * "summary_large_image", so its link previews are blank everywhere it's
+       * shared). Until an `app/opengraph-image.tsx` lands in THAT repo, the
+       * fallback below renders instead. Once it does, this picks it up with no
+       * change here.
+       */
+      image: "https://esportorium.com/opengraph-image",
+      imageFallback:
+        "https://placehold.co/800x600/1a1b16/c6f432?text=Esportorium",
+      live: "https://esportorium.com",
       code: null,
     },
     {
       title: "Baymax",
       year: "2026",
+      tagline: "Chrome extension that automates AI model deployment to GCP",
       description:
         "Chrome extension that automates AI model deployment to GCP. RAG pipeline + Gemini integration cuts deploy friction from hours to minutes.",
       stack: ["Chrome Extension", "RAG", "Gemini", "GCP"],
+      badge: "Details on request", // ✏️ your call — see the note above
+      image: "https://placehold.co/800x600/1a1a1a/999999?text=Baymax",
+      imageFallback: null,
       live: null,
       code: null,
     },
     {
       title: "Medical Clinic Booking Platform",
       year: "2025",
+      tagline: "Booking and clinic ops platform serving real patients",
       description:
         "Production booking system serving real patients — appointment scheduling, practitioner management, and clinic ops in one platform.",
       stack: ["Flutter Web", "FastAPI", "PostgreSQL"],
+      badge: "Details on request", // ✏️ your call — see the note above
+      image:
+        "https://placehold.co/800x600/1a1a1a/999999?text=Medical+Clinic",
+      imageFallback: null,
       live: null,
       code: null,
     },
