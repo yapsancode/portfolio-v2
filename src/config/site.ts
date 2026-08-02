@@ -188,11 +188,11 @@ export const site = {
       description:
         "AI Chrome extension that highlights the exact GCP Console button to click, guiding developers through cloud deployments in real time — 1st place, Gamuda AI Academy Capstone Demo Day.",
       stack: ["React 19", "FastAPI", "LangChain", "Gemini API", "Chrome Extension (MV3)", "Cloud Run"],
-      badge: "Details on request",
-      image: "https://placehold.co/800x600/1a1a1a/999999?text=Baymax",
+      badge: "Open source",
+      image: "https://placehold.co/800x600/1a1b16/c6f432?text=Baymax",
       imageFallback: null,
-      live: null,
-      code: null,
+      live: "https://github.com/yapsancode/baymax",
+      code: "https://github.com/yapsancode/baymax",
     },
     {
       title: "Job Kit / KerjaKit",
