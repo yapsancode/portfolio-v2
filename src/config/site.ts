@@ -182,12 +182,38 @@ export const site = {
    */
   projects: [
     {
+      title: "Baymax — AI GCP Deployment Assistant",
+      year: "2026",
+      tagline: "AI Chrome extension that guides GCP Console deployments step by step",
+      description:
+        "AI Chrome extension that highlights the exact GCP Console button to click, guiding developers through cloud deployments in real time — 1st place, Gamuda AI Academy Capstone Demo Day.",
+      stack: ["React 19", "FastAPI", "LangChain", "Gemini API", "Chrome Extension (MV3)", "Cloud Run"],
+      badge: "Details on request",
+      image: "https://placehold.co/800x600/1a1a1a/999999?text=Baymax",
+      imageFallback: null,
+      live: null,
+      code: null,
+    },
+    {
+      title: "Job Kit / KerjaKit",
+      year: "2026",
+      tagline: "Open-source resume tailor CLI plus a live web app, kerjakit.com",
+      description:
+        "Resume tailor product in two forms: an open-source CLI (31 GitHub stars) and a live web app with 10 registered users — paste a job posting, get an honest match report and an ATS-safe one-page resume.",
+      stack: ["Next.js 16", "Supabase", "Tailwind v4", "Typst", "DeepSeek", "Cloud Run"],
+      badge: null,
+      image: "https://placehold.co/800x600/1a1b16/c6f432?text=KerjaKit",
+      imageFallback: null,
+      live: "https://kerjakit.com",
+      code: "https://github.com/yapsancode/job-kit",
+    },
+    {
       title: "Esportorium",
       year: "2026",
       tagline: "Malaysia's curated home for Mobile Legends tournaments",
       description:
-        "Full-stack MLBB esports tournament platform — bracket management, team registration, and live match tracking for competitive play.",
-      stack: ["Next.js", "FastAPI", "PostgreSQL", "Cloud Run"],
+        "Full-stack MLBB esports tournament platform centralizing scattered tournament listings across Malaysia, with organiser accounts, JWT tenant isolation, and AI-assisted poster-to-tournament ingest.",
+      stack: ["Next.js", "FastAPI", "PostgreSQL", "Cloud Run", "Cloudflare R2"],
       badge: null,
       /**
        * Esportorium's own live OG image — so this preview tracks that site
@@ -207,28 +233,66 @@ export const site = {
       code: null,
     },
     {
-      title: "Baymax",
-      year: "2026",
-      tagline: "Chrome extension that automates AI model deployment to GCP",
+      title: "Medical Clinic Booking Platform",
+      year: "2025",
+      tagline: "Production appointment booking for real clinic patients",
       description:
-        "Chrome extension that automates AI model deployment to GCP. RAG pipeline + Gemini integration cuts deploy friction from hours to minutes.",
-      stack: ["Chrome Extension", "RAG", "Gemini", "GCP"],
-      badge: "Details on request", // ✏️ your call — see the note above
-      image: "https://placehold.co/800x600/1a1a1a/999999?text=Baymax",
+        "Production appointment booking system serving real patients at Klinik Mekar — booking UX, admin interface, and SEO shipped end-to-end.",
+      stack: ["Next.js", "Vercel"],
+      badge: null,
+      image: "https://placehold.co/800x600/1a1b16/c6f432?text=Klinik+Mekar",
+      imageFallback: null,
+      live: "https://klinikmekar.com",
+      code: null,
+    },
+    {
+      title: "The Sifu Path",
+      year: "2026",
+      tagline: "A five-level path from junior CRUD dev to AI-era engineer",
+      description:
+        "Shareable course web app for junior devs leveling up into the AI era — five levels, fourteen modules (teach → do → quiz → challenge), with local progress tracking and an optional live leaderboard.",
+      stack: ["Vite", "React", "TypeScript", "Tailwind v4", "Supabase", "Cloudflare Workers"],
+      badge: null,
+      image: "https://placehold.co/800x600/1a1b16/c6f432?text=The+Sifu+Path",
+      imageFallback: null,
+      live: "https://the-sifu-path.isyraf-dev.workers.dev/",
+      code: "https://github.com/yapsancode/the-sifu-path",
+    },
+    {
+      title: "Claude Code × OpenCode Go Bridge",
+      year: "2026",
+      tagline: "API bridge letting Claude Code run open models via OpenCode Go",
+      description:
+        "Lightweight API proxy letting Claude Code run open models via OpenCode Go — translates Anthropic's /v1/messages format to OpenAI-compatible calls, including streaming and tool use.",
+      stack: ["Python", "FastAPI", "LiteLLM"],
+      badge: "Open source",
+      image: "https://placehold.co/800x600/1a1b16/c6f432?text=CC+x+OpenCode",
+      imageFallback: null,
+      live: "https://github.com/yapsancode/claudecode-X-opencode",
+      code: "https://github.com/yapsancode/claudecode-X-opencode",
+    },
+    {
+      title: "Speed Trap Monitoring System",
+      year: "2024",
+      tagline: "ESP32-based IoT speed monitor with a live Flutter dashboard",
+      description:
+        "IoT speed monitoring system for a final year project — ESP32 and an IR sensor stream live vehicle-speed readings to a Flutter dashboard via Firebase with 1s latency.",
+      stack: ["ESP32", "Arduino", "Flutter", "Firebase"],
+      badge: "Final year project",
+      image: "https://placehold.co/800x600/1a1a1a/999999?text=Speed+Trap",
       imageFallback: null,
       live: null,
       code: null,
     },
     {
-      title: "Medical Clinic Booking Platform",
-      year: "2025",
-      tagline: "Booking and clinic ops platform serving real patients",
+      title: "AI Poster — MLBB Grassroots Poster Intelligence",
+      year: "2026",
+      tagline: "AI art-direction pipeline for grassroots MLBB tournament posters",
       description:
-        "Production booking system serving real patients — appointment scheduling, practitioner management, and clinic ops in one platform.",
-      stack: ["Flutter Web", "FastAPI", "PostgreSQL"],
-      badge: "Details on request", // ✏️ your call — see the note above
-      image:
-        "https://placehold.co/800x600/1a1a1a/999999?text=Medical+Clinic",
+        "Design-intelligence pipeline turning a structured art-direction brief into tournament posters for Malaysian grassroots MLBB scenes. Not yet production-ready.",
+      stack: ["LLM Art-Direction Pipeline", "Image Models"],
+      badge: "In progress",
+      image: "https://placehold.co/800x600/1a1a1a/999999?text=AI+Poster",
       imageFallback: null,
       live: null,
       code: null,
