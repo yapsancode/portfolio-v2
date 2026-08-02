@@ -204,8 +204,9 @@ export const site = {
         "Resume tailor product in two forms: an open-source CLI (31 GitHub stars) and a live web app with 10 registered users — paste a job posting, get an honest match report and an ATS-safe one-page resume.",
       stack: ["Next.js 16", "Supabase", "Tailwind v4", "Typst", "DeepSeek", "Cloud Run"],
       badge: null,
-      image: "https://placehold.co/800x600/1a1b16/c6f432?text=KerjaKit",
-      imageFallback: null,
+      // KerjaKit's own live OG image, same pattern as Esportorium.
+      image: "https://kerjakit.com/opengraph-image",
+      imageFallback: "https://placehold.co/800x600/1a1b16/c6f432?text=KerjaKit",
       live: "https://kerjakit.com",
       code: "https://github.com/yapsancode/job-kit",
     },
@@ -268,8 +269,9 @@ export const site = {
         "Lightweight API proxy letting Claude Code run open models via OpenCode Go — translates Anthropic's /v1/messages format to OpenAI-compatible calls, including streaming and tool use.",
       stack: ["Python", "FastAPI", "LiteLLM"],
       badge: "Open source",
-      image: "https://placehold.co/800x600/1a1b16/c6f432?text=CC+x+OpenCode",
-      imageFallback: null,
+      // GitHub's auto-generated social preview for the repo.
+      image: "https://opengraph.githubassets.com/1/yapsancode/claudecode-X-opencode",
+      imageFallback: "https://placehold.co/800x600/1a1b16/c6f432?text=CC+x+OpenCode",
       live: "https://github.com/yapsancode/claudecode-X-opencode",
       code: "https://github.com/yapsancode/claudecode-X-opencode",
     },
