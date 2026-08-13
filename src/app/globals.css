@@ -1,0 +1,408 @@
+@import "tailwindcss";
+
+@theme {
+  --font-pixel: var(--font-vt323), "Courier New", monospace;
+  --font-content: Tahoma, Verdana, Geneva, sans-serif;
+
+  --color-win-face: #c0c0c0;
+  --color-win-light: #dfdfdf;
+  --color-win-white: #ffffff;
+  --color-win-shadow: #808080;
+  --color-win-dark: #0a0a0a;
+  --color-win-navy: #000080;
+  --color-win-blue: #1084d0;
+  --color-win-yellow: #ffffe1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+::selection {
+  background: var(--color-win-navy);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Win98 bevel system (hand-rolled: 4-tone inset shadows)              */
+/* ------------------------------------------------------------------ */
+
+.bevel-out {
+  box-shadow:
+    inset -1px -1px var(--color-win-dark),
+    inset 1px 1px var(--color-win-light),
+    inset -2px -2px var(--color-win-shadow),
+    inset 2px 2px var(--color-win-white);
+}
+
+.bevel-in {
+  box-shadow:
+    inset -1px -1px var(--color-win-white),
+    inset 1px 1px var(--color-win-dark),
+    inset -2px -2px var(--color-win-light),
+    inset 2px 2px var(--color-win-shadow);
+}
+
+/* Thin sunken well (clock tray, status panels) */
+.bevel-well {
+  box-shadow:
+    inset -1px -1px var(--color-win-white),
+    inset 1px 1px var(--color-win-shadow);
+}
+
+/* ------------------------------------------------------------------ */
+/* Window chrome                                                       */
+/* ------------------------------------------------------------------ */
+
+.win-window {
+  background: var(--color-win-face);
+  padding: 3px;
+}
+
+.win-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 2px 3px;
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(
+    90deg,
+    var(--color-win-navy),
+    var(--color-win-blue)
+  );
+  user-select: none;
+  touch-action: none;
+}
+
+.win-titlebar.inactive {
+  color: #d4d0c8;
+  background: linear-gradient(90deg, #7b7b7b, #b5b5b5);
+}
+
+.win-titlebar .title {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-left: 2px;
+}
+
+.win-titlebtn {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 16px;
+  padding: 0;
+  background: var(--color-win-face);
+  border: none;
+  cursor: pointer;
+  box-shadow:
+    inset -1px -1px var(--color-win-dark),
+    inset 1px 1px var(--color-win-white),
+    inset -2px -2px var(--color-win-shadow),
+    inset 2px 2px var(--color-win-light);
+}
+
+.win-titlebtn:active {
+  box-shadow:
+    inset -1px -1px var(--color-win-white),
+    inset 1px 1px var(--color-win-dark),
+    inset -2px -2px var(--color-win-light),
+    inset 2px 2px var(--color-win-shadow);
+}
+
+.win-content {
+  background: var(--color-win-face);
+  font-family: var(--font-content);
+  font-size: 14px;
+  color: #111;
+}
+
+/* Sunken white page area inside a window */
+.win-page {
+  background: #fff;
+  height: 100%;
+  overflow: auto;
+  scrollbar-width: auto;
+  scrollbar-color: var(--color-win-face) var(--color-win-light);
+}
+
+/* Chunky Win98 scrollbars (webkit) */
+.win-page::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+.win-page::-webkit-scrollbar-track {
+  background: var(--color-win-light);
+}
+.win-page::-webkit-scrollbar-thumb {
+  background: var(--color-win-face);
+  box-shadow:
+    inset -1px -1px var(--color-win-dark),
+    inset 1px 1px var(--color-win-white),
+    inset -2px -2px var(--color-win-shadow),
+    inset 2px 2px var(--color-win-light);
+}
+.win-page::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Taskbar                                                             */
+/* ------------------------------------------------------------------ */
+
+.taskbar {
+  background: var(--color-win-face);
+  box-shadow: inset 0 1px var(--color-win-light);
+}
+
+.taskbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 10px;
+  background: var(--color-win-face);
+  border: none;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow:
+    inset -1px -1px var(--color-win-dark),
+    inset 1px 1px var(--color-win-white),
+    inset -2px -2px var(--color-win-shadow),
+    inset 2px 2px var(--color-win-light);
+}
+
+.taskbar-btn.active {
+  background: var(--color-win-light);
+  box-shadow:
+    inset -1px -1px var(--color-win-white),
+    inset 1px 1px var(--color-win-dark),
+    inset -2px -2px var(--color-win-light),
+    inset 2px 2px var(--color-win-shadow);
+}
+
+/* ------------------------------------------------------------------ */
+/* Desktop icons                                                       */
+/* ------------------------------------------------------------------ */
+
+.desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 88px;
+  padding: 6px 2px;
+  background: transparent;
+  border: 1px dotted transparent;
+  cursor: pointer;
+}
+
+.desktop-icon .icon-img {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.desktop-icon .icon-label {
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1.1;
+  color: #fff;
+  text-align: center;
+  text-shadow: 1px 1px 0 #000;
+  padding: 0 2px;
+}
+
+.desktop-icon:hover .icon-label,
+.desktop-icon:focus-visible .icon-label {
+  background: var(--color-win-navy);
+}
+
+.desktop-icon:focus-visible {
+  outline: none;
+  border: 1px dotted #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Starfield (pure CSS, three parallax densities)                      */
+/* ------------------------------------------------------------------ */
+
+.stars,
+.stars::before,
+.stars::after {
+  position: absolute;
+  inset: -520px;
+  content: "";
+  background-repeat: repeat;
+  pointer-events: none;
+}
+
+/* Deep-space nebula haze behind the stars, for depth. */
+.nebula {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 72% 18%, rgba(40, 45, 130, 0.32), transparent 70%),
+    radial-gradient(50% 45% at 18% 78%, rgba(95, 35, 150, 0.26), transparent 70%),
+    radial-gradient(42% 42% at 50% 50%, rgba(12, 14, 55, 0.45), transparent 72%);
+}
+
+.stars {
+  background-image:
+    radial-gradient(1px 1px at 22px 34px, #fff, transparent 100%),
+    radial-gradient(1px 1px at 78px 122px, #cfe4ff, transparent 100%),
+    radial-gradient(1px 1px at 146px 62px, #fff, transparent 100%),
+    radial-gradient(1px 1px at 190px 178px, #c9d4ff, transparent 100%),
+    radial-gradient(1.5px 1.5px at 112px 214px, #fff, transparent 100%),
+    radial-gradient(1px 1px at 56px 196px, #fff, transparent 100%),
+    radial-gradient(1px 1px at 214px 22px, #cfe4ff, transparent 100%);
+  background-size: 240px 240px;
+  animation:
+    twinkle 9s ease-in-out infinite alternate,
+    drift-far 120s linear infinite;
+}
+
+.stars::before {
+  background-image:
+    radial-gradient(1px 1px at 40px 90px, #fff, transparent 100%),
+    radial-gradient(1.5px 1.5px at 168px 40px, #fff, transparent 100%),
+    radial-gradient(1px 1px at 258px 150px, #c9d4ff, transparent 100%),
+    radial-gradient(1px 1px at 96px 268px, #fff, transparent 100%),
+    radial-gradient(1px 1px at 320px 88px, #cfe4ff, transparent 100%),
+    radial-gradient(1.5px 1.5px at 210px 322px, #fff, transparent 100%);
+  background-size: 380px 380px;
+  animation:
+    twinkle 5s ease-in-out infinite alternate,
+    drift-mid 80s linear infinite;
+}
+
+.stars::after {
+  background-image:
+    radial-gradient(1px 1px at 64px 48px, #fff, transparent 100%),
+    radial-gradient(1px 1px at 292px 210px, #fff, transparent 100%),
+    radial-gradient(2px 2px at 180px 130px, #fff, transparent 100%),
+    radial-gradient(1px 1px at 402px 60px, #c9d4ff, transparent 100%),
+    radial-gradient(1px 1px at 348px 396px, #cfe4ff, transparent 100%),
+    radial-gradient(1px 1px at 122px 452px, #fff, transparent 100%),
+    radial-gradient(2px 2px at 486px 272px, #fff, transparent 100%);
+  background-size: 520px 520px;
+  animation:
+    twinkle 7s ease-in-out infinite alternate-reverse,
+    drift-near 50s linear infinite;
+}
+
+@keyframes twinkle {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Parallax drift: each layer translates by exactly one tile so the loop is
+   seamless, and the near layer moves further/faster than the far one. */
+@keyframes drift-far {
+  to {
+    transform: translate3d(-240px, -240px, 0);
+  }
+}
+
+@keyframes drift-mid {
+  to {
+    transform: translate3d(-380px, -380px, 0);
+  }
+}
+
+@keyframes drift-near {
+  to {
+    transform: translate3d(-520px, -520px, 0);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Shooting star                                                       */
+/* ------------------------------------------------------------------ */
+
+.shooting-star {
+  position: absolute;
+  top: 12%;
+  left: 72%;
+  width: 140px;
+  height: 2px;
+  pointer-events: none;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.4) 40%,
+    transparent
+  );
+  transform: rotate(-28deg);
+  opacity: 0;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
+  animation: shooting-star 11s ease-in infinite 4s;
+}
+
+@keyframes shooting-star {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(-28deg);
+  }
+  5% {
+    opacity: 1;
+  }
+  22% {
+    opacity: 0;
+    transform: translate3d(-62vw, 34vw, 0) rotate(-28deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-62vw, 34vw, 0) rotate(-28deg);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Window open animation + reduced motion                              */
+/* ------------------------------------------------------------------ */
+
+@keyframes window-pop {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.window-pop {
+  animation: window-pop 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stars,
+  .stars::before,
+  .stars::after,
+  .shooting-star {
+    animation: none;
+  }
+  .window-pop {
+    animation: none;
+  }
+}
