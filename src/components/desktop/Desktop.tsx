@@ -296,6 +296,7 @@ export default function Desktop() {
             key={icon.id}
             label={icon.label}
             icon={icon.icon}
+            isMobile={isMobile}
             onOpen={() => openWindow(icon.opens)}
           />
         ))}

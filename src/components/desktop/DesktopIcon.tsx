@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 /**
@@ -86,12 +87,60 @@ const ICONS: Record<
 export type DesktopIconProps = {
   label: string;
   icon: keyof typeof ICONS;
+  /** Touch / small-screen fallback: a single tap opens instead of double-click. */
+  isMobile: boolean;
   onOpen: () => void;
 };
 
-export default function DesktopIcon({ label, icon, onOpen }: DesktopIconProps) {
+export default function DesktopIcon({
+  label,
+  icon,
+  isMobile,
+  onOpen,
+}: DesktopIconProps) {
+  const lastClick = useRef(0);
+  const [selected, setSelected] = useState(false);
+
+  // Deselect shortly after selecting, like letting go of an old desktop.
+  useEffect(() => {
+    if (!selected) return;
+    const timer = setTimeout(() => setSelected(false), 1200);
+    return () => clearTimeout(timer);
+  }, [selected]);
+
+  const handleClick = useCallback(() => {
+    if (isMobile) {
+      onOpen();
+      return;
+    }
+    const now = Date.now();
+    if (now - lastClick.current < 350) {
+      lastClick.current = 0;
+      setSelected(false);
+      onOpen();
+    } else {
+      lastClick.current = now;
+      setSelected(true);
+    }
+  }, [isMobile, onOpen]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onOpen();
+      }
+    },
+    [onOpen]
+  );
+
   return (
-    <button type="button" className="desktop-icon" onClick={onOpen}>
+    <button
+      type="button"
+      className={`desktop-icon${selected ? " selected" : ""}`}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+    >
       <svg
         viewBox="0 0 16 16"
         className="icon-img"

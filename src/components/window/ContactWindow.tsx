@@ -34,13 +34,6 @@ export default function ContactWindow() {
         ))}
       </ul>
 
-      <a
-        href={site.resumeUrl}
-        className="taskbar-btn inline-flex"
-        style={{ height: "28px" }}
-      >
-        Download résumé
-      </a>
     </article>
   );
 }

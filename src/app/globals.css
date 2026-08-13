@@ -227,8 +227,13 @@ body {
 }
 
 .desktop-icon:hover .icon-label,
-.desktop-icon:focus-visible .icon-label {
+.desktop-icon:focus-visible .icon-label,
+.desktop-icon.selected .icon-label {
   background: var(--color-win-navy);
+}
+
+.desktop-icon.selected {
+  border: 1px dotted #fff;
 }
 
 .desktop-icon:focus-visible {

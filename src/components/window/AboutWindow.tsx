@@ -12,6 +12,17 @@ export default function AboutWindow() {
           {paragraph}
         </p>
       ))}
+      <p className="mt-2 border-t border-win-shadow pt-2 text-xs text-neutral-600">
+        {site.inspiration.label}{" "}
+        <a
+          href={site.inspiration.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-win-navy underline"
+        >
+          {site.inspiration.url.replace(/^https?:\/\//, "")}
+        </a>
+      </p>
     </article>
   );
 }

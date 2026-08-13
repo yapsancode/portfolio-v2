@@ -4,6 +4,7 @@ import AboutWindow from "./AboutWindow";
 import WorkWindow from "./WorkWindow";
 import ContactWindow from "./ContactWindow";
 import NowWindow from "./NowWindow";
+import HireWindow from "./HireWindow";
 
 /**
  * Maps a window id to the component rendered inside the window frame.
@@ -15,4 +16,5 @@ export const windowRegistry: Record<WindowId, ComponentType> = {
   work: WorkWindow,
   contact: ContactWindow,
   now: NowWindow,
+  hire: HireWindow,
 };
