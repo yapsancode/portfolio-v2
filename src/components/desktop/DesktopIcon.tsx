@@ -7,7 +7,10 @@ import type { ReactNode } from "react";
  * turns the diagonal fills into staircases, which is exactly the
  * pixel-art look we want — no image assets needed.
  */
-const ICONS: Record<"person" | "briefcase" | "envelope" | "smiley", ReactNode> = {
+const ICONS: Record<
+  "person" | "briefcase" | "envelope" | "smiley" | "terminal",
+  ReactNode
+> = {
   person: (
     <>
       <rect x="5" y="1" width="6" height="2" fill="#5b3a1e" />
@@ -60,6 +63,22 @@ const ICONS: Record<"person" | "briefcase" | "envelope" | "smiley", ReactNode> =
       <rect x="4" y="10" width="1" height="1" fill="#000" />
       <rect x="11" y="10" width="1" height="1" fill="#000" />
       <rect x="5" y="11" width="6" height="1" fill="#000" />
+    </>
+  ),
+  terminal: (
+    <>
+      <rect x="1" y="2" width="14" height="12" fill="#000" />
+      <rect x="1" y="2" width="14" height="1" fill="#c0c0c0" />
+      <rect x="1" y="2" width="1" height="12" fill="#c0c0c0" />
+      <rect x="14" y="2" width="1" height="12" fill="#808080" />
+      <rect x="1" y="13" width="14" height="1" fill="#808080" />
+      <rect x="3" y="5" width="2" height="1" fill="#00ff00" />
+      <rect x="6" y="5" width="6" height="1" fill="#00ff00" />
+      <rect x="3" y="7" width="4" height="1" fill="#00ff00" />
+      <rect x="8" y="7" width="4" height="1" fill="#00ff00" />
+      <rect x="3" y="9" width="7" height="1" fill="#00ff00" />
+      <rect x="11" y="9" width="1" height="1" fill="#00ff00" />
+      <rect x="3" y="11" width="5" height="1" fill="#00ff00" />
     </>
   ),
 };
