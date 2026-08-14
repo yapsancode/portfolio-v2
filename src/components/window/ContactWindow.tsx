@@ -3,13 +3,9 @@ import { site } from "@/config/site";
 export default function ContactWindow() {
   return (
     <article className="p-4 leading-relaxed">
-      <h1 className="mb-1 text-lg font-bold">Say hello</h1>
-      <p className="mb-4 text-sm">
-        I&apos;m open to junior fullstack / frontend roles — remote or in
-        Malaysia, Singapore, or anywhere in between.
-      </p>
+      <h1 className="mb-4 text-lg font-bold">Say hello</h1>
 
-      <ul className="mb-4 space-y-2 text-sm">
+      <ul className="space-y-2 text-sm">
         <li>
           <span className="font-bold">Email: </span>
           <a

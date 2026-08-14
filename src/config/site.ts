@@ -21,16 +21,17 @@ export type Project = {
 };
 
 export const site = {
-  name: "Muhammad Isyraf Afifi bin Ismail",
+  name: "Isyraf's Website",
   shortName: "Isyraf",
-  role: "Fullstack Developer",
-  tagline: "I build things for the web — and I ship them.",
+  role: "Fullstack Developer — AI & Cloud",
+  tagline: "Open. Ship. Close. Repeat.",
 
   email: "muhammadisyrafafifi@gmail.com",
   resumeUrl: "/Muhammad-Isyraf-Resume.pdf",
   socials: [
     { label: "GitHub", url: "https://github.com/yapsancode" },
     { label: "LinkedIn", url: "https://linkedin.com/in/muhammad-isyraf-afifi" },
+    { label: "YouTube", url: "https://www.youtube.com/@isyrafafifi" },
   ],
 
   /** Short, plain-language blurb for the About window. */
@@ -41,6 +42,9 @@ export const site = {
     "Right now I'm going deep on AI systems and DevOps: building agents, grinding a 12-week upskilling block, and coming for the GCP Associate Cloud Engineer cert. I commit in full sentences with far too much personality.",
     "And this site? It's a love letter to the computers I grew up with. Every pixel — the windows, the icons, the bevels — is hand-built. Double-click around, open everything. If something looks broken, it's probably intentional.",
   ],
+
+  /** Music playing while you read this. */
+  music: "Childish Gambino — L.E.S. (instrumental)",
 
   /** Design credit line shown at the bottom of the About window. */
   inspiration: {
@@ -141,14 +145,14 @@ export const windowDefaults: Record<
     y: 60,
   },
   work: {
-    title: "C:\\isyraf\\work",
+    title: "C:\\isyraf\\work.txt",
     width: 580,
     height: 440,
     x: 200,
     y: 90,
   },
   contact: {
-    title: "C:\\isyraf\\contact",
+    title: "C:\\isyraf\\contact.txt",
     width: 460,
     height: 340,
     x: 260,

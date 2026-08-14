@@ -12,6 +12,7 @@ export default function AboutWindow() {
           {paragraph}
         </p>
       ))}
+      <p className="mt-2 text-xs text-neutral-500">music: {site.music}</p>
       <p className="mt-2 border-t border-win-shadow pt-2 text-xs text-neutral-600">
         {site.inspiration.label}{" "}
         <a
