@@ -23,7 +23,7 @@ export type Project = {
 export const site = {
   name: "Isyraf's Website",
   shortName: "Isyraf",
-  role: "Fullstack Developer — AI & Cloud",
+  role: "Software Engineer",
   tagline: "Open. Ship. Close. Repeat.",
 
   email: "muhammadisyrafafifi@gmail.com",
@@ -36,11 +36,12 @@ export const site = {
 
   /** Short, plain-language blurb for the About window. */
   about: [
-    "I'm Isyraf — a fullstack developer in Shah Alam, Malaysia. My thing is shipping: taking an idea from \"hmm, that could work\" to \"it's live and people actually use it.\"",
-    "Fresh out of Gamuda AI Academy (Yayasan Gamuda x Google Cloud), where I owned the codebase architecture and Git workflows for an AI capstone team — and we took 1st place at Demo Day. The certificate is around here somewhere. Probably in a drawer.",
-    "Before that I worked on a production Flutter Web platform for Malaysia's biggest carmaker — replacing legacy SAP screens that made everyone a little sad — and shipped my own stuff too: an esports tournament platform and a clinic booking system, because clearly one side project was never going to be enough.",
-    "Right now I'm going deep on AI systems and DevOps: building agents, grinding a 12-week upskilling block, and coming for the GCP Associate Cloud Engineer cert. I commit in full sentences with far too much personality.",
-    "And this site? It's a love letter to the computers I grew up with. Every pixel — the windows, the icons, the bevels — is hand-built. Double-click around, open everything. If something looks broken, it's probably intentional.",
+    "I'm Isyraf — a software engineer in Shah Alam, Malaysia. I like building things and getting them running for real people. That's the short version.",
+    "I started on the application side: Flutter and web development, with Laravel, Next.js, databases, and cloud along the way. That included a production Flutter Web platform for Malaysia's biggest carmaker, replacing some legacy screens people were glad to see go.",
+    "Then I got pulled into AI. I started building my own AI products outside of work — LLM APIs, RAG, agents, Python/FastAPI, Docker, PostgreSQL, Google Cloud. KerjaKit and the other side projects came out of that.",
+    "I've deployed some of those myself, but I'll be honest: I could ship something without fully understanding what was happening underneath. So now I'm going back to learn Linux, networking, Docker, cloud infrastructure, and CI/CD properly — not from tutorials or copy-pasted AI instructions.",
+    "I'm early in my career and still figuring out where I fit: AI engineering, full-stack, DevOps/MLOps, and eventually the place where they meet. I don't call myself an expert in any of it yet. Most of my time right now is trying things, finding gaps, and filling them on purpose.",
+    "The thing I'm most confident about is that I like building. I want to be the kind of engineer who doesn't just write the app, but understands how to get it running, deployed, and reliable in the real world. This site — a hand-built Windows 98 desktop — is part of that practice.",
   ],
 
   /** Music playing while you read this. */
@@ -54,17 +55,17 @@ export const site = {
 
   /** Pitch for the dedicated "Hire Me" window (job-ad style). */
   hireMe: {
-    role: "Fullstack Developer — AI & Cloud",
+    role: "Software Engineer",
     pitch:
-      "You want someone who takes a product from idea to deployed and cares about the details. That's me. Here's what hiring me gets you:",
+      "I'm an early-career software engineer who likes building things and wants to own the whole path to production — from the app to the deployment. I won't pretend I know everything. Here's what I actually bring:",
     wins: [
-      "Built a production platform for Malaysia's largest carmaker, replacing legacy SAP screens",
-      "1st place at Gamuda AI Academy capstone demo day — ran the codebase architecture and Git workflows",
-      "Independently shipped consumer products end-to-end: an esports tournament platform and a clinic booking system",
-      "Comfortable across the whole stack — Next.js, React, FastAPI, Google Cloud",
+      "Built a production Flutter Web platform for Malaysia's largest carmaker, replacing legacy screens",
+      "Took 1st place at the Gamuda AI Academy (Google Cloud) demo day — I owned the codebase architecture and Git workflows",
+      "Shipped my own AI products end-to-end — KerjaKit, an AI résumé tailor, and more — using LLM APIs, RAG, FastAPI, and Google Cloud",
+      "Going back to fundamentals right now — Linux, Docker, CI/CD, cloud — so I understand deployment, not just how to run the commands",
     ],
     note:
-      "No generic \"team player\" fluff. I ship things and I own the outcome.",
+      "No rockstar talk. I'm early in my career, I know exactly where my gaps are, and I'm filling them on purpose. I like building, and I own my work.",
     cta: "Still reading? Email me or grab the résumé below.",
   },
 

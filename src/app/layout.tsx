@@ -15,12 +15,13 @@ const siteUrl = "https://isyraf-afifi.com";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${site.name} — Fullstack Developer (AI & Cloud)`,
+    default: `${site.name} — Software Engineer`,
     template: `%s | ${site.shortName} Afifi`,
   },
   description:
-    `${site.name} is a fullstack developer in Malaysia who ships AI products and runs the infra — KerjaKit, Baymax (Gamuda AI Academy 1st place), Esportorium, and more. Explore the portfolio styled as a Windows 98 desktop.`,
+    `${site.name} is a software engineer in Malaysia building full-stack and AI products, and learning the infrastructure underneath them. Explore the portfolio styled as a Windows 98 desktop.`,
   keywords: [
+    "software engineer",
     "fullstack developer",
     "Malaysia",
     "Next.js",
@@ -37,17 +38,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: siteUrl,
-    title: `${site.name} — Fullstack Developer (AI & Cloud)`,
+    title: `${site.name} — Software Engineer`,
     description:
-      "Fullstack developer in Malaysia shipping AI products end-to-end — KerjaKit, Baymax, Esportorium.",
+      "Software engineer in Malaysia building full-stack and AI products, and learning the infrastructure underneath them.",
     siteName: `${site.shortName} Afifi`,
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${site.name} — Fullstack Developer (AI & Cloud)`,
+    title: `${site.name} — Software Engineer`,
     description:
-      "Fullstack developer in Malaysia shipping AI products end-to-end.",
+      "Software engineer in Malaysia building full-stack and AI products, learning the infrastructure underneath.",
     images: ["/opengraph-image"],
   },
   robots: { index: true, follow: true },
@@ -59,7 +60,7 @@ const personJsonLd = {
   name: site.name,
   url: siteUrl,
   email: site.email,
-  jobTitle: "Fullstack Developer",
+  jobTitle: "Software Engineer",
   alumniOf: [
     { "@type": "Organization", name: "Yayasan Gamuda x Google Cloud" },
     {
