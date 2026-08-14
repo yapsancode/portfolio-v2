@@ -50,12 +50,12 @@ export default function SoundToggle() {
         type="button"
         className="flex h-full items-center gap-1 px-1 font-pixel text-base"
         aria-pressed={playing}
-        aria-label={playing ? "Pause music" : "Play music"}
-        title={playing ? "Pause music" : "Play music"}
+        aria-label={playing ? "Pause music" : "Play aura music"}
+        title={playing ? "Pause music" : "Play aura music"}
         onClick={toggle}
       >
         <SpeakerGlyph playing={playing} />
-        <span className="pr-1">{playing ? "Pause" : "Play music"}</span>
+        <span className="pr-1">{playing ? "Pause" : "Play aura music"}</span>
       </button>
       <audio ref={audioRef} src={MUSIC_URL} loop preload="none" />
     </div>
