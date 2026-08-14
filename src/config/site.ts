@@ -15,6 +15,8 @@ export type Project = {
   year: string;
   /** One-line impact description — lead with what it achieved, not the tech. */
   impact: string;
+  /** Optional origin story — how the project started. */
+  origin?: string;
   stack: string[];
   liveUrl?: string;
   codeUrl?: string;
@@ -81,7 +83,9 @@ export const projects: Project[] = [
     name: "KerjaKit",
     year: "2026",
     impact:
-      "AI resume tailor: paste a job posting, get an honest match report and an ATS-safe one-page PDF. 31 GitHub stars, 10 registered users, every gap shown.",
+      "AI resume tailor that never invents: paste a job posting, get an honest match report and an ATS-safe one-page PDF, with in-production checks that block any fabricated skill or number. 28 real users, 34 GitHub stars.",
+    origin:
+      "Started as an open-source CLI that tailored résumés — great, but it needed git, Claude Code, and LaTeX, so only technical people could use it. A Threads post hit 3,000 likes and people kept asking for a web version, so I built one.",
     stack: ["Next.js 16", "React 19", "Supabase", "Tailwind v4", "Typst", "Cloud Run", "DeepSeek"],
     liveUrl: "https://kerjakit.com",
     codeUrl: "https://github.com/yapsancode/job-kit",
@@ -107,7 +111,8 @@ export const now: { label: string; detail: string }[] = [
   },
   {
     label: "KerjaKit",
-    detail: "Shipping and growing my AI job-tailor web app.",
+    detail:
+      "Growing my AI job-tailor app to real users — writing content and learning the marketing side, not just the code.",
   },
 ];
 

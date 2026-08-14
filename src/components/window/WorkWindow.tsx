@@ -12,6 +12,9 @@ export default function WorkWindow() {
               <span className="text-xs text-neutral-600">{project.year}</span>
             </div>
             <p className="mb-2 text-sm leading-relaxed">{project.impact}</p>
+            {project.origin && (
+              <p className="mb-2 text-sm leading-relaxed text-neutral-600">{project.origin}</p>
+            )}
             <p className="mb-2 flex flex-wrap gap-1">
               {project.stack.map((tech) => (
                 <span
