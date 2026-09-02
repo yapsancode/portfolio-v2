@@ -47,6 +47,18 @@ type Action =
   | { type: "RESIZE"; id: WindowId } & Rect;
 
 const initialState: State = { windows: [], nextZ: 10, activeId: null };
+const MOBILE_QUERY = "(max-width: 767px), (pointer: coarse)";
+
+function getDesktopRect(id: WindowId): Rect {
+  const d = windowDefaults[id];
+  const vw = window.innerWidth;
+  const vh = window.innerHeight - TASKBAR_HEIGHT;
+  const width = Math.min(d.width, vw - 16);
+  const height = Math.min(d.height, vh - 16);
+  const x = Math.max(8, Math.min(d.x, vw - width - 8));
+  const y = Math.max(8, Math.min(d.y, vh - height - 8));
+  return { x, y, width, height };
+}
 
 function topMost(windows: WindowState[]): WindowState | undefined {
   return windows.reduce<WindowState | undefined>(
@@ -189,12 +201,11 @@ function reducer(state: State, action: Action): State {
 function useIsMobile(): boolean {
   return useSyncExternalStore(
     (onChange) => {
-      const mq = window.matchMedia("(max-width: 767px), (pointer: coarse)");
+      const mq = window.matchMedia(MOBILE_QUERY);
       mq.addEventListener("change", onChange);
       return () => mq.removeEventListener("change", onChange);
     },
-    () =>
-      window.matchMedia("(max-width: 767px), (pointer: coarse)").matches,
+    () => window.matchMedia(MOBILE_QUERY).matches,
     () => false
   );
 }
@@ -215,15 +226,14 @@ export default function Desktop() {
       dispatch({ type: "OPEN", id, rect: { x: 0, y: 0, width: d.width, height: d.height } });
       return;
     }
-    const d = windowDefaults[id];
-    const vw = window.innerWidth;
-    const vh = window.innerHeight - TASKBAR_HEIGHT;
-    const width = Math.min(d.width, vw - 16);
-    const height = Math.min(d.height, vh - 16);
-    const x = Math.max(8, Math.min(d.x, vw - width - 8));
-    const y = Math.max(8, Math.min(d.y, vh - height - 8));
-    dispatch({ type: "OPEN", id, rect: { x, y, width, height } });
+    dispatch({ type: "OPEN", id, rect: getDesktopRect(id) });
   };
+
+  // Give desktop visitors immediate context without covering the mobile desktop.
+  useEffect(() => {
+    if (window.matchMedia(MOBILE_QUERY).matches) return;
+    dispatch({ type: "OPEN", id: "about", rect: getDesktopRect("about") });
+  }, []);
 
   // Escape closes the focused window.
   useEffect(() => {

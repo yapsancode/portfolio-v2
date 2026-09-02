@@ -6,7 +6,13 @@
  * touch component logic to update content.
  */
 
-export type WindowId = "about" | "work" | "contact" | "now" | "hire";
+export type WindowId =
+  | "about"
+  | "work"
+  | "contact"
+  | "now"
+  | "photos"
+  | "hire";
 
 export type DesktopIconId = WindowId | "hire-me";
 
@@ -22,11 +28,22 @@ export type Project = {
   codeUrl?: string;
 };
 
+export type Photo = {
+  /** Casual filename shown in the Photos folder. */
+  filename: string;
+  /** Web-safe local copy under public/photos. */
+  src: string;
+  /** Factual description used by the image viewer. */
+  alt: string;
+  /** Optional one-line personal note shown only in the image viewer. */
+  note?: string;
+};
+
 export const site = {
-  name: "Isyraf's Website",
+  name: "Isyraf Afifi",
   shortName: "Isyraf",
   role: "Software Engineer",
-  tagline: "Open. Ship. Close. Repeat.",
+  tagline: "I like building things.",
 
   email: "muhammadisyrafafifi@gmail.com",
   resumeUrl: "/Muhammad-Isyraf-Resume.pdf",
@@ -38,12 +55,11 @@ export const site = {
 
   /** Short, plain-language blurb for the About window. */
   about: [
-    "I'm Isyraf — a software engineer in Shah Alam, Malaysia. I like building things and getting them running for real people. That's the short version.",
+    "Hey, I'm Isyraf — a software engineer from Shah Alam who likes building things. That includes software products, AI experiments, side projects, and occasionally things that have nothing to do with code.",
     "I started on the application side: Flutter and web development, with Laravel, Next.js, databases, and cloud along the way. That included a production Flutter Web platform for Malaysia's biggest carmaker, replacing some legacy screens people were glad to see go.",
-    "Then I got pulled into AI. I started building my own AI products outside of work — LLM APIs, RAG, agents, Python/FastAPI, Docker, PostgreSQL, Google Cloud. KerjaKit and the other side projects came out of that.",
-    "I've deployed some of those myself, but I'll be honest: I could ship something without fully understanding what was happening underneath. So now I'm going back to learn Linux, networking, Docker, cloud infrastructure, and CI/CD properly — not from tutorials or copy-pasted AI instructions.",
-    "I'm early in my career and still figuring out where I fit: AI engineering, full-stack, DevOps/MLOps, and eventually the place where they meet. I don't call myself an expert in any of it yet. Most of my time right now is trying things, finding gaps, and filling them on purpose.",
-    "The thing I'm most confident about is that I like building. I want to be the kind of engineer who doesn't just write the app, but understands how to get it running, deployed, and reliable in the real world. This site — a hand-built Windows 98 desktop — is part of that practice.",
+    "Then I got pulled into AI and started building my own products outside of work — LLM APIs, RAG, agents, Python/FastAPI, Docker, PostgreSQL, Google Cloud. KerjaKit and a bunch of smaller experiments came out of that.",
+    "Shipping those projects made me more curious about everything underneath them. Right now I'm going deeper on Linux, networking, Docker, cloud infrastructure, and CI/CD so I can understand the whole path from an idea to something reliable in production.",
+    "Most of what I do comes back to the same thing: I like taking an idea, building it, and getting it in front of real people. Sometimes that's software, sometimes it's an experiment, and sometimes it's just something I wanted to try. This hand-built Windows 98 desktop is one of those things.",
   ],
 
   /** Music playing while you read this. */
@@ -55,20 +71,20 @@ export const site = {
     url: "https://www.zach.dev/",
   },
 
-  /** Pitch for the dedicated "Hire Me" window (job-ad style). */
+  /** Copy for the dedicated "Work with me" window. */
   hireMe: {
-    role: "Software Engineer",
+    role: "Work with me",
     pitch:
-      "I'm an early-career software engineer who likes building things and wants to own the whole path to production — from the app to the deployment. I won't pretend I know everything. Here's what I actually bring:",
+      "I spend most of my time building software, experimenting with ideas, and figuring out how to get them running for real people. If you're working on something interesting and think I could be useful, feel free to get in touch.",
     wins: [
       "Built a production Flutter Web platform for Malaysia's largest carmaker, replacing legacy screens",
-      "Took 1st place at the Gamuda AI Academy (Google Cloud) demo day — I owned the codebase architecture and Git workflows",
-      "Shipped my own AI products end-to-end — KerjaKit, an AI résumé tailor, and more — using LLM APIs, RAG, FastAPI, and Google Cloud",
-      "Going back to fundamentals right now — Linux, Docker, CI/CD, cloud — so I understand deployment, not just how to run the commands",
+      "Built and shipped KerjaKit end to end — from an open-source CLI to a live AI product used by real people",
+      "Took 1st place at the Gamuda AI Academy demo day, where I owned the codebase architecture and Git workflows",
+      "Currently going deeper on Linux, Docker, CI/CD, and cloud infrastructure so I can own more of the path to production",
     ],
     note:
-      "No rockstar talk. I'm early in my career, I know exactly where my gaps are, and I'm filling them on purpose. I like building, and I own my work.",
-    cta: "Still reading? Email me or grab the résumé below.",
+      "I care about understanding the problem, building the thing properly, and getting it running for real people.",
+    cta: "For roles, projects, or collaborations, email me. Recruiters can grab the résumé too.",
   },
 
   /** The centered desktop image (decorative). */
@@ -95,9 +111,9 @@ export const projects: Project[] = [
 /** Current-focus items for the "What I'm doing" window. */
 export const now: { label: string; detail: string }[] = [
   {
-    label: "DevOps upskilling (12 weeks)",
+    label: "Infrastructure fundamentals",
     detail:
-      "Linux, Docker, Kubernetes, Terraform, Prometheus/Grafana — targeting the GCP Associate Cloud Engineer cert around Nov 2026.",
+      "Going deeper on Linux, networking, Docker, cloud infrastructure, and CI/CD so I understand more of the path from development to production.",
   },
   {
     label: "AI agents",
@@ -112,7 +128,65 @@ export const now: { label: string; detail: string }[] = [
   {
     label: "KerjaKit",
     detail:
-      "Growing my AI job-tailor app to real users — writing content and learning the marketing side, not just the code.",
+      "Growing KerjaKit beyond the build itself — getting it in front of real users, writing content, and learning the marketing side.",
+  },
+];
+
+/** A small, manually ordered folder of personal photos. */
+export const photos: Photo[] = [
+  {
+    filename: "coffee_break.jpg",
+    src: "/photos/coffee_break.jpg",
+    alt: "Isyraf sitting by a cafe window, looking at his phone with two drinks on the table.",
+    note: "Somewhere between the first drink and the second one.",
+  },
+  {
+    filename: "work_setup.jpg",
+    src: "/photos/work_setup.jpg",
+    alt: "Two laptops with code open on their screens during a shared work session.",
+    note: "A normal amount of tabs and terminals.",
+  },
+  {
+    filename: "waterfall_hike.jpg",
+    src: "/photos/waterfall_hike.jpg",
+    alt: "Three friends standing in a rocky pool below a forest waterfall.",
+    note: "The pose made sense at the time.",
+  },
+  {
+    filename: "late_night_7e_japan.jpg",
+    src: "/photos/late_night_7e_japan.jpg",
+    alt: "Two people outside a brightly lit 7-Eleven in Japan at night.",
+    note: "A very serious late-night 7-Eleven stop.",
+  },
+  {
+    filename: "currently_here.jpg",
+    src: "/photos/currently_here.jpg",
+    alt: "A Shah Alam and Klang road sign beside traffic lights at sunset.",
+    note: "Somewhere between Shah Alam and Klang.",
+  },
+  {
+    filename: "masjid_tnb_bangsar.jpg",
+    src: "/photos/masjid_tnb_bangsar.jpg",
+    alt: "Worshippers seated inside Masjid TNB in Bangsar beneath an illuminated geometric ceiling.",
+    note: "A quiet pause in Bangsar.",
+  },
+  {
+    filename: "helmet_on.jpg",
+    src: "/photos/helmet_on.jpg",
+    alt: "Isyraf wearing a full-face motorcycle helmet beside a roadside parking area.",
+    note: "Helmet on, brain off.",
+  },
+  {
+    filename: "bike_at_night.jpg",
+    src: "/photos/bike_at_night.jpg",
+    alt: "A black-and-green Kawasaki motorcycle parked on a residential street at night.",
+    note: "Clean bike photo, finally.",
+  },
+  {
+    filename: "favourite_food.jpg",
+    src: "/photos/favourite_food.jpg",
+    alt: "Two servings of blue herb rice with grilled meat and vegetables on brown paper.",
+    note: "No utensils required.",
   },
 ];
 
@@ -123,16 +197,23 @@ export const now: { label: string; detail: string }[] = [
 export const desktopIcons: {
   id: DesktopIconId;
   label: string;
-  /** Which window this icon opens. "hire-me" is a shortcut to contact. */
+  /** Which window this icon opens. */
   opens: WindowId;
   /** Key into the pixel-icon set in DesktopIcon.tsx */
-  icon: "person" | "briefcase" | "envelope" | "smiley" | "terminal";
+  icon:
+    | "person"
+    | "briefcase"
+    | "envelope"
+    | "smiley"
+    | "terminal"
+    | "folder";
 }[] = [
   { id: "about", label: "About Me", opens: "about", icon: "person" },
   { id: "work", label: "My Work", opens: "work", icon: "briefcase" },
   { id: "now", label: "What I'm doing", opens: "now", icon: "terminal" },
+  { id: "photos", label: "Photos", opens: "photos", icon: "folder" },
   { id: "contact", label: "Contact", opens: "contact", icon: "envelope" },
-  { id: "hire-me", label: "Hire Me!", opens: "hire", icon: "smiley" },
+  { id: "hire-me", label: "Work with me", opens: "hire", icon: "smiley" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -171,8 +252,15 @@ export const windowDefaults: Record<
     x: 170,
     y: 80,
   },
+  photos: {
+    title: "C:\\isyraf\\photos",
+    width: 620,
+    height: 460,
+    x: 220,
+    y: 70,
+  },
   hire: {
-    title: "C:\\isyraf\\hire-me.txt",
+    title: "C:\\isyraf\\work-with-me.txt",
     width: 520,
     height: 440,
     x: 230,

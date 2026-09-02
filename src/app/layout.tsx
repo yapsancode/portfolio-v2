@@ -11,15 +11,18 @@ const vt323 = VT323({
 });
 
 const siteUrl = "https://isyraf-afifi.com";
+const pageTitle =
+  "Isyraf Afifi — software engineer who likes building things";
+const pageDescription =
+  "Isyraf Afifi is a software engineer in Shah Alam, Malaysia who likes building software products, AI experiments, and side projects. This is his personal corner of the internet.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${site.name} — Software Engineer`,
+    default: pageTitle,
     template: `%s | ${site.shortName} Afifi`,
   },
-  description:
-    `${site.name} is a software engineer in Malaysia building full-stack and AI products, and learning the infrastructure underneath them. Explore the portfolio styled as a Windows 98 desktop.`,
+  description: pageDescription,
   keywords: [
     "software engineer",
     "fullstack developer",
@@ -38,17 +41,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: siteUrl,
-    title: `${site.name} — Software Engineer`,
-    description:
-      "Software engineer in Malaysia building full-stack and AI products, and learning the infrastructure underneath them.",
-    siteName: `${site.shortName} Afifi`,
+    title: pageTitle,
+    description: pageDescription,
+    siteName: "Isyraf's Website",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${site.name} — Software Engineer`,
-    description:
-      "Software engineer in Malaysia building full-stack and AI products, learning the infrastructure underneath.",
+    title: pageTitle,
+    description: pageDescription,
     images: ["/opengraph-image"],
   },
   robots: { index: true, follow: true },
@@ -75,8 +76,6 @@ const personJsonLd = {
     "FastAPI",
     "Google Cloud",
     "Docker",
-    "Kubernetes",
-    "Terraform",
     "LangChain",
     "LLM evaluation",
     "Agentic AI",

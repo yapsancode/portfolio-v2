@@ -241,6 +241,24 @@ body {
   border: 1px dotted #fff;
 }
 
+/* Keep the full desktop column above the taskbar on short touch screens. */
+@media (max-height: 600px) and (pointer: coarse) {
+  .desktop-icon {
+    gap: 2px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+
+  .desktop-icon .icon-img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .desktop-icon .icon-label {
+    font-size: 15px;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Starfield (pure CSS, three parallax densities)                      */
 /* ------------------------------------------------------------------ */

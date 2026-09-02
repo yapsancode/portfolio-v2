@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Isyraf Afifi — Software Engineer";
+export const alt =
+  "Isyraf Afifi — software engineer who likes building things";
 
 /* ------------------------------------------------------------------ */
 /* Deterministic star field (stable across builds)                     */
@@ -228,7 +229,7 @@ export default async function Image() {
               whiteSpace: "nowrap",
             }}
           >
-            code → cloud → production
+            products · experiments · side projects
           </div>
         </div>
 

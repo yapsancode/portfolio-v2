@@ -4,7 +4,7 @@ export default function HireWindow() {
   return (
     <article className="p-4 leading-relaxed">
       <p className="mb-1 text-xs uppercase tracking-wide text-neutral-600">
-        Now interviewing for
+        Roles, projects, collaborations
       </p>
       <h1 className="mb-1 text-lg font-bold">{site.hireMe.role}</h1>
       <p className="mb-3 text-sm text-neutral-600">{site.hireMe.pitch}</p>
@@ -32,7 +32,7 @@ export default function HireWindow() {
           href={site.resumeUrl}
           className="text-win-navy underline"
         >
-          See my master résumé
+          View résumé
         </a>
       </p>
     </article>

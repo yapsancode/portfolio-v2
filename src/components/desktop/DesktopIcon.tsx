@@ -9,7 +9,12 @@ import type { ReactNode } from "react";
  * pixel-art look we want — no image assets needed.
  */
 const ICONS: Record<
-  "person" | "briefcase" | "envelope" | "smiley" | "terminal",
+  | "person"
+  | "briefcase"
+  | "envelope"
+  | "smiley"
+  | "terminal"
+  | "folder",
   ReactNode
 > = {
   person: (
@@ -80,6 +85,16 @@ const ICONS: Record<
       <rect x="3" y="9" width="7" height="1" fill="#00ff00" />
       <rect x="11" y="9" width="1" height="1" fill="#00ff00" />
       <rect x="3" y="11" width="5" height="1" fill="#00ff00" />
+    </>
+  ),
+  folder: (
+    <>
+      <rect x="2" y="3" width="6" height="2" fill="#9b6a00" />
+      <rect x="1" y="5" width="14" height="9" fill="#805000" />
+      <rect x="2" y="4" width="6" height="2" fill="#ffd84a" />
+      <rect x="2" y="6" width="13" height="7" fill="#ffd84a" />
+      <rect x="2" y="6" width="13" height="1" fill="#fff0a0" />
+      <rect x="2" y="12" width="13" height="1" fill="#d9a315" />
     </>
   ),
 };

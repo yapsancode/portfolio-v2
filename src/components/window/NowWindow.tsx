@@ -5,8 +5,7 @@ export default function NowWindow() {
     <article className="p-4 leading-relaxed">
       <h1 className="mb-1 text-lg font-bold">What I&apos;m doing now</h1>
       <p className="mb-4 text-sm text-neutral-600">
-        Last updated: Aug 2026. The honest version of &quot;currently
-        exploring opportunities&quot;.
+        Last updated: Sep 2026. A snapshot of what has my attention right now.
       </p>
       <ul className="space-y-3">
         {now.map((item) => (
