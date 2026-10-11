@@ -10,7 +10,7 @@ const vt323 = VT323({
   variable: "--font-vt323",
 });
 
-const siteUrl = "https://isyraf-afifi.com";
+const siteUrl = site.url;
 const pageTitle =
   "Isyraf Afifi — software engineer who likes building things";
 const pageDescription =

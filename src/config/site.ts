@@ -51,6 +51,12 @@ export type Photo = {
 };
 
 export const site = {
+  /**
+   * The site's main address, used for the canonical link, share tags, and
+   * sitemap. Keep the "www": the hosting redirects isyraf-afifi.com to
+   * www.isyraf-afifi.com, and this must match where visitors end up.
+   */
+  url: "https://www.isyraf-afifi.com",
   name: "Isyraf Afifi",
   shortName: "Isyraf",
   role: "Software Engineer",
