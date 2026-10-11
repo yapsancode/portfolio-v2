@@ -25,6 +25,12 @@ body {
   background: #000;
 }
 
+/* VT323 joins "fi" and "fl" into one glyph, which breaks the pixel grid
+   (e.g. "first", "Afifi"). Turn ligatures off everywhere. */
+body {
+  font-variant-ligatures: none;
+}
+
 ::selection {
   background: var(--color-win-navy);
   color: #fff;
@@ -134,19 +140,27 @@ body {
   background: #fff;
   height: 100%;
   overflow: auto;
+}
+
+/* Win98 scrollbars: the window page, plus any inner scroll area (.win-scroll) */
+.win-page,
+.win-scroll {
   scrollbar-width: auto;
   scrollbar-color: var(--color-win-face) var(--color-win-light);
 }
 
 /* Chunky Win98 scrollbars (webkit) */
-.win-page::-webkit-scrollbar {
+.win-page::-webkit-scrollbar,
+.win-scroll::-webkit-scrollbar {
   width: 16px;
   height: 16px;
 }
-.win-page::-webkit-scrollbar-track {
+.win-page::-webkit-scrollbar-track,
+.win-scroll::-webkit-scrollbar-track {
   background: var(--color-win-light);
 }
-.win-page::-webkit-scrollbar-thumb {
+.win-page::-webkit-scrollbar-thumb,
+.win-scroll::-webkit-scrollbar-thumb {
   background: var(--color-win-face);
   box-shadow:
     inset -1px -1px var(--color-win-dark),
@@ -154,8 +168,86 @@ body {
     inset -2px -2px var(--color-win-shadow),
     inset 2px 2px var(--color-win-light);
 }
-.win-page::-webkit-scrollbar-button {
+.win-page::-webkit-scrollbar-button,
+.win-scroll::-webkit-scrollbar-button {
   display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tabs (property-sheet style, used by the About window)               */
+/* ------------------------------------------------------------------ */
+
+.win-tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  padding: 0 2px;
+}
+
+.win-tab {
+  position: relative;
+  margin-top: 2px;
+  padding: 3px 10px 4px;
+  background: var(--color-win-face);
+  border: none;
+  border-radius: 3px 3px 0 0;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow:
+    inset 1px 1px var(--color-win-white),
+    inset -1px 0 var(--color-win-dark),
+    inset 2px 2px var(--color-win-light),
+    inset -2px 0 var(--color-win-shadow);
+}
+
+/* The selected tab is taller and covers the panel's top edge, so the two
+   read as one raised surface. */
+.win-tab.selected {
+  z-index: 1;
+  margin: 0 -2px -2px;
+  padding: 4px 12px 6px;
+}
+
+.win-tab:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -5px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Terminal (the "What I'm doing" window)                              */
+/* ------------------------------------------------------------------ */
+
+.terminal {
+  background: #000;
+  color: #00e000;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.terminal-dim {
+  color: #00a800;
+}
+
+.terminal-bright {
+  color: #b6ffb6;
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 0.9em;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: terminal-blink 1.1s steps(1) infinite;
+}
+
+@keyframes terminal-blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -192,6 +284,268 @@ body {
     inset 1px 1px var(--color-win-dark),
     inset -2px -2px var(--color-win-light),
     inset 2px 2px var(--color-win-shadow);
+}
+
+/* ------------------------------------------------------------------ */
+/* Start menu                                                          */
+/* ------------------------------------------------------------------ */
+
+.start-menu {
+  display: flex;
+  min-width: 220px;
+  padding: 3px;
+  background: var(--color-win-face);
+}
+
+/* The vertical band on the left, reading bottom to top. */
+.start-menu-strip {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 28px;
+  margin-right: 2px;
+  padding-bottom: 6px;
+  background: linear-gradient(
+    0deg,
+    var(--color-win-navy),
+    var(--color-win-blue)
+  );
+}
+
+.start-menu-strip > span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  line-height: 1;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.start-menu-strip-98 {
+  color: #c9d4ff;
+}
+
+.start-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 3px 18px 3px 6px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.start-menu-item:hover,
+.start-menu-item:focus-visible {
+  background: var(--color-win-navy);
+  color: #fff;
+  outline: none;
+}
+
+.start-menu-separator {
+  height: 2px;
+  margin: 3px 2px;
+  box-shadow:
+    inset 0 1px var(--color-win-shadow),
+    inset 0 -1px var(--color-win-white);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sliders (music player)                                              */
+/* ------------------------------------------------------------------ */
+
+.win-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.win-slider:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.win-slider:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: 1px;
+}
+
+/* Sunken groove */
+.win-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--color-win-light);
+  box-shadow:
+    inset 1px 1px var(--color-win-shadow),
+    inset -1px -1px var(--color-win-white);
+}
+.win-slider::-moz-range-track {
+  height: 4px;
+  background: var(--color-win-light);
+  box-shadow:
+    inset 1px 1px var(--color-win-shadow),
+    inset -1px -1px var(--color-win-white);
+}
+
+/* Raised thumb */
+.win-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 20px;
+  margin-top: -8px;
+  background: var(--color-win-face);
+  box-shadow:
+    inset -1px -1px var(--color-win-dark),
+    inset 1px 1px var(--color-win-white),
+    inset -2px -2px var(--color-win-shadow),
+    inset 2px 2px var(--color-win-light);
+}
+.win-slider::-moz-range-thumb {
+  width: 11px;
+  height: 20px;
+  border: none;
+  border-radius: 0;
+  background: var(--color-win-face);
+  box-shadow:
+    inset -1px -1px var(--color-win-dark),
+    inset 1px 1px var(--color-win-white),
+    inset -2px -2px var(--color-win-shadow),
+    inset 2px 2px var(--color-win-light);
+}
+
+/* ------------------------------------------------------------------ */
+/* Music player display                                                */
+/* ------------------------------------------------------------------ */
+
+.player-lcd {
+  padding: 6px 8px;
+  background: #000;
+  color: #00e000;
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.player-title {
+  margin-top: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* While playing, the track name scrolls across like a ticker. */
+.player-marquee {
+  display: inline-block;
+  padding-left: 100%;
+  animation: player-marquee 14s linear infinite;
+}
+
+@keyframes player-marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Boot screen + shut down screen                                      */
+/* ------------------------------------------------------------------ */
+
+/* Shows from the first paint, then fades out by itself. */
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-pixel);
+  animation: boot-out 250ms ease-in 1400ms forwards;
+}
+
+@keyframes boot-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.boot-title {
+  margin-top: 14px;
+  font-size: 56px;
+  line-height: 1;
+}
+
+.boot-title-98 {
+  color: #c9d4ff;
+}
+
+.boot-bar {
+  width: 200px;
+  height: 16px;
+  margin-top: 26px;
+  padding: 2px;
+  overflow: hidden;
+  border: 1px solid var(--color-win-shadow);
+}
+
+.boot-bar::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-win-blue) 0 12px,
+    transparent 12px 16px
+  );
+  animation: boot-slide 900ms linear infinite;
+}
+
+@keyframes boot-slide {
+  from {
+    transform: translateX(-48px);
+  }
+  to {
+    transform: translateX(200px);
+  }
+}
+
+.boot-caption {
+  margin-top: 10px;
+  font-size: 18px;
+  color: var(--color-win-shadow);
+}
+
+.shutdown-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-content: center;
+  gap: 14px;
+  padding: 24px;
+  background: #000;
+  border: none;
+  color: #ff9d2e;
+  font-family: var(--font-pixel);
+  font-size: clamp(24px, 4vw, 38px);
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.shutdown-hint {
+  font-size: 18px;
+  color: var(--color-win-shadow);
 }
 
 /* ------------------------------------------------------------------ */
@@ -257,6 +611,16 @@ body {
   .desktop-icon .icon-label {
     font-size: 15px;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Wallpaper sculpture                                                 */
+/* ------------------------------------------------------------------ */
+
+/* Fade the cut-off torso into the taskbar instead of ending on a hard edge. */
+.wallpaper-statue {
+  -webkit-mask-image: linear-gradient(to top, transparent, #000 16%);
+  mask-image: linear-gradient(to top, transparent, #000 16%);
 }
 
 /* ------------------------------------------------------------------ */
@@ -427,5 +791,16 @@ body {
   }
   .window-pop {
     animation: none;
+  }
+  .terminal-cursor {
+    animation: none;
+  }
+  .player-marquee {
+    padding-left: 0;
+    animation: none;
+  }
+  /* No start-up animation at all: go straight to the desktop. */
+  .boot-screen {
+    display: none;
   }
 }

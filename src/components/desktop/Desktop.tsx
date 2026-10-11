@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useReducer, useSyncExternalStore } from "react";
+import { useEffect, useReducer, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { site, desktopIcons, windowDefaults } from "@/config/site";
 import type { WindowId } from "@/config/site";
 import Window from "@/components/window/Window";
 import { windowRegistry } from "@/components/window/windowRegistry";
+import BootScreen from "./BootScreen";
 import DesktopIcon from "./DesktopIcon";
+import { MusicProvider } from "./music";
 import Taskbar, { TASKBAR_HEIGHT } from "./Taskbar";
 
 /* ------------------------------------------------------------------ */
@@ -214,9 +216,11 @@ function useIsMobile(): boolean {
 /* Desktop                                                             */
 /* ------------------------------------------------------------------ */
 
-export default function Desktop() {
+function DesktopRoot() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const isMobile = useIsMobile();
+  // "Shut Down..." in the Start menu: a full-screen goodbye until restart.
+  const [shutDown, setShutDown] = useState(false);
 
   const openWindow = (id: WindowId) => {
     if (isMobile) {
@@ -252,6 +256,7 @@ export default function Desktop() {
       <Window
         key={win.id}
         title={win.title}
+        icon={windowDefaults[win.id].icon}
         x={win.x}
         y={win.y}
         width={win.width}
@@ -276,24 +281,47 @@ export default function Desktop() {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-black">
+    // overflow-clip, not overflow-hidden: the star layers are larger than the
+    // screen, and a "hidden" box can still be scrolled by keyboard focus or
+    // scrollIntoView, which would shift the whole desktop with no way back.
+    <div className="fixed inset-0 overflow-clip bg-black">
+      <BootScreen />
+
+      {shutDown && (
+        <button
+          type="button"
+          autoFocus
+          className="shutdown-screen"
+          onClick={() => window.location.reload()}
+        >
+          <span>It&apos;s now safe to turn off your computer.</span>
+          <span className="shutdown-hint">Click or press Enter to restart.</span>
+        </button>
+      )}
+
       <div className="nebula" aria-hidden="true" />
       <div className="stars" aria-hidden="true" />
       <div className="shooting-star" aria-hidden="true" />
 
-      {/* Centered image (decorative, behind everything else) */}
+      {/* Wallpaper sculpture (decorative, behind everything else): centred,
+          standing on the taskbar. */}
       <div
-        className="pointer-events-none absolute inset-0 z-0 grid place-items-center"
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 flex items-end justify-center"
+        style={{ bottom: TASKBAR_HEIGHT }}
         aria-hidden="true"
       >
-        <Image
-          src={site.centerImage.src}
-          alt={site.centerImage.alt}
-          width={736}
-          height={1472}
-          priority
-          className="max-h-[75vh] w-auto object-contain sm:max-h-[92vh]"
-        />
+        <div className="wallpaper-statue relative aspect-[736/800] h-[44vh] sm:h-[58vh]">
+          {/* The file is 1:2 with the figure in its lower half; cover +
+              bottom crops away the empty top. */}
+          <Image
+            src={site.wallpaperImage.src}
+            alt={site.wallpaperImage.alt}
+            fill
+            sizes="(max-width: 639px) 85vw, 40vw"
+            preload
+            className="object-cover object-bottom"
+          />
+        </div>
       </div>
 
       {/* Icon column */}
@@ -328,12 +356,24 @@ export default function Desktop() {
         windows={state.windows.map((w) => ({
           id: w.id,
           title: w.title,
+          icon: windowDefaults[w.id].icon,
           minimized: w.minimized,
           active: state.activeId === w.id,
         }))}
         onTaskClick={(id) => dispatch({ type: "TASK_CLICK", id })}
         onOpenIcon={openWindow}
+        onShutDown={() => setShutDown(true)}
       />
     </div>
+  );
+}
+
+export default function Desktop() {
+  // The music provider holds the one audio element, so the track keeps
+  // playing no matter which windows are open.
+  return (
+    <MusicProvider>
+      <DesktopRoot />
+    </MusicProvider>
   );
 }

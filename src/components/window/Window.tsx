@@ -1,10 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { Rnd } from "react-rnd";
+import PixelIcon, { type PixelIconName } from "@/components/desktop/PixelIcon";
 
 export type WindowProps = {
   title: string;
+  /** Small icon shown at the left of the title bar. */
+  icon: PixelIconName;
   x: number;
   y: number;
   width: number;
@@ -54,6 +57,7 @@ function CloseGlyph() {
 
 export default function Window({
   title,
+  icon,
   x,
   y,
   width,
@@ -71,8 +75,18 @@ export default function Window({
   onResize,
   children,
 }: WindowProps) {
+  // Double-clicking the title bar maximizes / restores, like the real thing.
+  const onTitleDoubleClick = (e: MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest(".win-titlebtn")) return;
+    onToggleMaximize();
+  };
+
   const titlebar = (
-    <div className={`win-titlebar${active ? "" : " inactive"}`}>
+    <div
+      className={`win-titlebar${active ? "" : " inactive"}`}
+      onDoubleClick={isMobile ? undefined : onTitleDoubleClick}
+    >
+      <PixelIcon name={icon} className="shrink-0" />
       <span className="title">{title}</span>
       {!isMobile && (
         <>

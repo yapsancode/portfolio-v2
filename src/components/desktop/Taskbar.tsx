@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { WindowId } from "@/config/site";
-import { desktopIcons } from "@/config/site";
-import SoundToggle from "./SoundToggle";
+import MusicTray from "./MusicTray";
+import PixelIcon, { type PixelIconName } from "./PixelIcon";
+import StartMenu from "./StartMenu";
 
 export const TASKBAR_HEIGHT = 36;
 
 export type TaskbarWindow = {
   id: WindowId;
   title: string;
+  icon: PixelIconName;
   minimized: boolean;
   active: boolean;
 };
@@ -18,19 +20,8 @@ export type TaskbarProps = {
   windows: TaskbarWindow[];
   onTaskClick: (id: WindowId) => void;
   onOpenIcon: (id: WindowId) => void;
+  onShutDown: () => void;
 };
-
-/** Little four-pane logo for the Start button, 12x12 pixel style. */
-function StartGlyph() {
-  return (
-    <svg viewBox="0 0 12 12" width="14" height="14" shapeRendering="crispEdges" aria-hidden="true">
-      <rect x="1" y="2" width="4" height="4" fill="#e04040" />
-      <rect x="6" y="1" width="4" height="4" fill="#40c040" />
-      <rect x="1" y="7" width="4" height="4" fill="#4040e0" />
-      <rect x="6" y="6" width="4" height="4" fill="#ffd800" />
-    </svg>
-  );
-}
 
 function Clock() {
   const [time, setTime] = useState("");
@@ -48,15 +39,17 @@ function Clock() {
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <div className="bevel-well flex h-full items-center px-3 font-pixel text-base">
-      {time}
-    </div>
-  );
+  return <span className="px-2 font-pixel text-base">{time}</span>;
 }
 
-export default function Taskbar({ windows, onTaskClick, onOpenIcon }: TaskbarProps) {
+export default function Taskbar({
+  windows,
+  onTaskClick,
+  onOpenIcon,
+  onShutDown,
+}: TaskbarProps) {
   const [startOpen, setStartOpen] = useState(false);
+  const startButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div
@@ -64,47 +57,25 @@ export default function Taskbar({ windows, onTaskClick, onOpenIcon }: TaskbarPro
       style={{ height: TASKBAR_HEIGHT }}
     >
       {startOpen && (
-        <>
-          {/* click-away layer */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setStartOpen(false)}
-            aria-hidden="true"
-          />
-          <div
-            className="bevel-out absolute bottom-full left-1 z-50 mb-1 w-52 bg-win-face p-1"
-            role="menu"
-            aria-label="Start menu"
-          >
-            <div className="win-titlebar mb-1">
-              <span className="title">Isyraf 98</span>
-            </div>
-            {desktopIcons.map((icon) => (
-              <button
-                key={icon.id}
-                type="button"
-                role="menuitem"
-                className="flex w-full items-center px-2 py-1.5 text-left font-pixel text-base hover:bg-win-navy hover:text-white"
-                onClick={() => {
-                  setStartOpen(false);
-                  onOpenIcon(icon.opens);
-                }}
-              >
-                {icon.label}
-              </button>
-            ))}
-          </div>
-        </>
+        <StartMenu
+          onClose={(restoreFocus) => {
+            setStartOpen(false);
+            if (restoreFocus) startButtonRef.current?.focus();
+          }}
+          onOpenWindow={onOpenIcon}
+          onShutDown={onShutDown}
+        />
       )}
 
       <button
+        ref={startButtonRef}
         type="button"
         className={`taskbar-btn font-bold${startOpen ? " active" : ""}`}
         aria-haspopup="menu"
         aria-expanded={startOpen}
         onClick={() => setStartOpen((open) => !open)}
       >
-        <StartGlyph />
+        <PixelIcon name="logo" />
         Start
       </button>
 
@@ -116,14 +87,19 @@ export default function Taskbar({ windows, onTaskClick, onOpenIcon }: TaskbarPro
           type="button"
           className={`taskbar-btn min-w-0 flex-1 overflow-hidden${win.active && !win.minimized ? " active" : ""}`}
           style={{ maxWidth: 180 }}
+          title={win.title}
           onClick={() => onTaskClick(win.id)}
         >
+          <PixelIcon name={win.icon} className="shrink-0" />
           <span className="truncate">{win.title}</span>
         </button>
       ))}
 
-      <SoundToggle />
-      <Clock />
+      {/* Tray: music + clock */}
+      <div className="bevel-well ml-auto flex h-full shrink-0 items-center">
+        <MusicTray onOpen={() => onOpenIcon("music")} />
+        <Clock />
+      </div>
     </div>
   );
 }

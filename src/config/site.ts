@@ -6,24 +6,35 @@
  * touch component logic to update content.
  */
 
+import type { PixelIconName } from "@/components/desktop/PixelIcon";
+
 export type WindowId =
   | "about"
   | "work"
   | "contact"
   | "now"
   | "photos"
-  | "hire";
+  | "hire"
+  | "music";
 
 export type DesktopIconId = WindowId | "hire-me";
 
 export type Project = {
+  /** Short id — the "file name" in the Work folder and its address bar. */
+  slug: string;
   name: string;
   year: string;
-  /** One-line impact description — lead with what it achieved, not the tech. */
+  /** One short line shown in the Work folder list. */
+  summary: string;
+  /** Impact description — lead with what it achieved, not the tech. */
   impact: string;
-  /** Optional origin story — how the project started. */
-  origin?: string;
+  /** Optional second paragraph — how it started, or my part in it. */
+  story?: string;
   stack: string[];
+  /** Screenshot under public/work (16:10). */
+  image?: { src: string; alt: string };
+  /** For projects with no screen to show: a few plain facts, drawn as a console. */
+  console?: string[];
   liveUrl?: string;
   codeUrl?: string;
 };
@@ -62,8 +73,32 @@ export const site = {
     "Most of what I do comes back to the same thing: I like taking an idea, building it, and getting it in front of real people. Sometimes that's software, sometimes it's an experiment, and sometimes it's just something I wanted to try. This hand-built Windows 98 desktop is one of those things.",
   ],
 
-  /** Music playing while you read this. */
+  /** The "System Properties" card on the General tab of the About window. */
+  profile: {
+    photo: {
+      src: "/images/about-portrait.webp",
+      alt: "Isyraf sitting in a cafe, looking at his phone with a drink in his hand.",
+    },
+    specs: [
+      { label: "System", lines: ["Isyraf 98", "Inspired by Windows 98"] },
+      {
+        label: "Registered to",
+        lines: ["Isyraf Afifi", "Software Engineer", "Shah Alam, Malaysia"],
+      },
+      {
+        label: "Running",
+        lines: [
+          "Next.js, React, TypeScript",
+          "Python, FastAPI, PostgreSQL",
+          "Docker, Google Cloud",
+        ],
+      },
+    ],
+  },
+
+  /** Music playing while you read this — the track in the music player. */
   music: "Childish Gambino — L.E.S. (instrumental)",
+  musicSrc: "/sounds/les-instrumental.mp3",
 
   /** Design credit line shown at the bottom of the About window. */
   inspiration: {
@@ -87,24 +122,97 @@ export const site = {
     cta: "For roles, projects, or collaborations, email me. Recruiters can grab the résumé too.",
   },
 
-  /** The centered desktop image (decorative). */
-  centerImage: {
+  /** The desktop wallpaper sculpture (decorative, bottom-right). */
+  wallpaperImage: {
     src: "/images/greek-male-sculpture.png",
     alt: "",
   },
 } as const;
 
+/** Projects in the Work folder, in the order they are listed. */
 export const projects: Project[] = [
   {
+    slug: "kerjakit",
     name: "KerjaKit",
     year: "2026",
+    summary: "AI resume tailor that never invents. A live product with real users.",
     impact:
-      "AI resume tailor that never invents: paste a job posting, get an honest match report and an ATS-safe one-page PDF, with in-production checks that block any fabricated skill or number. 28 real users, 34 GitHub stars.",
-    origin:
+      "AI resume tailor that never invents: paste a job posting, get an honest match report and an ATS-safe one-page PDF, with in-production checks that block any fabricated skill or number. 28 real users, 36 GitHub stars.",
+    story:
       "Started as an open-source CLI that tailored résumés — great, but it needed git, Claude Code, and LaTeX, so only technical people could use it. A Threads post hit 3,000 likes and people kept asking for a web version, so I built one.",
     stack: ["Next.js 16", "React 19", "Supabase", "Tailwind v4", "Typst", "Cloud Run", "DeepSeek"],
+    image: {
+      src: "/work/kerjakit.webp",
+      alt: "KerjaKit's Job Radar page: a list of job matches, each with a fit score, shown with sample data.",
+    },
     liveUrl: "https://kerjakit.com",
     codeUrl: "https://github.com/yapsancode/job-kit",
+  },
+  {
+    slug: "baymax",
+    name: "Baymax",
+    year: "2026",
+    summary: "AI guide for Google Cloud deployments. 1st place at Gamuda AI Academy.",
+    impact:
+      "Chrome extension that walks developers through Google Cloud deployments by highlighting the exact button to click on the live Console. Won 1st place at the Gamuda AI Academy Capstone Demo Day.",
+    story:
+      "Built with a six-person team. I led the monorepo structure, tooling, and Git workflows, and coached my teammates on pull requests.",
+    stack: ["React 19", "FastAPI", "LangChain", "Gemini API", "Supabase", "Chrome Extension (MV3)", "Cloud Run"],
+    image: {
+      src: "/work/baymax.webp",
+      alt: "Title slide of the Baymax presentation: Building a Chrome Extension for Real-Time Website Guidance, by Team Penta.",
+    },
+    codeUrl: "https://github.com/yapsancode/baymax",
+  },
+  {
+    slug: "klinik-mekar",
+    name: "Klinik Mekar",
+    year: "2025 – now",
+    summary: "Clinic website with online booking, for a paying client.",
+    impact:
+      "Live website for a 24-hour clinic, built and maintained for a paying client. Patients can book an appointment online, read articles, see the clinic's Google Reviews, and reach it on WhatsApp.",
+    story:
+      "Work began in October 2025 and I still maintain it. That includes the SEO work: sitemap, structured data, and page titles.",
+    stack: ["Next.js 15", "React 19", "Tailwind v4", "Framer Motion", "Vercel"],
+    image: {
+      src: "/work/klinik-mekar.webp",
+      alt: "Klinik Mekar home page, with Book Appointment, Find Doctors, and Emergency buttons.",
+    },
+    liveUrl: "https://klinikmekar.com",
+  },
+  {
+    slug: "job-radar",
+    name: "job-radar",
+    year: "2026",
+    summary: "Finds tech jobs, scores them with AI, and sends the best to Telegram.",
+    impact:
+      "Personal automation that finds Malaysian tech jobs, scores each one against my résumé with an LLM, and sends the best ones to my Telegram three times a day.",
+    story:
+      "It reads more than one job board and removes duplicates. Jobs with a borderline score get a second, full read of the posting before they are kept or dropped.",
+    stack: ["Python", "DeepSeek", "Telegram Bot API", "Pydantic", "pytest"],
+    console: [
+      "53 jobs found",
+      "30 kept by location",
+      "3 scored 60 or more",
+      "digest sent at 09:00, 13:00, 19:00",
+    ],
+  },
+  {
+    slug: "mirror-bot",
+    name: "Tokyo Paradise Mirror Bot",
+    year: "2026",
+    summary: "Copies WhatsApp posts into a Telegram group. In testing.",
+    impact:
+      "Bot that listens to a team's posts in a WhatsApp Community and re-posts them into the matching topics of a Telegram group of about 1,800 members, so the team only has to post in one place. Currently in testing.",
+    story:
+      "It only listens on WhatsApp and never sends. Direct messages, statuses, and groups that are not on the route list are dropped before anything is saved.",
+    stack: ["Node.js 22", "TypeScript", "Baileys", "grammY", "SQLite", "Vitest"],
+    console: [
+      "WhatsApp Community (listen only)",
+      "-> SQLite queue, one job at a time",
+      "-> Telegram topics, ~1,800 members",
+      "status: in testing",
+    ],
   },
 ];
 
@@ -199,14 +307,8 @@ export const desktopIcons: {
   label: string;
   /** Which window this icon opens. */
   opens: WindowId;
-  /** Key into the pixel-icon set in DesktopIcon.tsx */
-  icon:
-    | "person"
-    | "briefcase"
-    | "envelope"
-    | "smiley"
-    | "terminal"
-    | "folder";
+  /** Key into the pixel-icon set in PixelIcon.tsx */
+  icon: PixelIconName;
 }[] = [
   { id: "about", label: "About Me", opens: "about", icon: "person" },
   { id: "work", label: "My Work", opens: "work", icon: "briefcase" },
@@ -217,36 +319,49 @@ export const desktopIcons: {
 ];
 
 /* ------------------------------------------------------------------ */
-/* Window registry defaults (title, opening size/position)             */
+/* Window registry defaults (title, icon, opening size/position)       */
 /* ------------------------------------------------------------------ */
 
 export const windowDefaults: Record<
   WindowId,
-  { title: string; width: number; height: number; x: number; y: number }
+  {
+    title: string;
+    /** Small icon in the title bar and on the taskbar button. */
+    icon: PixelIconName;
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  }
 > = {
   about: {
     title: "C:\\isyraf\\about.txt",
-    width: 500,
-    height: 380,
-    x: 140,
-    y: 60,
+    icon: "person",
+    // Narrow and to the left, so it opens beside the sculpture's head.
+    width: 460,
+    height: 370,
+    x: 110,
+    y: 50,
   },
   work: {
-    title: "C:\\isyraf\\work.txt",
-    width: 580,
-    height: 440,
+    title: "C:\\isyraf\\work",
+    icon: "briefcase",
+    width: 620,
+    height: 540,
     x: 200,
-    y: 90,
+    y: 60,
   },
   contact: {
     title: "C:\\isyraf\\contact.txt",
-    width: 460,
-    height: 340,
+    icon: "envelope",
+    width: 480,
+    height: 420,
     x: 260,
-    y: 130,
+    y: 110,
   },
   now: {
     title: "C:\\isyraf\\now.txt",
+    icon: "terminal",
     width: 520,
     height: 420,
     x: 170,
@@ -254,6 +369,7 @@ export const windowDefaults: Record<
   },
   photos: {
     title: "C:\\isyraf\\photos",
+    icon: "folder",
     width: 620,
     height: 460,
     x: 220,
@@ -261,9 +377,19 @@ export const windowDefaults: Record<
   },
   hire: {
     title: "C:\\isyraf\\work-with-me.txt",
+    icon: "smiley",
     width: 520,
     height: 440,
     x: 230,
     y: 120,
+  },
+  // Opened from the taskbar tray and the Start menu; it has no desktop icon.
+  music: {
+    title: "C:\\isyraf\\player.exe",
+    icon: "cd",
+    width: 340,
+    height: 240,
+    x: 900,
+    y: 400,
   },
 };
