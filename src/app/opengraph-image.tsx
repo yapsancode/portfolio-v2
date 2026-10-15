@@ -138,7 +138,9 @@ export default async function Image() {
           }}
         />
 
-        {/* Marble sculpture — hero, cropped upper body */}
+        {/* Marble sculpture — hero, cropped upper body. The source PNG's top
+            half is empty (it stands at the bottom of the desktop wallpaper),
+            so crop from the bottom to keep the head and shoulders in frame. */}
         <div
           style={{
             position: "absolute",
@@ -159,7 +161,7 @@ export default async function Image() {
               width: 540,
               height: 630,
               objectFit: "cover",
-              objectPosition: "top center",
+              objectPosition: "bottom center",
               opacity: 0.96,
             }}
           />
