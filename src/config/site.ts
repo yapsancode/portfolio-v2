@@ -60,7 +60,7 @@ export const site = {
   name: "Isyraf Afifi",
   shortName: "Isyraf",
   role: "Software Engineer",
-  tagline: "I like building things.",
+  tagline: "I build things.",
 
   email: "muhammadisyrafafifi@gmail.com",
   resumeUrl: "/Muhammad-Isyraf-Resume.pdf",
@@ -73,10 +73,11 @@ export const site = {
   /** Short, plain-language blurb for the About window. */
   about: [
     "I'm Isyraf. I build things.",
-    "Software, mostly. A platform for Malaysia's largest carmaker. Products of my own, like KerjaKit. Some with AI, some without.",
-    "When I'm not building, I'm in Tokyo, looking for things worth bringing home.",
-    "Right now I'm learning what runs underneath it all. I like to know how things work before I trust them.",
-    "This desktop? I built it because I wanted to.",
+    "Software, mostly. A platform for Malaysia's largest carmaker. KerjaKit, which helps people decide which jobs are worth their time.",
+    "I run a small studio with a partner. We build websites for businesses that need to be found.",
+    "Some weeks I'm in Tokyo, finding things people here can't get.",
+    "Lately I've been learning what sits underneath the code. I don't trust what I don't understand.",
+    "This desktop wasn't necessary. I built it anyway.",
     "If you have something worth building, you know where to find me.",
   ],
 
@@ -95,9 +96,9 @@ export const site = {
       {
         label: "Running",
         lines: [
-          "Next.js, React, TypeScript",
-          "Python, FastAPI, PostgreSQL",
-          "Docker, Google Cloud",
+          "TypeScript, Next.js, Flutter",
+          "Python, FastAPI, LangChain",
+          "GCP, Docker, Terraform",
         ],
       },
     ],
@@ -117,16 +118,15 @@ export const site = {
   hireMe: {
     role: "Work with me",
     pitch:
-      "I spend most of my time building software, experimenting with ideas, and figuring out how to get them running for real people. If you're working on something interesting and think I could be useful, feel free to get in touch.",
+      "I find the real problem, build the thing properly, and see it through to real users. If that's what you need, let's talk.",
     wins: [
-      "Built a production Flutter Web platform for Malaysia's largest carmaker, replacing legacy screens",
-      "Built and shipped KerjaKit end to end — from an open-source CLI to a live AI product used by real people",
-      "Took 1st place at the Gamuda AI Academy demo day, where I owned the codebase architecture and Git workflows",
-      "Currently going deeper on Linux, Docker, CI/CD, and cloud infrastructure so I can own more of the path to production",
+      "Shipped a production Flutter Web platform for Malaysia's largest carmaker, retiring its legacy screens.",
+      "Built KerjaKit end to end: an open-source CLI with 35+ GitHub stars, now a paid AI product in English and Malay with 40+ registered users.",
+      "Co-founded IIDev Studio. We build websites for Malaysian businesses, including a 24-hour clinic live since 2025.",
+      "1st place, Gamuda AI Academy × Google Cloud demo day, with Baymax: an AI Chrome extension that guides people through Google Cloud. I owned the architecture and the Git workflow.",
     ],
-    note:
-      "I care about understanding the problem, building the thing properly, and getting it running for real people.",
-    cta: "For roles, projects, or collaborations, email me. Recruiters can grab the résumé too.",
+    note: "Working toward the Google Cloud Associate Cloud Engineer cert, and going deeper into Linux, Docker and CI/CD.",
+    cta: "Roles, projects, collaborations: email me. The résumé is here if you need it.",
   },
 
   /** The desktop wallpaper sculpture (decorative, bottom-right). */
@@ -142,12 +142,21 @@ export const projects: Project[] = [
     slug: "kerjakit",
     name: "KerjaKit",
     year: "2026",
-    summary: "AI resume tailor that never invents. A live product with real users.",
+    summary:
+      "AI resume tailor that never invents. A live product with real users.",
     impact:
       "AI resume tailor that never invents: paste a job posting, get an honest match report and an ATS-safe one-page PDF, with in-production checks that block any fabricated skill or number. 28 real users, 36 GitHub stars.",
     story:
       "Started as an open-source CLI that tailored résumés — great, but it needed git, Claude Code, and LaTeX, so only technical people could use it. A Threads post hit 3,000 likes and people kept asking for a web version, so I built one.",
-    stack: ["Next.js 16", "React 19", "Supabase", "Tailwind v4", "Typst", "Cloud Run", "DeepSeek"],
+    stack: [
+      "Next.js 16",
+      "React 19",
+      "Supabase",
+      "Tailwind v4",
+      "Typst",
+      "Cloud Run",
+      "DeepSeek",
+    ],
     image: {
       src: "/work/kerjakit.webp",
       alt: "KerjaKit's Job Radar page: a list of job matches, each with a fit score, shown with sample data.",
@@ -159,12 +168,21 @@ export const projects: Project[] = [
     slug: "baymax",
     name: "Baymax",
     year: "2026",
-    summary: "AI guide for Google Cloud deployments. 1st place at Gamuda AI Academy.",
+    summary:
+      "AI guide for Google Cloud deployments. 1st place at Gamuda AI Academy.",
     impact:
       "Chrome extension that walks developers through Google Cloud deployments by highlighting the exact button to click on the live Console. Won 1st place at the Gamuda AI Academy Capstone Demo Day.",
     story:
       "Built with a six-person team. I led the monorepo structure, tooling, and Git workflows, and coached my teammates on pull requests.",
-    stack: ["React 19", "FastAPI", "LangChain", "Gemini API", "Supabase", "Chrome Extension (MV3)", "Cloud Run"],
+    stack: [
+      "React 19",
+      "FastAPI",
+      "LangChain",
+      "Gemini API",
+      "Supabase",
+      "Chrome Extension (MV3)",
+      "Cloud Run",
+    ],
     image: {
       src: "/work/baymax.webp",
       alt: "Title slide of the Baymax presentation: Building a Chrome Extension for Real-Time Website Guidance, by Team Penta.",
@@ -191,7 +209,8 @@ export const projects: Project[] = [
     slug: "job-radar",
     name: "job-radar",
     year: "2026",
-    summary: "Finds tech jobs, scores them with AI, and sends the best to Telegram.",
+    summary:
+      "Finds tech jobs, scores them with AI, and sends the best to Telegram.",
     impact:
       "Personal automation that finds Malaysian tech jobs, scores each one against my résumé with an LLM, and sends the best ones to my Telegram three times a day.",
     story:
@@ -213,7 +232,14 @@ export const projects: Project[] = [
       "Bot that listens to a team's posts in a WhatsApp Community and re-posts them into the matching topics of a Telegram group of about 1,800 members, so the team only has to post in one place. Currently in testing.",
     story:
       "It only listens on WhatsApp and never sends. Direct messages, statuses, and groups that are not on the route list are dropped before anything is saved.",
-    stack: ["Node.js 22", "TypeScript", "Baileys", "grammY", "SQLite", "Vitest"],
+    stack: [
+      "Node.js 22",
+      "TypeScript",
+      "Baileys",
+      "grammY",
+      "SQLite",
+      "Vitest",
+    ],
     console: [
       "WhatsApp Community (listen only)",
       "-> SQLite queue, one job at a time",
