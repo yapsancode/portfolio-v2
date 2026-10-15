@@ -5,7 +5,7 @@ import { join } from "node:path";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt =
-  "Isyraf Afifi — software engineer who likes building things";
+  "Isyraf Afifi - Software Engineer in Malaysia";
 
 /* ------------------------------------------------------------------ */
 /* Deterministic star field (stable across builds)                     */

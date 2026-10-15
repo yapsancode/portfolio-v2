@@ -12,9 +12,9 @@ const vt323 = VT323({
 
 const siteUrl = site.url;
 const pageTitle =
-  "Isyraf Afifi — software engineer who likes building things";
+  "Isyraf Afifi - Software Engineer in Malaysia";
 const pageDescription =
-  "Isyraf Afifi is a software engineer in Shah Alam, Malaysia who likes building software products, AI experiments, and side projects. This is his personal corner of the internet.";
+  "Isyraf Afifi is a software engineer in Shah Alam, Malaysia. Builder of KerjaKit and co-founder of IIDev Studio. This is his personal corner of the internet.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
