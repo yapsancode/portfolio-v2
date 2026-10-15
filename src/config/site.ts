@@ -72,11 +72,12 @@ export const site = {
 
   /** Short, plain-language blurb for the About window. */
   about: [
-    "Hey, I'm Isyraf — a software engineer from Shah Alam who likes building things. That includes software products, AI experiments, side projects, and occasionally things that have nothing to do with code.",
-    "I started on the application side: Flutter and web development, with Laravel, Next.js, databases, and cloud along the way. That included a production Flutter Web platform for Malaysia's biggest carmaker, replacing some legacy screens people were glad to see go.",
-    "Then I got pulled into AI and started building my own products outside of work — LLM APIs, RAG, agents, Python/FastAPI, Docker, PostgreSQL, Google Cloud. KerjaKit and a bunch of smaller experiments came out of that.",
-    "Shipping those projects made me more curious about everything underneath them. Right now I'm going deeper on Linux, networking, Docker, cloud infrastructure, and CI/CD so I can understand the whole path from an idea to something reliable in production.",
-    "Most of what I do comes back to the same thing: I like taking an idea, building it, and getting it in front of real people. Sometimes that's software, sometimes it's an experiment, and sometimes it's just something I wanted to try. This hand-built Windows 98 desktop is one of those things.",
+    "I'm Isyraf. I build things.",
+    "Software, mostly. A platform for Malaysia's largest carmaker. Products of my own, like KerjaKit. Some with AI, some without.",
+    "When I'm not building, I'm in Tokyo, looking for things worth bringing home.",
+    "Right now I'm learning what runs underneath it all. I like to know how things work before I trust them.",
+    "This desktop? I built it because I wanted to.",
+    "If you have something worth building, you know where to find me.",
   ],
 
   /** The "System Properties" card on the General tab of the About window. */
