@@ -7,7 +7,7 @@ import NowWindow from "./NowWindow";
 import HireWindow from "./HireWindow";
 import PhotosWindow from "./PhotosWindow";
 import MusicWindow from "./MusicWindow";
-import CongkakWindow from "./CongkakWindow";
+import OlympusWindow from "./OlympusWindow";
 
 /**
  * Maps a window id to the component rendered inside the window frame.
@@ -22,5 +22,5 @@ export const windowRegistry: Record<WindowId, ComponentType> = {
   photos: PhotosWindow,
   hire: HireWindow,
   music: MusicWindow,
-  congkak: CongkakWindow,
+  olympus: OlympusWindow,
 };

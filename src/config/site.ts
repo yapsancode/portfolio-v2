@@ -16,7 +16,7 @@ export type WindowId =
   | "photos"
   | "hire"
   | "music"
-  | "congkak";
+  | "olympus";
 
 export type DesktopIconId = WindowId | "hire-me";
 
@@ -130,33 +130,23 @@ export const site = {
     cta: "Roles, projects, collaborations: email me. The résumé is here if you need it.",
   },
 
-  /** Copy for the Congkak game window. */
-  congkak: {
-    /** Name shown on the scoreboard and in messages. */
-    opponent: "Computer",
-    howToPlay: {
-      intro: [
-        "Congkak is a traditional Malay board game: two rows of seven holes, a house at each end, and 98 marbles.",
-        "You play the bottom row, and your house is on the left. The computer plays the top row and the house on the right.",
-        "Pick a hole on your side. Its marbles go out one by one, clockwise: right to left along your row, into your house, then along the top row. You skip the computer's house.",
-      ],
-      landingTitle: "Where the last marble lands decides what happens:",
-      landing: [
-        "In your house: go again.",
-        "In a hole with marbles: pick them all up and keep going.",
-        "In an empty hole on your side: take the marbles in the hole across from it.",
-        "In an empty hole on the other side: your turn is over.",
-      ],
-      outro: [
-        "The game ends when one side runs out. Each player keeps what is left on their side. More marbles in your house wins.",
-        "Real congkak starts with both players moving at the same time. Here, you go first.",
-      ],
+  /** Copy for Olympus, the desktop asteroids game (olympus.exe). Drafts: rewrite freely. */
+  olympus: {
+    warning: "olympus.exe will damage your desktop.",
+    warningMore:
+      "Windows may crash. Icons may not survive. The statue on the wallpaper may wake up.",
+    hint: "← → turn · ↑ thrust · Space fire · P pause · Esc quit",
+    crash: "{name} has performed an illegal operation and will be shut down.",
+    statue: {
+      wakes: "Who keeps shooting my desktop?",
+      hurt: "I am marble. You are a mouse pointer.",
+      falls: "I was only a wallpaper...",
     },
-    result: {
-      win: "You win. Not bad.",
-      lose: "The computer wins. Rematch?",
-      draw: "Seri. It's a draw.",
-    },
+    win: ["The statue crumbled.", "It was only a wallpaper anyway."],
+    bsod: [
+      "A fatal exception 0E has occurred at 0028:C0DE1998 in VXD STATUE(01).",
+      "The statue won. Your mouse pointer has been terminated.",
+    ],
   },
 
   /** Tooltip shown when a visitor clicks the shooting star. `{n}` = how many they've caught. */
@@ -389,7 +379,7 @@ export const desktopIcons: {
   { id: "photos", label: "Photos", opens: "photos", icon: "folder" },
   { id: "contact", label: "Contact", opens: "contact", icon: "envelope" },
   { id: "hire-me", label: "Work with me", opens: "hire", icon: "smiley" },
-  { id: "congkak", label: "Congkak", opens: "congkak", icon: "congkak" },
+  { id: "olympus", label: "Olympus", opens: "olympus", icon: "olympus" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -466,12 +456,13 @@ export const windowDefaults: Record<
     x: 900,
     y: 400,
   },
-  congkak: {
-    title: "C:\\isyraf\\games\\congkak.exe",
-    icon: "congkak",
-    width: 600,
-    height: 360,
-    x: 240,
-    y: 90,
+  // A Win98 warning dialog; Start runs the game over the whole desktop.
+  olympus: {
+    title: "C:\\isyraf\\games\\olympus.exe",
+    icon: "olympus",
+    width: 400,
+    height: 330,
+    x: 300,
+    y: 140,
   },
 };

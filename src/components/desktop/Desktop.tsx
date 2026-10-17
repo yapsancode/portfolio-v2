@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useReducer, useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useEffect, useReducer, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { site, desktopIcons, windowDefaults } from "@/config/site";
-import type { WindowId } from "@/config/site";
+import type { DesktopIconId, WindowId } from "@/config/site";
+import { GameContext, type GameControls } from "@/components/game/GameContext";
 import Window from "@/components/window/Window";
 import { windowRegistry } from "@/components/window/windowRegistry";
 import BootScreen from "./BootScreen";
@@ -11,6 +12,9 @@ import DesktopIcon from "./DesktopIcon";
 import { MusicProvider } from "./music";
 import ShootingStar from "./ShootingStar";
 import Taskbar, { TASKBAR_HEIGHT } from "./Taskbar";
+
+// Olympus (the desktop asteroids game) is only downloaded when someone presses Start.
+const OlympusGame = lazy(() => import("@/components/game/OlympusGame"));
 
 /* ------------------------------------------------------------------ */
 /* Window state (single source of truth — see CLAUDE.md)               */
@@ -223,6 +227,15 @@ function DesktopRoot() {
   // "Shut Down..." in the Start menu: a full-screen goodbye until restart.
   const [shutDown, setShutDown] = useState(false);
 
+  // Olympus runs over the whole desktop. While it does, shot-down icons are
+  // hidden, crashed windows are minimized and the statue may be "awake".
+  // Ending the game puts all of it back.
+  const [game, setGame] = useState<{ run: number; spawnAt: { x: number; y: number } | null } | null>(null);
+  const [destroyedIcons, setDestroyedIcons] = useState<DesktopIconId[]>([]);
+  const [crashedWindows, setCrashedWindows] = useState<WindowId[]>([]);
+  const [statueHidden, setStatueHidden] = useState(false);
+  const [statueReturning, setStatueReturning] = useState(false);
+
   const openWindow = (id: WindowId) => {
     if (isMobile) {
       // Touch fallback: one full-screen window at a time.
@@ -240,22 +253,51 @@ function DesktopRoot() {
     dispatch({ type: "OPEN", id: "about", rect: getDesktopRect("about") });
   }, []);
 
-  // Escape closes the focused window.
+  // Escape closes the focused window (but not while Olympus is running).
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (game) return;
       if (e.key === "Escape" && state.activeId !== null) {
         dispatch({ type: "CLOSE", id: state.activeId });
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [state.activeId]);
+  }, [state.activeId, game]);
+
+  const gameControls: GameControls = {
+    start: (spawnAt) => {
+      // On phones the warning dialog is full-screen; play on the bare desktop,
+      // with the ship in the middle rather than under the touch buttons.
+      dispatch(isMobile ? { type: "CLOSE_ALL" } : { type: "CLOSE", id: "olympus" });
+      setStatueReturning(false);
+      setGame({ run: (game?.run ?? 0) + 1, spawnAt: isMobile ? null : spawnAt });
+    },
+    cancel: () => dispatch({ type: "CLOSE", id: "olympus" }),
+  };
+
+  const endGame = (replay: boolean) => {
+    for (const id of crashedWindows) {
+      if (state.windows.find((w) => w.id === id)?.minimized) dispatch({ type: "FOCUS", id });
+    }
+    setCrashedWindows([]);
+    setDestroyedIcons([]);
+    if (statueHidden) setStatueReturning(true);
+    setStatueHidden(false);
+    setGame(replay ? { run: (game?.run ?? 0) + 1, spawnAt: null } : null);
+    if (!replay) {
+      requestAnimationFrame(() =>
+        document.querySelector<HTMLElement>('[data-icon-id="olympus"]')?.focus()
+      );
+    }
+  };
 
   const renderWindow = (win: WindowState) => {
     const Content = windowRegistry[win.id];
     return (
       <Window
         key={win.id}
+        windowId={win.id}
         title={win.title}
         icon={windowDefaults[win.id].icon}
         x={win.x}
@@ -285,89 +327,115 @@ function DesktopRoot() {
     // overflow-clip, not overflow-hidden: the star layers are larger than the
     // screen, and a "hidden" box can still be scrolled by keyboard focus or
     // scrollIntoView, which would shift the whole desktop with no way back.
-    <div className="fixed inset-0 overflow-clip bg-black">
-      <BootScreen />
+    <GameContext value={gameControls}>
+      <div className="fixed inset-0 overflow-clip bg-black">
+        <BootScreen />
 
-      {shutDown && (
-        <button
-          type="button"
-          autoFocus
-          className="shutdown-screen"
-          onClick={() => window.location.reload()}
-        >
-          <span>It&apos;s now safe to turn off your computer.</span>
-          <span className="shutdown-hint">Click or press Enter to restart.</span>
-        </button>
-      )}
+        {shutDown && (
+          <button
+            type="button"
+            autoFocus
+            className="shutdown-screen"
+            onClick={() => window.location.reload()}
+          >
+            <span>It&apos;s now safe to turn off your computer.</span>
+            <span className="shutdown-hint">Click or press Enter to restart.</span>
+          </button>
+        )}
 
-      <div className="nebula" aria-hidden="true" />
-      <div className="stars" aria-hidden="true" />
-      <ShootingStar />
+        <div className="nebula" aria-hidden="true" />
+        <div className="stars" aria-hidden="true" />
+        <ShootingStar />
 
-      {/* Wallpaper sculpture (decorative, behind everything else): centred,
-          standing on the taskbar. */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 flex items-end justify-center"
-        style={{ bottom: TASKBAR_HEIGHT }}
-        aria-hidden="true"
-      >
-        <div className="wallpaper-statue relative aspect-[736/800] h-[44vh] sm:h-[58vh]">
-          {/* The file is 1:2 with the figure in its lower half; cover +
-              bottom crops away the empty top. */}
-          <Image
-            src={site.wallpaperImage.src}
-            alt={site.wallpaperImage.alt}
-            fill
-            sizes="(max-width: 639px) 85vw, 40vw"
-            preload
-            className="object-cover object-bottom"
-          />
-        </div>
-      </div>
-
-      {/* Icon column. On short screens it wraps into a second column, like
-          real Windows, instead of running under the taskbar. */}
-      <nav
-        aria-label="Desktop icons"
-        className="absolute left-2 top-2 z-10 flex flex-col flex-wrap content-start items-start gap-1"
-        style={{ maxHeight: `calc(100% - ${TASKBAR_HEIGHT + 16}px)` }}
-      >
-        {desktopIcons.map((icon) => (
-          <DesktopIcon
-            key={icon.id}
-            label={icon.label}
-            icon={icon.icon}
-            isMobile={isMobile}
-            onOpen={() => openWindow(icon.opens)}
-          />
-        ))}
-      </nav>
-
-      {/* Windows layer (drag bounds = desktop area above the taskbar) */}
-      {isMobile ? (
-        state.windows.map(renderWindow)
-      ) : (
+        {/* Wallpaper sculpture (decorative, behind everything else): centred,
+            standing on the taskbar. */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-20"
+          className="pointer-events-none absolute inset-x-0 top-0 z-0 flex items-end justify-center"
           style={{ bottom: TASKBAR_HEIGHT }}
+          aria-hidden="true"
         >
-          {state.windows.map(renderWindow)}
+          <div
+            data-statue
+            className={`wallpaper-statue relative aspect-[736/800] h-[44vh] sm:h-[58vh]${statueReturning ? " statue-return" : ""}`}
+            style={statueHidden ? { visibility: "hidden" } : undefined}
+          >
+            {/* The file is 1:2 with the figure in its lower half; cover +
+                bottom crops away the empty top. */}
+            <Image
+              src={site.wallpaperImage.src}
+              alt={site.wallpaperImage.alt}
+              fill
+              sizes="(max-width: 639px) 85vw, 40vw"
+              preload
+              className="object-cover object-bottom"
+            />
+          </div>
         </div>
-      )}
 
-      <Taskbar
-        windows={state.windows.map((w) => ({
-          id: w.id,
-          title: w.title,
-          icon: windowDefaults[w.id].icon,
-          minimized: w.minimized,
-          active: state.activeId === w.id,
-        }))}
-        onTaskClick={(id) => dispatch({ type: "TASK_CLICK", id })}
-        onOpenIcon={openWindow}
-        onShutDown={() => setShutDown(true)}
-      />
-    </div>
+        {/* Icon column. On short screens it wraps into a second column, like
+            real Windows, instead of running under the taskbar. */}
+        <nav
+          aria-label="Desktop icons"
+          className="absolute left-2 top-2 z-10 flex flex-col flex-wrap content-start items-start gap-1"
+          style={{ maxHeight: `calc(100% - ${TASKBAR_HEIGHT + 16}px)` }}
+        >
+          {desktopIcons.map((icon) => (
+            <DesktopIcon
+              key={icon.id}
+              id={icon.id}
+              label={icon.label}
+              icon={icon.icon}
+              isMobile={isMobile}
+              hidden={destroyedIcons.includes(icon.id)}
+              onOpen={() => openWindow(icon.opens)}
+            />
+          ))}
+        </nav>
+
+        {/* Windows layer (drag bounds = desktop area above the taskbar) */}
+        {isMobile ? (
+          state.windows.map(renderWindow)
+        ) : (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-20"
+            style={{ bottom: TASKBAR_HEIGHT }}
+          >
+            {state.windows.map(renderWindow)}
+          </div>
+        )}
+
+        {game && (
+          <Suspense fallback={null}>
+            <OlympusGame
+              key={game.run}
+              spawnAt={game.spawnAt}
+              touch={isMobile}
+              windows={state.windows.map((w) => ({ id: w.id, zIndex: w.zIndex, minimized: w.minimized }))}
+              onIconDestroyed={(id) => setDestroyedIcons((list) => [...list, id])}
+              onWindowCrashed={(id) => {
+                dispatch({ type: "MINIMIZE", id });
+                setCrashedWindows((list) => [...list, id]);
+              }}
+              onStatueAwake={() => setStatueHidden(true)}
+              onEnd={endGame}
+            />
+          </Suspense>
+        )}
+
+        <Taskbar
+          windows={state.windows.map((w) => ({
+            id: w.id,
+            title: w.title,
+            icon: windowDefaults[w.id].icon,
+            minimized: w.minimized,
+            active: state.activeId === w.id,
+          }))}
+          onTaskClick={(id) => dispatch({ type: "TASK_CLICK", id })}
+          onOpenIcon={openWindow}
+          onShutDown={() => setShutDown(true)}
+        />
+      </div>
+    </GameContext>
   );
 }
 
