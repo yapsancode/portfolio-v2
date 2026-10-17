@@ -15,7 +15,8 @@ export type WindowId =
   | "now"
   | "photos"
   | "hire"
-  | "music";
+  | "music"
+  | "congkak";
 
 export type DesktopIconId = WindowId | "hire-me";
 
@@ -127,6 +128,45 @@ export const site = {
     ],
     note: "Working toward the Google Cloud Associate Cloud Engineer cert, and going deeper into Linux, Docker and CI/CD.",
     cta: "Roles, projects, collaborations: email me. The résumé is here if you need it.",
+  },
+
+  /** Copy for the Congkak game window. */
+  congkak: {
+    /** Name shown on the scoreboard and in messages. */
+    opponent: "Computer",
+    howToPlay: {
+      intro: [
+        "Congkak is a traditional Malay board game: two rows of seven holes, a house at each end, and 98 marbles.",
+        "You play the bottom row, and your house is on the left. The computer plays the top row and the house on the right.",
+        "Pick a hole on your side. Its marbles go out one by one, clockwise: right to left along your row, into your house, then along the top row. You skip the computer's house.",
+      ],
+      landingTitle: "Where the last marble lands decides what happens:",
+      landing: [
+        "In your house: go again.",
+        "In a hole with marbles: pick them all up and keep going.",
+        "In an empty hole on your side: take the marbles in the hole across from it.",
+        "In an empty hole on the other side: your turn is over.",
+      ],
+      outro: [
+        "The game ends when one side runs out. Each player keeps what is left on their side. More marbles in your house wins.",
+        "Real congkak starts with both players moving at the same time. Here, you go first.",
+      ],
+    },
+    result: {
+      win: "You win. Not bad.",
+      lose: "The computer wins. Rematch?",
+      draw: "Seri. It's a draw.",
+    },
+  },
+
+  /** Tooltip shown when a visitor clicks the shooting star. `{n}` = how many they've caught. */
+  shootingStar: {
+    milestones: [
+      { count: 1, text: "You caught a shooting star. Make a wish." },
+      { count: 3, text: "Three. You're getting good at this." },
+      { count: 10, text: "Ten stars. Okay, that's enough." },
+    ],
+    other: "Shooting star caught. That's {n}.",
   },
 
   /** The desktop wallpaper sculpture (decorative, bottom-right). */
@@ -349,6 +389,7 @@ export const desktopIcons: {
   { id: "photos", label: "Photos", opens: "photos", icon: "folder" },
   { id: "contact", label: "Contact", opens: "contact", icon: "envelope" },
   { id: "hire-me", label: "Work with me", opens: "hire", icon: "smiley" },
+  { id: "congkak", label: "Congkak", opens: "congkak", icon: "congkak" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -424,5 +465,13 @@ export const windowDefaults: Record<
     height: 240,
     x: 900,
     y: 400,
+  },
+  congkak: {
+    title: "C:\\isyraf\\games\\congkak.exe",
+    icon: "congkak",
+    width: 600,
+    height: 360,
+    x: 240,
+    y: 90,
   },
 };

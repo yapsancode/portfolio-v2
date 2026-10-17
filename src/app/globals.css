@@ -455,6 +455,127 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Congkak (wooden board, guli marbles)                                */
+/* ------------------------------------------------------------------ */
+
+/* The area around the board: sizes inside scale with its width. */
+.congkak-table {
+  container-type: inline-size;
+}
+
+/* Boat-shaped board: a house at each end, two rows of seven holes, and a
+   row of counts above and below. */
+.congkak-board {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(7, 1fr) 1.3fr;
+  align-items: center;
+  column-gap: clamp(3px, 1.1cqi, 8px);
+  row-gap: clamp(2px, 0.6cqi, 5px);
+  width: min(100%, 680px);
+  padding: clamp(4px, 1.2cqi, 10px) clamp(14px, 5.5cqi, 40px);
+  border: 2px solid #4a2f16;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    #c98d4b,
+    #a0662c 22%,
+    #93592a 78%,
+    #6e431b
+  );
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.35),
+    0 3px 0 #4a2f16;
+}
+
+/* Phones and narrow windows: slimmer ends, so the holes stay easy to tap. */
+@container (max-width: 480px) {
+  .congkak-board {
+    grid-template-columns: 1.1fr repeat(7, 1fr) 1.1fr;
+    column-gap: 3px;
+    padding-inline: 12px;
+  }
+}
+
+.congkak-count {
+  font-family: var(--font-pixel);
+  font-size: clamp(13px, 2.8cqi, 20px);
+  line-height: 1;
+  text-align: center;
+  color: #ffe9c4;
+  text-shadow: 1px 1px 0 #4a2f16;
+}
+
+.congkak-hole,
+.congkak-house {
+  position: relative;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #3d2611, #1e1208 72%);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.7),
+    0 1px 0 rgba(255, 233, 196, 0.45);
+}
+
+.congkak-hole {
+  aspect-ratio: 1;
+}
+
+.congkak-house {
+  align-self: stretch;
+}
+
+/* Your holes are buttons: show which ones can be played. */
+button.congkak-hole {
+  cursor: default;
+}
+
+button.congkak-hole.playable {
+  cursor: pointer;
+}
+
+button.congkak-hole.playable:hover {
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.7),
+    0 0 0 2px #ffd800;
+}
+
+button.congkak-hole:focus-visible {
+  outline: 2px dotted #fff;
+  outline-offset: 2px;
+}
+
+/* Where the hand is while a move plays. */
+.congkak-hole.hand,
+.congkak-house.hand {
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.7),
+    0 0 0 2px var(--color-win-yellow),
+    0 0 8px 2px rgba(255, 255, 225, 0.6);
+}
+
+/* A glass marble: colour from inline style, plus a highlight. */
+.guli {
+  position: absolute;
+  width: 22%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background-image: radial-gradient(
+    circle at 35% 30%,
+    rgba(255, 255, 255, 0.9) 0 16%,
+    transparent 24%
+  );
+  box-shadow: inset -1px -1px 1px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.congkak-house .guli {
+  width: 26%;
+}
+
+/* ------------------------------------------------------------------ */
 /* Boot screen + shut down screen                                      */
 /* ------------------------------------------------------------------ */
 
@@ -595,6 +716,16 @@ body {
   border: 1px dotted #fff;
 }
 
+/* Short laptop screens: tighter spacing (same icon size), so all seven icons
+   still fit in one column and the About window doesn't cover a second one. */
+@media (max-height: 700px) {
+  .desktop-icon {
+    gap: 2px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+}
+
 /* Keep the full desktop column above the taskbar on short touch screens. */
 @media (max-height: 600px) and (pointer: coarse) {
   .desktop-icon {
@@ -725,13 +856,32 @@ body {
 /* Shooting star                                                       */
 /* ------------------------------------------------------------------ */
 
+/* The box is a 32px-tall catch area; the visible star is the 2px trail
+   inside it. It is only visible (and so only clickable) while it flies. */
 .shooting-star {
   position: absolute;
   top: 12%;
   left: 72%;
+  display: flex;
+  align-items: center;
   width: 140px;
-  height: 2px;
+  height: 32px;
+  margin-top: -15px;
+  cursor: pointer;
+  transform: rotate(-28deg);
+  opacity: 0;
+  visibility: hidden;
+  animation: shooting-star 11s ease-in infinite 4s;
+}
+
+.shooting-star.caught {
   pointer-events: none;
+}
+
+.shooting-star-trail {
+  position: relative;
+  width: 100%;
+  height: 2px;
   border-radius: 999px;
   background: linear-gradient(
     to right,
@@ -739,15 +889,35 @@ body {
     rgba(255, 255, 255, 0.4) 40%,
     transparent
   );
-  transform: rotate(-28deg);
-  opacity: 0;
   filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
-  animation: shooting-star 11s ease-in infinite 4s;
+  transform-origin: left center;
+}
+
+/* Caught: the trail snaps into the head and the head flashes. */
+.shooting-star.caught .shooting-star-trail {
+  animation: star-caught-trail 300ms ease-out forwards;
+}
+
+.shooting-star-trail::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 2px, rgba(255, 255, 225, 0.8) 3px, transparent 70%);
+  opacity: 0;
+}
+
+.shooting-star.caught .shooting-star-trail::before {
+  animation: star-caught-flash 450ms ease-out forwards;
 }
 
 @keyframes shooting-star {
   0% {
     opacity: 0;
+    visibility: visible;
     transform: translate3d(0, 0, 0) rotate(-28deg);
   }
   5% {
@@ -755,12 +925,44 @@ body {
   }
   22% {
     opacity: 0;
+    visibility: hidden;
     transform: translate3d(-62vw, 34vw, 0) rotate(-28deg);
   }
   100% {
     opacity: 0;
+    visibility: hidden;
     transform: translate3d(-62vw, 34vw, 0) rotate(-28deg);
   }
+}
+
+@keyframes star-caught-trail {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes star-caught-flash {
+  30% {
+    opacity: 1;
+    transform: scale(1.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+/* Win98 tooltip above the clock, shown after catching the star. */
+.tray-tip {
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 4px 7px;
+  border: 1px solid #000;
+  background: var(--color-win-yellow);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+  font-family: var(--font-content);
+  font-size: 12px;
+  line-height: 1.35;
+  color: #000;
 }
 
 /* ------------------------------------------------------------------ */

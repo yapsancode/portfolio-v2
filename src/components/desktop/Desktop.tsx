@@ -9,6 +9,7 @@ import { windowRegistry } from "@/components/window/windowRegistry";
 import BootScreen from "./BootScreen";
 import DesktopIcon from "./DesktopIcon";
 import { MusicProvider } from "./music";
+import ShootingStar from "./ShootingStar";
 import Taskbar, { TASKBAR_HEIGHT } from "./Taskbar";
 
 /* ------------------------------------------------------------------ */
@@ -301,7 +302,7 @@ function DesktopRoot() {
 
       <div className="nebula" aria-hidden="true" />
       <div className="stars" aria-hidden="true" />
-      <div className="shooting-star" aria-hidden="true" />
+      <ShootingStar />
 
       {/* Wallpaper sculpture (decorative, behind everything else): centred,
           standing on the taskbar. */}
@@ -324,10 +325,12 @@ function DesktopRoot() {
         </div>
       </div>
 
-      {/* Icon column */}
+      {/* Icon column. On short screens it wraps into a second column, like
+          real Windows, instead of running under the taskbar. */}
       <nav
         aria-label="Desktop icons"
-        className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1"
+        className="absolute left-2 top-2 z-10 flex flex-col flex-wrap content-start items-start gap-1"
+        style={{ maxHeight: `calc(100% - ${TASKBAR_HEIGHT + 16}px)` }}
       >
         {desktopIcons.map((icon) => (
           <DesktopIcon

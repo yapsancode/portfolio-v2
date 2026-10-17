@@ -125,6 +125,33 @@ const ICONS = {
       <rect x="10" y="5" width="1" height="1" fill="#fff" />
     </>
   ),
+  /** Congkak board seen from above: a house at each end, two rows of holes, a few marbles. */
+  congkak: (
+    <>
+      <rect x="2" y="3" width="12" height="10" fill="#4a2f16" />
+      <rect x="1" y="4" width="14" height="8" fill="#4a2f16" />
+      <rect x="0" y="5" width="16" height="6" fill="#4a2f16" />
+      <rect x="2" y="4" width="12" height="8" fill="#a0662c" />
+      <rect x="1" y="5" width="14" height="6" fill="#a0662c" />
+      <rect x="3" y="4" width="10" height="1" fill="#c98d4b" />
+      <rect x="1" y="6" width="2" height="4" fill="#2a1a0c" />
+      <rect x="13" y="6" width="2" height="4" fill="#2a1a0c" />
+      <rect x="4" y="5" width="2" height="2" fill="#2a1a0c" />
+      <rect x="7" y="5" width="2" height="2" fill="#2a1a0c" />
+      <rect x="10" y="5" width="2" height="2" fill="#2a1a0c" />
+      <rect x="4" y="9" width="2" height="2" fill="#2a1a0c" />
+      <rect x="7" y="9" width="2" height="2" fill="#2a1a0c" />
+      <rect x="10" y="9" width="2" height="2" fill="#2a1a0c" />
+      <rect x="4" y="5" width="1" height="1" fill="#e04040" />
+      <rect x="8" y="6" width="1" height="1" fill="#ffd800" />
+      <rect x="5" y="10" width="1" height="1" fill="#40a0ff" />
+      <rect x="10" y="9" width="1" height="1" fill="#40c040" />
+      <rect x="1" y="7" width="1" height="1" fill="#ffd800" />
+      <rect x="2" y="8" width="1" height="1" fill="#e04040" />
+      <rect x="13" y="7" width="1" height="1" fill="#40a0ff" />
+      <rect x="14" y="8" width="1" height="1" fill="#40c040" />
+    </>
+  ),
   /** Four-pane logo — the Start button and the boot screen. */
   logo: (
     <>
