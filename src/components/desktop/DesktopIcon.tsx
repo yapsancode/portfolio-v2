@@ -1,20 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { DesktopIconId } from "@/config/site";
 import PixelIcon, { type PixelIconName } from "./PixelIcon";
 
 export type DesktopIconProps = {
+  id: DesktopIconId;
   label: string;
   icon: PixelIconName;
   /** Touch / small-screen fallback: a single tap opens instead of double-click. */
   isMobile: boolean;
+  /** Shot down in Olympus: invisible (but keeps its place) until the game ends. */
+  hidden?: boolean;
   onOpen: () => void;
 };
 
 export default function DesktopIcon({
+  id,
   label,
   icon,
   isMobile,
+  hidden = false,
   onOpen,
 }: DesktopIconProps) {
   const lastClick = useRef(0);
@@ -57,6 +63,8 @@ export default function DesktopIcon({
     <button
       type="button"
       className={`desktop-icon${selected ? " selected" : ""}`}
+      data-icon-id={id}
+      style={hidden ? { visibility: "hidden" } : undefined}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >

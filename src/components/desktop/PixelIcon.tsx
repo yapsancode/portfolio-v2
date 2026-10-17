@@ -125,6 +125,44 @@ const ICONS = {
       <rect x="10" y="5" width="1" height="1" fill="#fff" />
     </>
   ),
+  /** Olympus: a marble bust in profile, its eye already glowing red. */
+  olympus: (
+    <>
+      <rect x="6" y="1" width="5" height="1" fill="#dcdcdc" />
+      <rect x="5" y="2" width="7" height="1" fill="#dcdcdc" />
+      <rect x="4" y="3" width="8" height="1" fill="#dcdcdc" />
+      <rect x="6" y="3" width="1" height="1" fill="#a8a8a8" />
+      <rect x="9" y="3" width="1" height="1" fill="#a8a8a8" />
+      <rect x="4" y="4" width="8" height="1" fill="#dcdcdc" />
+      <rect x="5" y="4" width="1" height="1" fill="#a8a8a8" />
+      <rect x="8" y="4" width="1" height="1" fill="#a8a8a8" />
+      <rect x="11" y="4" width="1" height="1" fill="#a8a8a8" />
+      <rect x="4" y="5" width="4" height="1" fill="#f0f0f0" />
+      <rect x="8" y="5" width="4" height="1" fill="#dcdcdc" />
+      <rect x="10" y="5" width="1" height="1" fill="#a8a8a8" />
+      <rect x="4" y="6" width="5" height="1" fill="#f0f0f0" />
+      <rect x="5" y="6" width="1" height="1" fill="#e04040" />
+      <rect x="9" y="6" width="3" height="1" fill="#dcdcdc" />
+      <rect x="3" y="7" width="6" height="1" fill="#f0f0f0" />
+      <rect x="9" y="7" width="1" height="1" fill="#9a9a9a" />
+      <rect x="10" y="7" width="2" height="1" fill="#a8a8a8" />
+      <rect x="4" y="8" width="6" height="1" fill="#f0f0f0" />
+      <rect x="10" y="8" width="1" height="1" fill="#a8a8a8" />
+      <rect x="4" y="9" width="1" height="1" fill="#9a9a9a" />
+      <rect x="5" y="9" width="5" height="1" fill="#f0f0f0" />
+      <rect x="5" y="10" width="5" height="1" fill="#f0f0f0" />
+      <rect x="9" y="10" width="1" height="1" fill="#9a9a9a" />
+      <rect x="7" y="11" width="4" height="1" fill="#f0f0f0" />
+      <rect x="10" y="11" width="1" height="1" fill="#9a9a9a" />
+      <rect x="7" y="12" width="4" height="1" fill="#f0f0f0" />
+      <rect x="10" y="12" width="1" height="1" fill="#9a9a9a" />
+      <rect x="4" y="13" width="9" height="1" fill="#f0f0f0" />
+      <rect x="11" y="13" width="2" height="1" fill="#9a9a9a" />
+      <rect x="3" y="14" width="11" height="1" fill="#f0f0f0" />
+      <rect x="11" y="14" width="3" height="1" fill="#9a9a9a" />
+      <rect x="3" y="15" width="11" height="1" fill="#9a9a9a" />
+    </>
+  ),
   /** Four-pane logo — the Start button and the boot screen. */
   logo: (
     <>

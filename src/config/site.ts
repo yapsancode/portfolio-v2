@@ -15,7 +15,8 @@ export type WindowId =
   | "now"
   | "photos"
   | "hire"
-  | "music";
+  | "music"
+  | "olympus";
 
 export type DesktopIconId = WindowId | "hire-me";
 
@@ -127,6 +128,35 @@ export const site = {
     ],
     note: "Working toward the Google Cloud Associate Cloud Engineer cert, and going deeper into Linux, Docker and CI/CD.",
     cta: "Roles, projects, collaborations: email me. The résumé is here if you need it.",
+  },
+
+  /** Copy for Olympus, the desktop asteroids game (olympus.exe). Drafts: rewrite freely. */
+  olympus: {
+    warning: "olympus.exe will damage your desktop.",
+    warningMore:
+      "Windows may crash. Icons may not survive. The statue on the wallpaper may wake up.",
+    hint: "← → turn · ↑ thrust · Space fire · P pause · Esc quit",
+    crash: "{name} has performed an illegal operation and will be shut down.",
+    statue: {
+      wakes: "Who keeps shooting my desktop?",
+      hurt: "I am marble. You are a mouse pointer.",
+      falls: "I was only a wallpaper...",
+    },
+    win: ["The statue crumbled.", "It was only a wallpaper anyway."],
+    bsod: [
+      "A fatal exception 0E has occurred at 0028:C0DE1998 in VXD STATUE(01).",
+      "The statue won. Your mouse pointer has been terminated.",
+    ],
+  },
+
+  /** Tooltip shown when a visitor clicks the shooting star. `{n}` = how many they've caught. */
+  shootingStar: {
+    milestones: [
+      { count: 1, text: "You caught a shooting star. Make a wish." },
+      { count: 3, text: "Three. You're getting good at this." },
+      { count: 10, text: "Ten stars. Okay, that's enough." },
+    ],
+    other: "Shooting star caught. That's {n}.",
   },
 
   /** The desktop wallpaper sculpture (decorative, bottom-right). */
@@ -349,6 +379,7 @@ export const desktopIcons: {
   { id: "photos", label: "Photos", opens: "photos", icon: "folder" },
   { id: "contact", label: "Contact", opens: "contact", icon: "envelope" },
   { id: "hire-me", label: "Work with me", opens: "hire", icon: "smiley" },
+  { id: "olympus", label: "Olympus", opens: "olympus", icon: "olympus" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -424,5 +455,14 @@ export const windowDefaults: Record<
     height: 240,
     x: 900,
     y: 400,
+  },
+  // A Win98 warning dialog; Start runs the game over the whole desktop.
+  olympus: {
+    title: "C:\\isyraf\\games\\olympus.exe",
+    icon: "olympus",
+    width: 400,
+    height: 330,
+    x: 300,
+    y: 140,
   },
 };

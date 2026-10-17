@@ -2,9 +2,12 @@
 
 import type { MouseEvent, ReactNode } from "react";
 import { Rnd } from "react-rnd";
+import type { WindowId } from "@/config/site";
 import PixelIcon, { type PixelIconName } from "@/components/desktop/PixelIcon";
 
 export type WindowProps = {
+  /** Lets Olympus find the window it hit. */
+  windowId: WindowId;
   title: string;
   /** Small icon shown at the left of the title bar. */
   icon: PixelIconName;
@@ -56,6 +59,7 @@ function CloseGlyph() {
 }
 
 export default function Window({
+  windowId,
   title,
   icon,
   x,
@@ -140,6 +144,7 @@ export default function Window({
     return (
       <div
         className="win-window fixed inset-0 z-50 flex flex-col"
+        data-window-id={windowId}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -173,6 +178,7 @@ export default function Window({
     >
       <section
         aria-label={title}
+        data-window-id={windowId}
         className={`win-window bevel-out window-pop flex h-full w-full flex-col${active ? "" : " brightness-[0.98]"}`}
         onMouseDown={onFocus}
       >
