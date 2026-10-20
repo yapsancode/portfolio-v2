@@ -10,7 +10,7 @@ export default function NowWindow() {
       </p>
       <h1 className="terminal-bright mt-2">What I&apos;m doing now</h1>
       <p className="terminal-dim mb-4">
-        Last updated: Sep 2026. A snapshot of what has my attention right now.
+        Last updated: Oct 2026. A snapshot of what has my attention right now.
       </p>
       <ol className="space-y-4">
         {now.map((item, index) => (

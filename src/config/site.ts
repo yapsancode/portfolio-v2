@@ -74,7 +74,7 @@ export const site = {
   /** Short, plain-language blurb for the About window. */
   about: [
     "I'm Isyraf. I build things.",
-    "Software, mostly. A platform for Malaysia's largest carmaker. KerjaKit, which helps people decide which jobs are worth their time.",
+    "Software, mostly. A logistics platform for a major carmaker, built with a team. KerjaKit, which helps people decide which jobs are worth their time.",
     "I run a small studio with a partner. We build websites for businesses that need to be found.",
     "Some weeks I'm in Tokyo, finding things people here can't get.",
     "Lately I've been learning what sits underneath the code. I don't trust what I don't understand.",
@@ -100,6 +100,7 @@ export const site = {
           "TypeScript, Next.js, Flutter",
           "Python, FastAPI, LangChain",
           "GCP, Docker, Terraform",
+          "MCP servers, Cloudflare Workers",
         ],
       },
     ],
@@ -121,9 +122,9 @@ export const site = {
     pitch:
       "I find the real problem, build the thing properly, and see it through to real users. If that's what you need, let's talk.",
     wins: [
-      "Shipped a production Flutter Web platform for Malaysia's largest carmaker, retiring its legacy screens.",
-      "Built KerjaKit end to end: an open-source CLI with 35+ GitHub stars, now a paid AI product in English and Malay with 40+ registered users.",
-      "Co-founded IIDev Studio. We build websites for Malaysian businesses, including a 24-hour clinic live since 2025.",
+      "Helped build a production Flutter Web logistics platform for a major carmaker, replacing its legacy SAP screens.",
+      "Built KerjaKit end to end: an open-source CLI with 35+ GitHub stars, now a paid AI product in English and Malay with 90 registered users.",
+      "Co-founded IIDev Studio. We build websites, SEO and AI automation for Malaysian businesses, including a 24-hour clinic live since 2025.",
       "1st place, Gamuda AI Academy × Google Cloud demo day, with Baymax: an AI Chrome extension that guides people through Google Cloud. I owned the architecture and the Git workflow.",
     ],
     note: "Working toward the Google Cloud Associate Cloud Engineer cert, and going deeper into Linux, Docker and CI/CD.",
@@ -175,7 +176,7 @@ export const projects: Project[] = [
     summary:
       "AI resume tailor that never invents. A live product with real users.",
     impact:
-      "AI resume tailor that never invents: paste a job posting, get an honest match report and an ATS-safe one-page PDF, with in-production checks that block any fabricated skill or number. 28 real users, 36 GitHub stars.",
+      "AI resume tailor that never invents: paste a job posting, get an honest match report and an ATS-safe one-page PDF, with in-production checks that block any fabricated skill or number. It also sends daily job matches (Job Radar) and takes FPX payments. 90 registered users, 36 GitHub stars.",
     story:
       "Started as an open-source CLI that tailored résumés — great, but it needed git, Claude Code, and LaTeX, so only technical people could use it. A Threads post hit 3,000 likes and people kept asking for a web version, so I built one.",
     stack: [
@@ -186,6 +187,9 @@ export const projects: Project[] = [
       "Typst",
       "Cloud Run",
       "DeepSeek",
+      "Gemini",
+      "OpenRouter",
+      "CHIP (FPX)",
     ],
     image: {
       src: "/work/kerjakit.webp",
@@ -193,6 +197,33 @@ export const projects: Project[] = [
     },
     liveUrl: "https://kerjakit.com",
     codeUrl: "https://github.com/yapsancode/job-kit",
+  },
+  {
+    slug: "iidev-studio",
+    name: "IIDev Studio",
+    year: "2026 – now",
+    summary:
+      "My studio's website, plus a sales system that Claude can work in.",
+    impact:
+      "The website and sales system for IIDev Studio, the web studio I co-founded. Enquiries and prospects live in one system on Cloudflare, with instant Telegram alerts, reply-rate tracking, and a rule check on every outreach draft. A Claude connector (an MCP server with 12 tools) lets Claude read enquiries, audit prospects, and save drafts. A person still sends every message.",
+    story:
+      "I moved the sales pipeline here from Notion. The founder area is locked behind Cloudflare Access, every change made through Claude is marked \"via Claude\" in the record's timeline, and about 178 tests cover it.",
+    stack: [
+      "Next.js 16",
+      "React 19",
+      "TypeScript",
+      "Tailwind v4",
+      "Cloudflare Workers",
+      "Cloudflare D1",
+      "Cloudflare Access",
+      "MCP",
+      "Vitest",
+    ],
+    image: {
+      src: "/work/iidev-studio.webp",
+      alt: "IIDev Studio home page, with the headline \"They search. They find you.\" next to a search box.",
+    },
+    liveUrl: "https://iidevstudio.com",
   },
   {
     slug: "baymax",
@@ -203,7 +234,7 @@ export const projects: Project[] = [
     impact:
       "Chrome extension that walks developers through Google Cloud deployments by highlighting the exact button to click on the live Console. Won 1st place at the Gamuda AI Academy Capstone Demo Day.",
     story:
-      "Built with a six-person team. I led the monorepo structure, tooling, and Git workflows, and coached my teammates on pull requests.",
+      "Built with a six-person team. I was the top committer (183 of 438 commits), led the monorepo structure, tooling, and Git workflows, and coached my teammates on pull requests.",
     stack: [
       "React 19",
       "FastAPI",
@@ -236,22 +267,64 @@ export const projects: Project[] = [
     liveUrl: "https://klinikmekar.com",
   },
   {
-    slug: "job-radar",
-    name: "job-radar",
+    slug: "risk-checker",
+    name: "Hidden Risk Checker",
     year: "2026",
     summary:
-      "Finds tech jobs, scores them with AI, and sends the best to Telegram.",
+      "MCP server that shows traders when their open trades are the same bet.",
     impact:
-      "Personal automation that finds Malaysian tech jobs, scores each one against my résumé with an LLM, and sends the best ones to my Telegram three times a day.",
+      "A read-only MCP server for Claude Desktop that shows retail forex and CFD traders when their open trades are secretly the same bet. It groups trades whose daily moves are closely linked, adjusted for long and short positions, and explains each group in plain words.",
     story:
-      "It reads more than one job board and removes duplicates. Jobs with a borderline score get a second, full read of the posting before they are kept or dropped.",
-    stack: ["Python", "DeepSeek", "Telegram Bot API", "Pydantic", "pytest"],
+      "Built in two days as a working demo of MCP for trading. It also checks what one bad day would do, falls back to saved sample data when offline, and ends every risk reply with a \"not financial advice\" line.",
+    stack: ["Python 3.11", "MCP SDK", "httpx", "Yahoo Finance", "pytest"],
     console: [
-      "53 jobs found",
-      "30 kept by location",
-      "3 scored 60 or more",
-      "digest sent at 09:00, 13:00, 19:00",
+      "3 read-only tools for Claude",
+      "forex, gold, oil, indices, crypto",
+      "correlation >= 0.5 over ~90 days",
+      "20 tests, works offline",
     ],
+  },
+  {
+    slug: "devops-coach",
+    name: "DevOps Coach",
+    year: "2026",
+    summary: "A 12-week DevOps program run by an AI coach. 19 GitHub stars.",
+    impact:
+      "A 12-week, self-paced DevOps program run by an AI coach, open-sourced as a GitHub template. Each morning it sets 3–4 hands-on tasks with a clear \"done when\" check. Each evening it reads your terminal output as proof and rejects weak evidence. 19 GitHub stars.",
+    story:
+      "It is built against passive learning: review questions from earlier days, a Friday rebuild from scratch, and honest tracking where a skipped day moves the end date. It covers Linux, networking, Docker, Kubernetes, Terraform, monitoring and CI/CD, then cloud cert prep. One skill file works in Claude Code, Codex and OpenCode.",
+    stack: ["Claude Code skills", "Codex", "OpenCode", "Markdown"],
+    console: [
+      "/coach -> today's tasks",
+      "/coach done -> proof check",
+      "weeks 1-12: Linux to cloud cert",
+      "19 GitHub stars",
+    ],
+    codeUrl: "https://github.com/yapsancode/devops-coach",
+  },
+  {
+    slug: "wedding-invitation",
+    name: "Wedding Invitation",
+    year: "2026",
+    summary: "A digital wedding invitation with a 3D envelope you open.",
+    impact:
+      "A custom digital wedding invitation, built under IIDev Studio. It opens with a 3D envelope, and guests can leave wishes and add photos to a shared gallery.",
+    story:
+      "The 3D intro loads only when it is needed, so the page stays fast, and there is a plain HTML version as a fallback. Wishes are also copied to a Google Sheet.",
+    stack: [
+      "Astro",
+      "TypeScript",
+      "Three.js",
+      "GSAP",
+      "Vercel Functions",
+      "Upstash Redis",
+      "Vercel Blob",
+    ],
+    image: {
+      src: "/work/wedding-invitation.webp",
+      alt: "Wedding invitation card for Hana and Afzan, Saturday 26.12.2026, beside a green envelope and a \"Buka Jemputan\" (open the invitation) button.",
+    },
+    liveUrl: "https://hanaafzan.iidevstudio.com",
   },
   {
     slug: "mirror-bot",
@@ -261,7 +334,7 @@ export const projects: Project[] = [
     impact:
       "Bot that listens to a team's posts in a WhatsApp Community and re-posts them into the matching topics of a Telegram group of about 1,800 members, so the team only has to post in one place. Currently in testing.",
     story:
-      "It only listens on WhatsApp and never sends. Direct messages, statuses, and groups that are not on the route list are dropped before anything is saved.",
+      "It only listens on WhatsApp and never sends. Direct messages, statuses, and groups that are not on the route list are dropped before anything is saved. 221 unit tests cover it.",
     stack: [
       "Node.js 22",
       "TypeScript",
@@ -276,6 +349,94 @@ export const projects: Project[] = [
       "-> Telegram topics, ~1,800 members",
       "status: in testing",
     ],
+  },
+  {
+    slug: "job-radar",
+    name: "job-radar",
+    year: "2026",
+    summary:
+      "Found tech jobs, scored them with AI. Now part of KerjaKit.",
+    impact:
+      "Personal automation that found Malaysian tech jobs, scored each one against my résumé with an LLM, and sent the best ones to my Telegram three times a day. Paused since September 2026: the idea grew into Job Radar inside KerjaKit.",
+    story:
+      "It read five job boards and removed duplicates. Jobs with a borderline score got a second, full read of the posting before they were kept or dropped. 249 tests covered it.",
+    stack: ["Python", "DeepSeek", "Telegram Bot API", "Pydantic", "pytest"],
+    console: [
+      "53 jobs found",
+      "30 kept by location",
+      "3 scored 60 or more",
+      "status: paused, now in KerjaKit",
+    ],
+  },
+  {
+    slug: "ezbiz-buddy",
+    name: "EzBiz Buddy",
+    year: "2026",
+    summary: "AI guide for registering a business with SSM. Discontinued.",
+    impact:
+      "A Chrome extension side panel that helped Malaysians register a business on SSM's ezbiz portal. It answered questions from official SSM documents and highlighted the right button or field on the live portal. A working prototype, built in three days. Discontinued.",
+    story:
+      "Answers came from 1,036 chunks of official SSM guides and web pages, searched with Gemini embeddings and MongoDB Atlas Vector Search. It had its own sign-in, a free tier of 5 questions a day, and 17 tests.",
+    stack: [
+      "Chrome Extension (MV3)",
+      "React 19",
+      "FastAPI",
+      "LangChain",
+      "DeepSeek",
+      "Gemini embeddings",
+      "MongoDB Atlas",
+    ],
+    console: [
+      "1,036 chunks of official SSM docs",
+      "vector search -> DeepSeek answer",
+      "free tier: 5 questions a day",
+      "status: discontinued",
+    ],
+  },
+  {
+    slug: "esportorium",
+    name: "Esportorium",
+    year: "2025 – 2026",
+    summary: "Mobile Legends tournament finder for Malaysia. Discontinued.",
+    impact:
+      "A site where players in Malaysia found Mobile Legends esports tournaments. Organisers submitted events, and an admin approved them before they went live. Discontinued.",
+    story:
+      "Each organiser could only ever see their own data, and a test in CI proved it against a real PostgreSQL database. An AI step turned messy tournament details into a draft listing, with an accuracy check in CI that had to pass before a change could ship.",
+    stack: [
+      "Next.js 16",
+      "TypeScript",
+      "FastAPI",
+      "PostgreSQL (Supabase)",
+      "Docker",
+      "Cloud Run",
+      "GitHub Actions",
+      "OpenTelemetry",
+    ],
+    console: [
+      "organiser data isolated, tested in CI",
+      "AI draft listings, eval gate in CI",
+      "62 pytest tests",
+      "status: discontinued",
+    ],
+    codeUrl: "https://github.com/yapsancode/esportorium",
+  },
+  {
+    slug: "opencode-bridge",
+    name: "OpenCode Bridge",
+    year: "2026",
+    summary: "Ran Claude Code on open models via OpenCode Go. Not in use now.",
+    impact:
+      "A small API bridge so Claude Code could run open models (GLM, DeepSeek, Kimi and others) through OpenCode Go's $10-a-month plan, without PostgreSQL or Docker. 2 GitHub stars.",
+    story:
+      "A FastAPI proxy translates Claude's message format to the OpenAI format and back, including streaming and tool calls, and LiteLLM routes the calls. I don't use it now, but I may come back to it.",
+    stack: ["Python", "FastAPI", "LiteLLM"],
+    console: [
+      "Claude Code -> bridge -> OpenCode Go",
+      "Anthropic <-> OpenAI format",
+      "streaming + tool calls",
+      "status: not in use",
+    ],
+    codeUrl: "https://github.com/yapsancode/claudecode-X-opencode",
   },
 ];
 
@@ -294,7 +455,7 @@ export const now: { label: string; detail: string }[] = [
   {
     label: "Qalam — Jawi handwriting ML",
     detail:
-      "Building the first Jawi handwriting dataset and a tutor app that verifies your writing. Looking for a Jawi-literate collaborator.",
+      "Planning a Jawi handwriting dataset and a tutor app that checks your writing. Phase 0 is done; the build hasn't started yet. Looking for a Jawi-literate collaborator.",
   },
   {
     label: "KerjaKit",

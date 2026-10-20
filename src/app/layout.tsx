@@ -79,6 +79,7 @@ const personJsonLd = {
     "LangChain",
     "LLM evaluation",
     "Agentic AI",
+    "Model Context Protocol (MCP)",
     "PostgreSQL",
     "DevOps",
   ],
@@ -86,7 +87,7 @@ const personJsonLd = {
     "https://github.com/yapsancode",
     "https://linkedin.com/in/muhammad-isyraf-afifi",
     "https://kerjakit.com",
-    "https://esportorium.com",
+    "https://iidevstudio.com",
   ],
 };
 
