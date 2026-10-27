@@ -31,7 +31,7 @@ const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 export type OlympusGameProps = {
   /** Where the pointer was when Start was pressed: the ship appears there. */
   spawnAt: { x: number; y: number } | null;
-  /** Show on-screen buttons (phones, tablets). */
+  /** Phone layout: start with the on-screen buttons. (Any touch screen gets them too.) */
   touch: boolean;
   /** Open windows, so the game knows which one is on top. */
   windows: { id: WindowId; zIndex: number; minimized: boolean }[];
@@ -137,6 +137,15 @@ function readTargets(windows: OlympusGameProps["windows"]): TargetRect[] {
     targets.push({ kind: "icon", id: el.dataset.iconId ?? "", x: r.left, y: r.top, w: r.width, h: r.height });
   });
   return targets;
+}
+
+/**
+ * Any touch screen, not only the main pointer. Tablets with a stylus or a
+ * keyboard cover (and touch laptops) report a "fine" pointer like a mouse,
+ * so the phone layout misses them.
+ */
+function hasTouchScreen() {
+  return navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches;
 }
 
 function fileName(id: WindowId) {
@@ -320,6 +329,9 @@ export default function OlympusGame(props: OlympusGameProps) {
   const inputRef = useRef<Input>({ ...NO_INPUT });
   const pausedRef = useRef(false);
   const endedRef = useRef(false);
+  // On-screen buttons follow the last input used: a touch shows them, a game key hides them.
+  const [touch, setTouch] = useState(() => props.touch || hasTouchScreen());
+  const touchRef = useRef(touch);
 
   const [hud, setHud] = useState<Hud>({ score: 0, lives: TUNING.lives, anger: 0, statue: 1, phase: "play" });
   const [paused, setPaused] = useState(false);
@@ -549,12 +561,23 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (!control) return;
       e.preventDefault();
       e.stopPropagation();
+      if (touchRef.current) {
+        // Hiding the buttons drops any press they still hold.
+        touchRef.current = false;
+        setTouch(false);
+        inputRef.current = { ...NO_INPUT };
+      }
       if (pausedRef.current) return;
       inputRef.current = { ...inputRef.current, [control]: true };
     };
     const onKeyUp = (e: KeyboardEvent) => {
       const control = KEYS[e.key];
       if (control) inputRef.current = { ...inputRef.current, [control]: false };
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (touchRef.current || (e.pointerType !== "touch" && e.pointerType !== "pen")) return;
+      touchRef.current = true;
+      setTouch(true);
     };
     const onBlur = () => pause(true);
     const onVisibility = () => {
@@ -563,6 +586,7 @@ export default function OlympusGame(props: OlympusGameProps) {
 
     window.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("blur", onBlur);
     window.addEventListener("resize", fit);
     document.addEventListener("visibilitychange", onVisibility);
@@ -573,6 +597,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       for (const t of timers) clearTimeout(t);
       window.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("blur", onBlur);
       window.removeEventListener("resize", fit);
       document.removeEventListener("visibilitychange", onVisibility);
@@ -649,7 +674,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         </div>
       )}
 
-      {hint && !props.touch && !ending && (
+      {hint && !touch && !ending && (
         <div className="olympus-hint tray-tip" style={{ bottom: TASKBAR_HEIGHT + 12 }} aria-hidden="true">
           {copy.hint}
         </div>
@@ -663,7 +688,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         </button>
       )}
 
-      {props.touch && !ending && <TouchPad onPress={press} />}
+      {touch && !ending && <TouchPad onPress={press} />}
 
       {ending?.kind === "won" && (
         <WinDialog ending={ending} onReplay={() => props.onEnd(true)} onExit={() => props.onEnd(false)} />

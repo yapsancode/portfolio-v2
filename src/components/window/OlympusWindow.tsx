@@ -62,7 +62,7 @@ export default function OlympusWindow() {
             ))}
           </tbody>
         </table>
-        <p className="mt-1 text-neutral-600">On a phone, use the buttons at the bottom of the screen.</p>
+        <p className="mt-1 text-neutral-600">On a phone or tablet, use the buttons at the bottom of the screen.</p>
       </div>
 
       <div className="mt-3 flex shrink-0 items-center gap-2">
