@@ -191,7 +191,10 @@ for (const [screenName, screen] of Object.entries(SCREENS)) {
 }
 
 // Targets. Each roadmap step switches its own lines on.
-const checks = [];
+const R = results;
+const checks = [
+  ["step 1: on a phone, Idle reaches the boss with 2+ lives in most games", R["phone.idle"].twoLives >= 0.7],
+];
 
 let failed = 0;
 for (const [name, ok] of checks) {

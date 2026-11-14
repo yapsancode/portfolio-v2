@@ -97,6 +97,8 @@ export type Statue = {
 };
 
 export type GameEvent =
+  | { type: "shot" }
+  | { type: "rockBroken"; size: 0 | 1 | 2 }
   | { type: "iconDestroyed"; id: string }
   | { type: "windowHit"; id: string }
   | { type: "windowCrashed"; id: string }
@@ -130,6 +132,10 @@ export type World = {
   score: number;
   fireIn: number;
   spawnIn: number;
+  /** Below 1 on small screens: rocks are smaller and slower there. */
+  scale: number;
+  /** Pixels at the bottom the ship stays out of (the touch buttons). */
+  shipFloor: number;
   /** 0 → 1, for fewer particles with reduced motion. */
   particleScale: number;
   random: () => number;
@@ -151,6 +157,7 @@ export const TUNING = {
     maxSpeed: 520,
     safeTime: 2,
     respawnTime: 1.4,
+    recoil: 4, // px/s per shot
   },
   bullet: { speed: 700, life: 0.8, max: 6, cooldown: 0.2 },
   rock: {
@@ -234,14 +241,15 @@ export function createStatue(home: Rect, cols: number, rows: number, solid: bool
 }
 
 function makeRock(
-  random: () => number,
+  world: World,
   size: 0 | 1 | 2,
   x: number,
   y: number,
   direction?: number
 ): Rock {
+  const { random, scale } = world;
   const [min, max] = TUNING.rock.speed[size];
-  const speed = between(random, min, max);
+  const speed = between(random, min, max) * scale;
   const angle = direction ?? random() * Math.PI * 2;
   const corners = 9 + Math.floor(random() * 3);
   return {
@@ -250,7 +258,7 @@ function makeRock(
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
     size,
-    r: TUNING.rock.radius[size],
+    r: TUNING.rock.radius[size] * scale,
     angle: random() * Math.PI * 2,
     spin: between(random, -1.2, 1.2),
     shape: Array.from({ length: corners }, () => between(random, 0.72, 1.12)),
@@ -265,7 +273,7 @@ function rockFromEdge(world: World): Rock {
   const x = side === 0 ? -r : side === 1 ? w + r : random() * w;
   const y = side === 2 ? -r : side === 3 ? h + r : random() * h;
   const toMiddle = Math.atan2(h / 2 - y, w / 2 - x);
-  return makeRock(random, 0, x, y, toMiddle + between(random, -0.6, 0.6));
+  return makeRock(world, 0, x, y, toMiddle + between(random, -0.6, 0.6));
 }
 
 export function createWorld(opts: {
@@ -275,6 +283,7 @@ export function createWorld(opts: {
   statue: Statue;
   random: () => number;
   particleScale?: number;
+  shipFloor?: number;
 }): World {
   const world: World = {
     w: opts.w,
@@ -306,10 +315,14 @@ export function createWorld(opts: {
     score: 0,
     fireIn: 0,
     spawnIn: TUNING.rock.spawnEvery,
+    scale: Math.max(0.6, Math.min(1, opts.w / 900)),
+    shipFloor: opts.shipFloor ?? 0,
     particleScale: opts.particleScale ?? 1,
     random: opts.random,
     lostSent: false,
   };
+  // The pointer "becomes" the ship.
+  burst(world, world.ship.x, world.ship.y, 28, SPARK, 240);
   for (let i = 0; i < TUNING.rock.start; i++) world.rocks.push(rockFromEdge(world));
   return world;
 }
@@ -334,11 +347,12 @@ export function resize(world: World, w: number, h: number, statueHome: Rect) {
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-function wrap(world: World, o: { x: number; y: number }, margin: number) {
+function wrap(world: World, o: { x: number; y: number }, margin: number, floor = 0) {
+  const h = world.h - floor;
   if (o.x < -margin) o.x += world.w + margin * 2;
   else if (o.x > world.w + margin) o.x -= world.w + margin * 2;
-  if (o.y < -margin) o.y += world.h + margin * 2;
-  else if (o.y > world.h + margin) o.y -= world.h + margin * 2;
+  if (o.y < -margin) o.y += h + margin * 2;
+  else if (o.y > h + margin) o.y -= h + margin * 2;
 }
 
 function burst(
@@ -450,7 +464,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
     }
     ship.x += ship.vx * dt;
     ship.y += ship.vy * dt;
-    wrap(world, ship, 12);
+    wrap(world, ship, 12, world.shipFloor);
     ship.safe = Math.max(0, ship.safe - dt);
 
     world.fireIn -= dt;
@@ -465,13 +479,18 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
         vy: dy * TUNING.bullet.speed + ship.vy,
         life: TUNING.bullet.life,
       });
+      // Muzzle flash and a small kick backwards.
+      burst(world, ship.x + dx * 18, ship.y + dy * 18, 4, SPARK, 110);
+      ship.vx -= dx * TUNING.ship.recoil;
+      ship.vy -= dy * TUNING.ship.recoil;
+      events.push({ type: "shot" });
     }
   } else if (world.lives > 0) {
     ship.respawn -= dt;
     if (ship.respawn <= 0) {
       Object.assign(ship, {
         x: world.w / 2,
-        y: world.h * 0.4,
+        y: (world.h - world.shipFloor) * 0.4,
         vx: 0,
         vy: 0,
         angle: 0,
@@ -524,8 +543,8 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
       const fromY = home.y + statue.dy + home.h * 0.38;
       const aim = Math.atan2(ship.y - fromY, ship.x - fromX) + between(random, -0.12, 0.12);
       if (world.rocks.length < TUNING.rock.max + 2) {
-        const chunk = makeRock(random, random() < 0.5 ? 1 : 2, fromX, fromY, aim);
-        const speed = between(random, ...TUNING.statue.throwSpeed);
+        const chunk = makeRock(world, random() < 0.5 ? 1 : 2, fromX, fromY, aim);
+        const speed = between(random, ...TUNING.statue.throwSpeed) * world.scale;
         chunk.vx = Math.cos(aim) * speed;
         chunk.vy = Math.sin(aim) * speed;
         world.rocks.push(chunk);
@@ -605,11 +624,12 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
     world.score += TUNING.rock.score[rock.size];
     addAnger(world, TUNING.rock.anger[rock.size]);
     burst(world, rock.x, rock.y, 10 + (2 - rock.size) * 6, MARBLE, 160);
+    events.push({ type: "rockBroken", size: rock.size });
     if (rock.size < 2) {
       const next = (rock.size + 1) as 1 | 2;
       const heading = Math.atan2(rock.vy, rock.vx);
       for (const turn of [-0.6, 0.6]) {
-        world.rocks.push(makeRock(random, next, rock.x, rock.y, heading + turn + between(random, -0.2, 0.2)));
+        world.rocks.push(makeRock(world, next, rock.x, rock.y, heading + turn + between(random, -0.2, 0.2)));
       }
     }
     return true;

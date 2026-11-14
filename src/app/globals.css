@@ -518,11 +518,13 @@ body {
   pointer-events: none;
 }
 
-.olympus-hint {
+/* .tray-tip caps its width at 280px further down: two classes win over it. */
+.olympus-hint.tray-tip {
   left: 50%;
-  max-width: none;
+  width: max-content;
+  max-width: calc(100vw - 16px);
   transform: translateX(-50%);
-  white-space: nowrap;
+  text-align: center;
 }
 
 .olympus-paused,
@@ -561,7 +563,8 @@ body {
   font-family: var(--font-pixel);
   font-size: 22px;
   line-height: 1;
-  opacity: 0.9;
+  /* See-through, so the ship and the statue show behind the buttons. */
+  opacity: 0.55;
   pointer-events: auto;
   touch-action: none;
   user-select: none;
@@ -570,6 +573,7 @@ body {
 }
 
 .olympus-touch-btn:active {
+  opacity: 0.9;
   box-shadow:
     inset -1px -1px var(--color-win-white),
     inset 1px 1px var(--color-win-dark),
@@ -581,6 +585,21 @@ body {
   width: 84px;
   height: 84px;
   font-size: 26px;
+}
+
+.olympus-touch-quit {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 27;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--color-win-face);
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.7;
 }
 
 /* Game over: the blue screen. */

@@ -27,13 +27,13 @@ const CURSOR = [
 ] as const;
 const CURSOR_CENTER = { x: 4, y: 11 };
 const CURSOR_LEAN = Math.atan2(CURSOR_CENTER.x, CURSOR_CENTER.y);
-const CURSOR_SCALE = 1.4;
+const CURSOR_SCALE = 2;
 
 function drawShip(ctx: CanvasRenderingContext2D, ship: Ship, time: number) {
   if (!ship.alive) return;
-  // Blink while it can't be hit.
-  if (ship.safe > 0 && Math.floor(time * 10) % 2 === 0) return;
   ctx.save();
+  // Flicker while it can't be hit (never fully invisible).
+  if (ship.safe > 0 && Math.floor(time * 10) % 2 === 0) ctx.globalAlpha = 0.35;
   ctx.translate(ship.x, ship.y);
   ctx.rotate(ship.angle + CURSOR_LEAN);
   ctx.scale(CURSOR_SCALE, CURSOR_SCALE);
@@ -154,8 +154,19 @@ export function drawWorld(
 
   for (const rock of world.rocks) drawRock(ctx, rock);
 
-  ctx.fillStyle = "#ffffe1";
-  for (const b of world.bullets) ctx.fillRect(Math.round(b.x) - 1, Math.round(b.y) - 1, 3, 3);
+  // Bullets: a bright streak along the flight path.
+  ctx.lineCap = "butt";
+  for (const b of world.bullets) {
+    const v = Math.hypot(b.vx, b.vy) || 1;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(b.x - (b.vx / v) * 14, b.y - (b.vy / v) * 14);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#ff8c1a";
+    ctx.stroke();
+    ctx.fillStyle = "#ffffe1";
+    ctx.fillRect(Math.round(b.x) - 3, Math.round(b.y) - 3, 6, 6);
+  }
 
   for (const p of world.particles) {
     ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
@@ -163,6 +174,21 @@ export function drawWorld(
     ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
   }
   ctx.globalAlpha = 1;
+
+  // "The pointer becomes the ship": a ring opens around it at the start.
+  if (world.time < 0.7 && world.ship.alive) {
+    const grow = world.time * 90;
+    ctx.globalAlpha = 1 - world.time / 0.7;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#ffd800";
+    ctx.strokeRect(
+      Math.round(world.ship.x - 8 - grow),
+      Math.round(world.ship.y - 8 - grow),
+      Math.round(16 + grow * 2),
+      Math.round(16 + grow * 2)
+    );
+    ctx.globalAlpha = 1;
+  }
 
   drawShip(ctx, world.ship, world.time);
   ctx.restore();

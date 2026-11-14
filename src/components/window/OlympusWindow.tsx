@@ -7,6 +7,13 @@ import { loadBest, useGame } from "@/components/game/GameContext";
 
 const copy = site.olympus;
 
+const TOUCH_CONTROLS = [
+  ["◄ ►", "Turn"],
+  ["▲", "Thrust"],
+  ["FIRE", "Fire"],
+  ["✕", "Quit and fix the desktop"],
+] as const;
+
 const CONTROLS = [
   ["← →  or  A D", "Turn"],
   ["↑  or  W", "Thrust"],
@@ -33,6 +40,10 @@ const button =
 export default function OlympusWindow() {
   const { start, cancel } = useGame();
   const [best] = useState(loadBest);
+  // Same test the game uses to show its on-screen buttons.
+  const [touch] = useState(
+    () => navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches
+  );
 
   // A mouse click spawns the ship where the pointer is; Enter starts it in the middle.
   const onStart = (e: MouseEvent<HTMLButtonElement>) =>
@@ -54,7 +65,7 @@ export default function OlympusWindow() {
         <table className="w-full">
           <caption className="sr-only">Controls</caption>
           <tbody>
-            {CONTROLS.map(([keys, action]) => (
+            {(touch ? TOUCH_CONTROLS : CONTROLS).map(([keys, action]) => (
               <tr key={action}>
                 <td className="w-1/2 py-0.5 pr-2 font-pixel text-base leading-none">{keys}</td>
                 <td className="py-0.5">{action}</td>
@@ -62,7 +73,11 @@ export default function OlympusWindow() {
             ))}
           </tbody>
         </table>
-        <p className="mt-1 text-neutral-600">On a phone or tablet, use the buttons at the bottom of the screen.</p>
+        <p className="mt-1 text-neutral-600">
+          {touch
+            ? "Use the buttons at the bottom of the screen. A keyboard works too."
+            : "On a phone or tablet, use the buttons at the bottom of the screen."}
+        </p>
       </div>
 
       <div className="mt-3 flex shrink-0 items-center gap-2">

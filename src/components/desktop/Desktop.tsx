@@ -4,6 +4,7 @@ import { lazy, Suspense, useEffect, useReducer, useState, useSyncExternalStore }
 import Image from "next/image";
 import { site, desktopIcons, windowDefaults } from "@/config/site";
 import type { DesktopIconId, WindowId } from "@/config/site";
+import { unlockSound } from "@/components/game/sound";
 import { GameContext, type GameControls } from "@/components/game/GameContext";
 import Window from "@/components/window/Window";
 import { windowRegistry } from "@/components/window/windowRegistry";
@@ -267,6 +268,7 @@ function DesktopRoot() {
 
   const gameControls: GameControls = {
     start: (spawnAt) => {
+      unlockSound(); // browsers only allow sound from inside a click
       // On phones the warning dialog is full-screen; play on the bare desktop,
       // with the ship in the middle rather than under the touch buttons.
       dispatch(isMobile ? { type: "CLOSE_ALL" } : { type: "CLOSE", id: "olympus" });

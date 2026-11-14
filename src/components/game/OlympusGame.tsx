@@ -6,7 +6,9 @@ import type { DesktopIconId, WindowId } from "@/config/site";
 import PixelIcon from "@/components/desktop/PixelIcon";
 import { TASKBAR_HEIGHT } from "@/components/desktop/Taskbar";
 import { drawWorld, type StatueArt } from "./draw";
+import { useMusic } from "@/components/desktop/music";
 import { loadBest, saveBest } from "./GameContext";
+import { playSound, setSoundVolume, unlockSound } from "./sound";
 import {
   createStatue,
   createWorld,
@@ -27,6 +29,10 @@ const COLS = 16;
 const ROWS = 18;
 const DT = 1 / 60;
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+/** Height of the strip the touch buttons use; the ship stays above it. */
+const TOUCH_STRIP = 100;
+/** Game time skipped on a kill, so it lands with a small "thud". */
+const KILL_PAUSE_MS = 45;
 
 export type OlympusGameProps = {
   /** Where the pointer was when Start was pressed: the ship appears there. */
@@ -182,11 +188,13 @@ const dialogButton =
 function BlueScreen({
   score,
   best,
+  touch,
   onReplay,
   onExit,
 }: {
   score: number;
   best: number;
+  touch: boolean;
   onReplay: () => void;
   onExit: () => void;
 }) {
@@ -225,10 +233,11 @@ function BlueScreen({
           Score: {score.toLocaleString("en")} &nbsp; Best: {best.toLocaleString("en")}
         </p>
         <button type="button" className="bsod-option" onClick={onReplay}>
-          * Press Enter or click here to play again.
+          {touch ? "* Tap here to play again." : "* Press Enter or click here to play again."}
         </button>
         <button type="button" className="bsod-option" onClick={onExit}>
-          * Press any other key to return to the desktop. <span className="terminal-cursor" />
+          {touch ? "* Tap here to return to the desktop." : "* Press any other key to return to the desktop."}{" "}
+          <span className="terminal-cursor" />
         </button>
       </div>
     </div>
@@ -284,7 +293,13 @@ function WinDialog({
   );
 }
 
-function TouchPad({ onPress }: { onPress: (control: Control, down: boolean) => void }) {
+function TouchPad({
+  onPress,
+  onQuit,
+}: {
+  onPress: (control: Control, down: boolean) => void;
+  onQuit: () => void;
+}) {
   const button = (control: Control, label: string, name: string, extra = "") => (
     <button
       type="button"
@@ -308,14 +323,20 @@ function TouchPad({ onPress }: { onPress: (control: Control, down: boolean) => v
     </button>
   );
   return (
-    <div className="olympus-touch" style={{ bottom: TASKBAR_HEIGHT + 8 }}>
-      <div className="flex gap-2">
-        {button("left", "◄", "Turn left")}
-        {button("right", "►", "Turn right")}
-        {button("thrust", "▲", "Thrust")}
+    <>
+      {/* A touch screen has no Esc key. */}
+      <button type="button" className="olympus-touch-quit bevel-out" aria-label="Quit the game" onClick={onQuit}>
+        ✕
+      </button>
+      <div className="olympus-touch" style={{ bottom: TASKBAR_HEIGHT + 8 }}>
+        <div className="flex gap-2">
+          {button("left", "◄", "Turn left")}
+          {button("right", "►", "Turn right")}
+          {button("thrust", "▲", "Thrust")}
+        </div>
+        {button("fire", "FIRE", "Fire", "olympus-touch-fire")}
       </div>
-      {button("fire", "FIRE", "Fire", "olympus-touch-fire")}
-    </div>
+    </>
   );
 }
 
@@ -340,6 +361,10 @@ export default function OlympusGame(props: OlympusGameProps) {
   const [speech, setSpeech] = useState<{ text: string; x: number; y: number } | null>(null);
   const [hint, setHint] = useState(true);
   const [announce, setAnnounce] = useState("Olympus started.");
+  const { volume } = useMusic();
+
+  // Game sounds follow the Music player's volume slider.
+  useEffect(() => setSoundVolume(volume), [volume]);
 
   useEffect(() => {
     propsRef.current = props;
@@ -369,6 +394,10 @@ export default function OlympusGame(props: OlympusGameProps) {
     let shakeUntil = 0;
     let shakeSize = 0;
     let saidHurt = false;
+    let freezeUntil = 0;
+    const killPause = () => {
+      if (!reducedMotion) freezeUntil = performance.now() + KILL_PAUSE_MS;
+    };
 
     const fit = () => {
       const { w, h } = worldSize();
@@ -396,10 +425,20 @@ export default function OlympusGame(props: OlympusGameProps) {
       const p = propsRef.current;
       for (const e of events) {
         switch (e.type) {
+          case "shot":
+            playSound("shot");
+            break;
+          case "rockBroken":
+            playSound("rock");
+            if (e.size === 0) killPause();
+            break;
           case "iconDestroyed":
+            playSound("iconBreak");
+            killPause();
             p.onIconDestroyed(e.id as DesktopIconId);
             break;
           case "windowHit": {
+            playSound("hit");
             const el = document.querySelector(`[data-window-id="${e.id}"]`);
             if (el && !reducedMotion) {
               el.animate(
@@ -415,6 +454,8 @@ export default function OlympusGame(props: OlympusGameProps) {
             break;
           }
           case "windowCrashed": {
+            playSound("windowCrash");
+            killPause();
             const id = e.id as WindowId;
             const r = document.querySelector(`[data-window-id="${id}"]`)?.getBoundingClientRect();
             const key = performance.now();
@@ -429,11 +470,13 @@ export default function OlympusGame(props: OlympusGameProps) {
           }
           case "statueAwake":
             p.onStatueAwake();
+            playSound("rumble");
             shake(7, 1400);
             say(copy.statue.wakes);
             setAnnounce("The statue woke up. Shoot it to break it.");
             break;
           case "statueHit":
+            playSound("statueHit");
             shake(2, 90);
             if (!saidHurt && world && world.statue.hp <= world.statue.maxHp / 2) {
               saidHurt = true;
@@ -441,11 +484,14 @@ export default function OlympusGame(props: OlympusGameProps) {
             }
             break;
           case "statueCrumbled":
+            playSound("crumble");
+            killPause();
             shake(9, 900);
             say(copy.statue.falls);
             setAnnounce("The statue crumbled.");
             break;
           case "shipLost":
+            playSound("shipLost");
             shake(5, 300);
             setAnnounce(e.livesLeft > 0 ? `Hit. ${e.livesLeft} ${e.livesLeft === 1 ? "life" : "lives"} left.` : "Hit. No lives left.");
             break;
@@ -456,6 +502,7 @@ export default function OlympusGame(props: OlympusGameProps) {
             const best = loadBest();
             const newBest = world.score > best;
             if (newBest) saveBest(world.score);
+            if (e.type === "won") playSound("win");
             setEnding({ kind: e.type, score: world.score, best: Math.max(best, world.score), newBest });
             setAnnounce(
               `${e.type === "won" ? "You won" : "Game over"}. Score ${world.score.toLocaleString("en")}.`
@@ -479,8 +526,9 @@ export default function OlympusGame(props: OlympusGameProps) {
         if (now >= nextSync) {
           nextSync = now + 250;
           setTargets(world, readTargets(propsRef.current.windows));
+          world.shipFloor = touchRef.current ? TOUCH_STRIP : 0;
         }
-        acc += elapsed;
+        if (now >= freezeUntil) acc += elapsed;
         while (acc >= DT) {
           acc -= DT;
           handle(step(world, inputRef.current, DT));
@@ -528,12 +576,12 @@ export default function OlympusGame(props: OlympusGameProps) {
         statue: createStatue(box, COLS, ROWS, solidTiles(loaded)),
         random: Math.random,
         particleScale: reducedMotion ? 0.35 : 1,
+        shipFloor: touchRef.current ? TOUCH_STRIP : 0,
       });
       setTargets(world, readTargets(propsRef.current.windows));
       last = performance.now();
       raf = requestAnimationFrame(frame);
     });
-    later(4500, () => setHint(false));
 
     const pause = (value: boolean) => {
       if (endedRef.current) return;
@@ -561,6 +609,8 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (!control) return;
       e.preventDefault();
       e.stopPropagation();
+      unlockSound();
+      setHint(false);
       if (touchRef.current) {
         // Hiding the buttons drops any press they still hold.
         touchRef.current = false;
@@ -575,6 +625,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (control) inputRef.current = { ...inputRef.current, [control]: false };
     };
     const onPointerDown = (e: PointerEvent) => {
+      unlockSound();
       if (touchRef.current || (e.pointerType !== "touch" && e.pointerType !== "pen")) return;
       touchRef.current = true;
       setTouch(true);
@@ -688,7 +739,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         </button>
       )}
 
-      {touch && !ending && <TouchPad onPress={press} />}
+      {touch && !ending && <TouchPad onPress={press} onQuit={() => props.onEnd(false)} />}
 
       {ending?.kind === "won" && (
         <WinDialog ending={ending} onReplay={() => props.onEnd(true)} onExit={() => props.onEnd(false)} />
@@ -697,6 +748,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         <BlueScreen
           score={ending.score}
           best={ending.best}
+          touch={touch}
           onReplay={() => props.onEnd(true)}
           onExit={() => props.onEnd(false)}
         />
