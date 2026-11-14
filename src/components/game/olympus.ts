@@ -75,6 +75,8 @@ export type Debris = { x: number; y: number; size: number; color: string };
 export type Tile = {
   col: number;
   row: number;
+  /** Enough marble to stop a bullet. Thin edge tiles are only drawn. */
+  solid: boolean;
   attached: boolean;
   /** Only used once it has broken off. */
   x: number;
@@ -178,13 +180,15 @@ export const TUNING = {
     max: 8,
     spawnEvery: 4,
   },
-  window: { hp: 14, hitScore: 50, crashScore: 500, hitAnger: 1.5, crashAnger: 16 },
-  icon: { score: 150, anger: 8 },
+  window: { hp: 14, hitScore: 50, crashScore: 500, hitAnger: 1, crashAnger: 12 },
+  icon: { score: 150, anger: 6 },
   /** Anger comes from wrecking the desktop; time only adds a trickle. */
-  angerPerSecond: 0.6,
+  angerPerSecond: 1,
   /** Safety net: the statue wakes by now even if nothing was shot. */
   maxPlayTime: 45,
   maxDebris: 400,
+  /** The moment it wakes: everything stands still this long. */
+  awakenFreeze: 0.6,
   awakenTime: 2.4,
   statue: {
     hp: 55,
@@ -196,7 +200,7 @@ export const TUNING = {
     throwEvery: [1.9, 1.1] as const, // undamaged → nearly broken
     throwSpeed: [190, 260] as const,
     sway: 18,
-    rise: 20,
+    rise: 34,
     gravity: 900,
   },
   crumbleTime: 2.2,
@@ -225,15 +229,17 @@ function between(random: () => number, min: number, max: number) {
 }
 
 /**
- * The statue image cut into a grid. `solid[row * cols + col]` says whether
- * that tile has enough of the statue in it to be worth drawing and hitting.
+ * The statue image cut into a grid. `cover[row * cols + col]` is how much
+ * of that tile is statue, 0 → 1. Any tile with marble in it is drawn (so
+ * the outline stays smooth); only well-filled tiles can be hit.
  */
-export function createStatue(home: Rect, cols: number, rows: number, solid: boolean[]): Statue {
+export function createStatue(home: Rect, cols: number, rows: number, cover: number[]): Statue {
   const tiles: Tile[] = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      if (!solid[row * cols + col]) continue;
-      tiles.push({ col, row, attached: true, x: 0, y: 0, vx: 0, vy: 0, angle: 0, spin: 0 });
+      const filled = cover[row * cols + col];
+      if (filled < 0.02) continue;
+      tiles.push({ col, row, solid: filled > 0.35, attached: true, x: 0, y: 0, vx: 0, vy: 0, angle: 0, spin: 0 });
     }
   }
   return {
@@ -443,7 +449,7 @@ function attachedTileAt(statue: Statue, x: number, y: number): Tile | undefined 
   const col = Math.floor((x - statue.home.x - statue.dx) / tw);
   const row = Math.floor((y - statue.home.y - statue.dy) / th);
   if (col < 0 || row < 0 || col >= statue.cols || row >= statue.rows) return undefined;
-  return statue.tiles.find((t) => t.attached && t.col === col && t.row === row);
+  return statue.tiles.find((t) => t.attached && t.solid && t.col === col && t.row === row);
 }
 
 function breakTile(world: World, tile: Tile, fromX: number, fromY: number) {
@@ -471,6 +477,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
 
   world.time += dt;
   world.phaseTime += dt;
+  if (world.phase === "awakening" && world.phaseTime < TUNING.awakenFreeze) return events;
 
   /* Ship */
   if (ship.alive) {
@@ -552,8 +559,8 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   /* Statue */
   statue.time += dt;
   if (world.phase === "awakening") {
-    statue.wake = Math.min(1, world.phaseTime / TUNING.awakenTime);
-    if (world.phaseTime >= TUNING.awakenTime) setPhase(world, "boss");
+    statue.wake = Math.min(1, (world.phaseTime - TUNING.awakenFreeze) / TUNING.awakenTime);
+    if (statue.wake >= 1) setPhase(world, "boss");
   }
   if (world.phase === "awakening" || world.phase === "boss") {
     statue.dx = Math.sin(statue.time * 0.8) * TUNING.statue.sway * statue.wake;

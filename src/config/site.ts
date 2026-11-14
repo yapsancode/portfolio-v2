@@ -135,12 +135,19 @@ export const site = {
   olympus: {
     warning: "olympus.exe will damage your desktop.",
     warningMore:
-      "Windows may crash. Icons may not survive. The statue on the wallpaper may wake up.",
+      "Windows may crash. Icons may not survive. Everything comes back when you quit.",
     hint: "← → turn · ↑ thrust · Space fire · P pause · Esc quit",
     crash: "{name} has performed an illegal operation and will be shut down.",
     statue: {
       wakes: "Who keeps shooting my desktop?",
-      hurt: "I am marble. You are a mouse pointer.",
+      /** Said one by one as it loses health. */
+      hurt: [
+        "I am marble. You are a mouse pointer.",
+        "I have stood here for 2,000 years.",
+        "Fine. Look me in the eye.",
+      ],
+      /** Said when it takes one of your lives. */
+      taunts: ["Pointer not responding.", "Have you tried turning it off and on again?", "Click harder."],
       falls: "I was only a wallpaper...",
     },
     win: ["The statue crumbled.", "It was only a wallpaper anyway."],

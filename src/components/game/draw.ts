@@ -154,8 +154,11 @@ function drawStatue(ctx: CanvasRenderingContext2D, world: World, art: StatueArt)
   }
   ctx.globalAlpha = 1;
 
-  // The eye glows red while it wakes, as long as the eye is still there.
-  if (statue.wake > 0) {
+  // The eye glows red once it wakes, as long as the eye is still there.
+  // It lights up during the freeze and flares while the statue rises.
+  const waking = world.phase === "awakening";
+  const lit = waking ? Math.min(1, world.phaseTime / 0.5) : statue.wake;
+  if (lit > 0) {
     const col = Math.floor(EYE.x * statue.cols);
     const row = Math.floor(EYE.y * statue.rows);
     const eyeLeft = statue.tiles.some((t) => t.attached && t.col === col && t.row === row);
@@ -163,7 +166,8 @@ function drawStatue(ctx: CanvasRenderingContext2D, world: World, art: StatueArt)
       const x = statue.home.x + statue.dx + EYE.x * statue.home.w;
       const y = statue.home.y + statue.dy + EYE.y * statue.home.h;
       const pulse = 0.75 + Math.sin(world.time * 6) * 0.25;
-      const r = (8 + statue.home.w * 0.02) * statue.wake * pulse;
+      const flare = waking ? 1 + 2.2 * (1 - statue.wake) : 1;
+      const r = (8 + statue.home.w * 0.02) * lit * pulse * flare;
       const glow = ctx.createRadialGradient(x, y, 0, x, y, r);
       glow.addColorStop(0, "rgba(255, 240, 240, 1)");
       glow.addColorStop(0.25, "rgba(255, 40, 40, 0.95)");

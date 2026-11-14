@@ -29,7 +29,7 @@ function makeWorld(seed, screen, run) {
   const solid = [];
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
-      solid.push(r > 2 && Math.abs((c + 0.5) / COLS - 0.5) < 0.12 + r / ROWS / 3);
+      solid.push(r > 2 && Math.abs((c + 0.5) / COLS - 0.5) < 0.12 + r / ROWS / 3 ? 1 : 0);
   const sh = (h + TASKBAR) * (screen.phone ? 0.44 : 0.58);
   const sw = sh * 0.92;
   const box = { x: (w - sw) / 2, y: h - sh, w: sw, h: sh };

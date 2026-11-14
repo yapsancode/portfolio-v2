@@ -101,9 +101,9 @@ async function loadStatueArt(box: Rect): Promise<StatueArt | null> {
   return { image, sx: 0, sy: image.naturalHeight - sh, sw, sh };
 }
 
-/** Which tiles of the picture actually contain statue (not empty background). */
-function solidTiles(art: StatueArt | null): boolean[] {
-  const solid: boolean[] = [];
+/** How much of each tile of the picture is statue (not empty background), 0 → 1. */
+function tileCover(art: StatueArt | null): number[] {
+  const solid: number[] = [];
   const k = 6;
   const canvas = document.createElement("canvas");
   canvas.width = COLS * k;
@@ -113,7 +113,7 @@ function solidTiles(art: StatueArt | null): boolean[] {
     // No picture: a rough statue shape, so the game still works.
     for (let row = 0; row < ROWS; row++)
       for (let col = 0; col < COLS; col++)
-        solid.push(row > 2 && Math.abs((col + 0.5) / COLS - 0.5) < 0.12 + row / ROWS / 3);
+        solid.push(row > 2 && Math.abs((col + 0.5) / COLS - 0.5) < 0.12 + row / ROWS / 3 ? 1 : 0);
     return solid;
   }
   ctx.drawImage(art.image, art.sx, art.sy, art.sw, art.sh, 0, 0, canvas.width, canvas.height);
@@ -123,7 +123,7 @@ function solidTiles(art: StatueArt | null): boolean[] {
       let alpha = 0;
       for (let y = 0; y < k; y++)
         for (let x = 0; x < k; x++) alpha += data[((row * k + y) * canvas.width + col * k + x) * 4 + 3];
-      solid.push(alpha / (k * k) > 90);
+      solid.push(alpha / (k * k) / 255);
     }
   }
   return solid;
@@ -393,7 +393,8 @@ export default function OlympusGame(props: OlympusGameProps) {
     let disposed = false;
     let shakeUntil = 0;
     let shakeSize = 0;
-    let saidHurt = false;
+    let hurtLines = 0;
+    let taunts = 0;
     let freezeUntil = 0;
     const killPause = () => {
       if (!reducedMotion) freezeUntil = performance.now() + KILL_PAUSE_MS;
@@ -475,18 +476,23 @@ export default function OlympusGame(props: OlympusGameProps) {
             break;
           }
           case "statueAwake":
+            // Swap the wallpaper for the canvas statue; then a beat of
+            // silence (the rules freeze too) before it all breaks loose.
             p.onStatueAwake();
-            playSound("rumble");
-            shake(7, 1400);
-            say(copy.statue.wakes);
+            later(TUNING.awakenFreeze * 1000, () => {
+              playSound("rumble");
+              shake(9, 2200);
+              say(copy.statue.wakes);
+            });
             setAnnounce("The statue woke up. Shoot it to break it.");
             break;
           case "statueHit":
             playSound("statueHit");
             shake(2, 90);
-            if (!saidHurt && world && world.statue.hp <= world.statue.maxHp / 2) {
-              saidHurt = true;
-              say(copy.statue.hurt);
+            // One line each time it loses another slice of health.
+            if (world && hurtLines < copy.statue.hurt.length) {
+              const slice = 1 - (hurtLines + 1) / (copy.statue.hurt.length + 1);
+              if (world.statue.hp <= world.statue.maxHp * slice) say(copy.statue.hurt[hurtLines++]);
             }
             break;
           case "statueCrumbled":
@@ -499,6 +505,8 @@ export default function OlympusGame(props: OlympusGameProps) {
           case "shipLost":
             playSound("shipLost");
             shake(5, 300);
+            if (world?.phase === "boss" && e.livesLeft > 0)
+              say(copy.statue.taunts[taunts++ % copy.statue.taunts.length]);
             setAnnounce(e.livesLeft > 0 ? `Hit. ${e.livesLeft} ${e.livesLeft === 1 ? "life" : "lives"} left.` : "Hit. No lives left.");
             break;
           case "won":
@@ -579,7 +587,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         w,
         h,
         shipAt: spawn ? { x: Math.min(w - 20, spawn.x), y: Math.min(h - 20, spawn.y) } : undefined,
-        statue: createStatue(box, COLS, ROWS, solidTiles(loaded)),
+        statue: createStatue(box, COLS, ROWS, tileCover(loaded)),
         random: Math.random,
         particleScale: reducedMotion ? 0.35 : 1,
         shipFloor: touchRef.current ? TOUCH_STRIP : 0,
@@ -685,6 +693,8 @@ export default function OlympusGame(props: OlympusGameProps) {
         role="application"
         aria-label="Olympus. Left and right arrows turn, up arrow thrusts, Space fires, P pauses, Escape quits."
       />
+
+      {statueAwake && <div className="olympus-dark" aria-hidden="true" />}
 
       <div className="olympus-hud bevel-out" aria-hidden="true">
         <div className="player-lcd">

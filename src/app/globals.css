@@ -470,6 +470,22 @@ body {
   outline: none;
 }
 
+/* The statue is awake: the desktop goes dark (under the canvas, over the windows). */
+.olympus-dark {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  background: radial-gradient(circle at 50% 75%, rgba(70, 0, 0, 0.45), rgba(0, 0, 0, 0.78) 70%);
+  pointer-events: none;
+  animation: olympus-dark-in 0.5s ease-out;
+}
+
+@keyframes olympus-dark-in {
+  from {
+    opacity: 0;
+  }
+}
+
 .olympus-hud {
   position: fixed;
   top: 8px;
