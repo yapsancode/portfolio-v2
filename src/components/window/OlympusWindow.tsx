@@ -5,40 +5,19 @@ import type { MouseEvent } from "react";
 import { site } from "@/config/site";
 import { BEST_RUN_KEY, loadBest, useGame } from "@/components/game/GameContext";
 
-const copy = site.olympus;
+const copy = site.olympus.title;
 
-const TOUCH_CONTROLS = [
-  ["◄ ►", "Turn"],
-  ["▲", "Thrust"],
-  ["FIRE", "Fire"],
-  ["✕", "Quit and fix the desktop"],
-] as const;
-
-const CONTROLS = [
-  ["← →  or  A D", "Turn"],
-  ["↑  or  W", "Thrust"],
-  ["Space", "Fire"],
-  ["P", "Pause"],
-  ["Esc", "Quit and fix the desktop"],
-] as const;
-
-/** Win98 warning triangle. */
-function WarningGlyph() {
-  return (
-    <svg viewBox="0 0 16 16" width="32" height="32" shapeRendering="crispEdges" aria-hidden="true">
-      <path d="M7 1h2v2h1v3h1v3h1v3h1v2h1v1H1v-1h1v-2h1V9h1V6h1V3h1V1z" fill="#000" />
-      <path d="M7 2h2v2h1v3h1v3h1v3h1v1H2v-1h1v-3h1V7h1V4h1V2z" fill="#ffd800" />
-      <rect x="7" y="5" width="2" height="5" fill="#000" />
-      <rect x="7" y="11" width="2" height="2" fill="#000" />
-    </svg>
-  );
+/** One key (or on-screen button), drawn as a grey Windows 98 keycap. */
+function Key({ children }: { children: string }) {
+  return <kbd className="olympus-key bevel-out">{children}</kbd>;
 }
 
-const button =
-  "bevel-out min-w-20 bg-win-face px-4 py-1 font-pixel text-base leading-none focus-visible:outline-1 focus-visible:-outline-offset-4 focus-visible:outline-dotted focus-visible:outline-black active:translate-x-px active:translate-y-px";
-
+/**
+ * The title screen of olympus.exe: an old DOS game running in a window.
+ * Enter (or a tap) starts the game; the window's close button leaves.
+ */
 export default function OlympusWindow() {
-  const { start, cancel } = useGame();
+  const { start } = useGame();
   const [best] = useState(() => loadBest());
   const [bestRun] = useState(() => loadBest(BEST_RUN_KEY));
   // Same test the game uses to show its on-screen buttons.
@@ -51,48 +30,57 @@ export default function OlympusWindow() {
     start(e.detail === 0 ? null : { x: e.clientX, y: e.clientY });
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-win-face p-3">
-      <h1 className="sr-only">Olympus</h1>
+    <div className="olympus-title">
+      <p className="olympus-title-dim">{copy.presents}</p>
+      <h1 className="olympus-logo">OLYMPUS</h1>
+      <p>{copy.tagline}</p>
 
-      <div className="flex shrink-0 gap-3">
-        <WarningGlyph />
-        <div className="text-sm leading-snug">
-          <p className="font-bold">{copy.warning}</p>
-          <p className="mt-1">{copy.warningMore}</p>
-        </div>
-      </div>
+      <button type="button" className="olympus-title-start" onClick={onStart} autoFocus>
+        {touch ? copy.startTouch : copy.start}
+      </button>
 
-      <div className="bevel-in win-scroll mt-3 min-h-0 flex-1 overflow-auto bg-white p-2 text-xs">
-        <table className="w-full">
-          <caption className="sr-only">Controls</caption>
-          <tbody>
-            {(touch ? TOUCH_CONTROLS : CONTROLS).map(([keys, action]) => (
-              <tr key={action}>
-                <td className="w-1/2 py-0.5 pr-2 font-pixel text-base leading-none">{keys}</td>
-                <td className="py-0.5">{action}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="mt-1 text-neutral-600">
-          {touch
-            ? "Use the buttons at the bottom of the screen. A keyboard works too."
-            : "On a phone or tablet, use the buttons at the bottom of the screen."}
+      {touch ? (
+        <p className="olympus-title-keys">
+          <span>
+            <Key>◄</Key> <Key>►</Key> turn
+          </span>
+          <span>
+            <Key>▲</Key> thrust
+          </span>
+          <span>
+            <Key>FIRE</Key> fire
+          </span>
+          <span>
+            <Key>✕</Key> quit
+          </span>
         </p>
-      </div>
+      ) : (
+        <p className="olympus-title-keys">
+          <span>
+            <Key>←</Key> <Key>→</Key> turn
+          </span>
+          <span>
+            <Key>↑</Key> thrust
+          </span>
+          <span>
+            <Key>Space</Key> fire
+          </span>
+          <span>
+            <Key>P</Key> pause
+          </span>
+          <span>
+            <Key>Esc</Key> quit
+          </span>
+        </p>
+      )}
 
-      <div className="mt-3 flex shrink-0 items-center gap-2">
-        <span className="mr-auto font-pixel text-base leading-none">
-          Best: {best.toLocaleString("en")}
-          {bestRun > 0 && ` · run ${bestRun}`}
-        </span>
-        <button type="button" className={button} onClick={onStart} autoFocus>
-          Start
-        </button>
-        <button type="button" className={button} onClick={cancel}>
-          Cancel
-        </button>
-      </div>
+      {best > 0 && (
+        <p className="olympus-title-score">
+          HI-SCORE {String(best).padStart(6, "0")}
+          {bestRun > 0 && ` · RUN ${bestRun}`}
+        </p>
+      )}
+      <p className="olympus-title-dim">{copy.warning}</p>
     </div>
   );
 }

@@ -275,13 +275,12 @@ function DesktopRoot() {
   const gameControls: GameControls = {
     start: (spawnAt) => {
       unlockSound(); // browsers only allow sound from inside a click
-      // On phones the warning dialog is full-screen; play on the bare desktop,
+      // On phones the title screen is full-screen; play on the bare desktop,
       // with the ship in the middle rather than under the touch buttons.
       dispatch(isMobile ? { type: "CLOSE_ALL" } : { type: "CLOSE", id: "olympus" });
       setStatueReturning(false);
       setGame({ run: (game?.run ?? 0) + 1, level: 1, spawnAt: isMobile ? null : spawnAt });
     },
-    cancel: () => dispatch({ type: "CLOSE", id: "olympus" }),
   };
 
   const endGame = (replay: boolean, won: boolean) => {

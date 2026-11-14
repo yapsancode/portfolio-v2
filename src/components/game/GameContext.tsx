@@ -3,14 +3,12 @@
 import { createContext, useContext } from "react";
 
 /**
- * Lets the olympus.exe warning dialog start the game, which runs at the
+ * Lets the olympus.exe title screen start the game, which runs at the
  * desktop level (over every window), not inside its own window.
  */
 export type GameControls = {
   /** `spawnAt` is where the pointer was, so the ship appears there. */
   start: (spawnAt: { x: number; y: number } | null) => void;
-  /** Close the warning dialog without playing. */
-  cancel: () => void;
 };
 
 export const GameContext = createContext<GameControls | null>(null);

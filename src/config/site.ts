@@ -133,9 +133,14 @@ export const site = {
 
   /** Copy for Olympus, the desktop asteroids game (olympus.exe). Drafts: rewrite freely. */
   olympus: {
-    warning: "olympus.exe will damage your desktop.",
-    warningMore:
-      "Windows may crash. Icons may not survive. Everything comes back when you quit.",
+    /** The title screen inside the olympus.exe window. */
+    title: {
+      presents: "Isyraf 98 presents",
+      tagline: "Shoot everything on this desktop.",
+      start: "Press Enter to start",
+      startTouch: "Tap to start",
+      warning: "Windows may crash. Icons may not survive. Everything comes back when you quit.",
+    },
     hint: "← → turn · ↑ thrust · Space fire · P pause · Esc quit",
     crash: "{name} has performed an illegal operation and will be shut down.",
     statue: {
@@ -629,7 +634,7 @@ export const windowDefaults: Record<
     title: "C:\\isyraf\\games\\olympus.exe",
     icon: "olympus",
     width: 400,
-    height: 330,
+    height: 360,
     x: 300,
     y: 140,
   },
