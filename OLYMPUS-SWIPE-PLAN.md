@@ -1,7 +1,7 @@
 # Olympus — Swipe & Smash build and release plan
 
 Date: 2026-11-15.
-Status: implemented and locally verified; PR / production release in progress.
+Status: implementation complete. Release and deployment record: [PR #3](https://github.com/yapsancode/portfolio-v2/pull/3).
 Destination: implement, verify, commit, push, merge into `main`, and verify the production deployment.
 
 This plan supersedes the gameplay direction and release gates in `OLYMPUS_ROADMAP.md`. That document remains the history of the Asteroids version.
@@ -151,6 +151,8 @@ The user's request includes push and merge to `main`; do not introduce an additi
 
 ## Definition of done
 
+The release checkboxes below are the pre-merge checklist. PR #3 and its deployment record track the final merge and production verification.
+
 - [x] One-thumb Swipe & Smash is the playable Olympus experience on phone and desktop.
 - [x] Six authored boards, readable statue attacks, chain scoring, immediate replay and small cosmetic progression work.
 - [x] No time pressure or hidden damage while the player is idle; interruptions and reloads preserve progress.
@@ -183,3 +185,9 @@ Local verification:
 - Screenshots inspected for introduction, marked attack, pause/help, win/unlock, next board and landscape. Portrait controls fit the tested short phone; landscape permits vertical scrolling while keeping the board and swipe pad accessible.
 
 Limits: no physical iPhone/Android hand-comfort study, human retention test, or acoustic listening test has been performed. Browser WebKit is not physical Safari hardware. Offline cold starts remain outside this release.
+
+
+Release checks:
+
+- The first GitHub CI run exposed a pre-existing peer-dependency lock mismatch: this machine's global npm setting used `legacy-peer-deps=true`. The lockfile was repaired using standard peer resolution and a repository `.npmrc` now keeps future installs consistent with CI.
+- Vercel's preview build succeeded, but its URL requires Vercel authentication unavailable to the local browser/CLI. Preview gameplay could not be checked remotely. The release uses the local production-browser suite and GitHub CI as the merge gate, followed by checks on the public production URL. No deployment-protection settings were changed.
