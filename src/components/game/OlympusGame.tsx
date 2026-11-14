@@ -450,6 +450,12 @@ export default function OlympusGame(props: OlympusGameProps) {
                 ],
                 { duration: 220 }
               );
+              // Nearly dead: the title bar flickers.
+              if (e.left <= 4)
+                el.querySelector(".win-titlebar")?.animate(
+                  [{ opacity: 1 }, { opacity: 0.25 }, { opacity: 1 }, { opacity: 0.25 }, { opacity: 1 }],
+                  { duration: 260 }
+                );
             }
             break;
           }

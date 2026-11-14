@@ -130,6 +130,12 @@ function dodgerBot(world) {
   return idleBot(world);
 }
 
+/** Does nothing at all (and cannot be hit): for the "nobody shoots" safety net. */
+function ghostBot(world) {
+  world.ship.safe = 9;
+  return { left: false, right: false, thrust: false, fire: false };
+}
+
 function play(seed, screen, bot, run = 1) {
   const world = makeWorld(seed, screen, run);
   const out = { end: "timeout", wake: 0, boss: 0, livesAtBoss: 0, windowTime: 0, tail: 0 };
@@ -192,7 +198,13 @@ for (const [screenName, screen] of Object.entries(SCREENS)) {
 
 // Targets. Each roadmap step switches its own lines on.
 const R = results;
+const all = Object.values(R);
+const ghostWake = play(1, SCREENS.desktop, ghostBot).wake;
+console.log(`nobody shoots: statue wakes at ${ghostWake.toFixed(1)}s`);
 const checks = [
+  ["step 2: an active player wakes the statue between 15 and 30 s", all.every((r) => r.wake >= 15 && r.wake <= 30)],
+  ["step 2: with nobody shooting, the statue still wakes at 45 s", Math.abs(ghostWake - 45) < 0.5],
+  ["step 2: the first window survives 4+ s of fire", R["desktop.dodger"].windowTime >= 4 && R["desktop.idle"].windowTime >= 4],
   ["step 1: on a phone, Idle reaches the boss with 2+ lives in most games", R["phone.idle"].twoLives >= 0.7],
 ];
 

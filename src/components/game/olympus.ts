@@ -65,6 +65,12 @@ export type Particle = {
   gravity: number;
 };
 
+/** A bullet hole in a window that is still open. */
+export type Scar = { id: string; x: number; y: number };
+
+/** A bit of wreckage left where a window or icon used to be. */
+export type Debris = { x: number; y: number; size: number; color: string };
+
 /** One tile of the statue image, still attached or flying off. */
 export type Tile = {
   col: number;
@@ -100,7 +106,8 @@ export type GameEvent =
   | { type: "shot" }
   | { type: "rockBroken"; size: 0 | 1 | 2 }
   | { type: "iconDestroyed"; id: string }
-  | { type: "windowHit"; id: string }
+  /** `left` = hits the window can still take. */
+  | { type: "windowHit"; id: string; left: number }
   | { type: "windowCrashed"; id: string }
   | { type: "statueAwake" }
   | { type: "statueHit" }
@@ -126,6 +133,8 @@ export type World = {
   windowHp: Record<string, number>;
   destroyedIcons: string[];
   crashedWindows: string[];
+  scars: Scar[];
+  debris: Debris[];
   /** 0 → 100. At 100 the statue wakes up. */
   anger: number;
   lives: number;
@@ -169,18 +178,20 @@ export const TUNING = {
     max: 8,
     spawnEvery: 4,
   },
-  window: { hp: 3, hitScore: 50, crashScore: 500, hitAnger: 1, crashAnger: 5 },
-  icon: { score: 150, anger: 3 },
-  angerPerSecond: 2.2,
-  /** The statue never wakes before this, however fast you shoot. */
-  minPlayTime: 20,
+  window: { hp: 14, hitScore: 50, crashScore: 500, hitAnger: 1.5, crashAnger: 16 },
+  icon: { score: 150, anger: 8 },
+  /** Anger comes from wrecking the desktop; time only adds a trickle. */
+  angerPerSecond: 0.6,
+  /** Safety net: the statue wakes by now even if nothing was shot. */
+  maxPlayTime: 45,
+  maxDebris: 400,
   awakenTime: 2.4,
   statue: {
     hp: 55,
     tilesPerHit: [1, 2] as const,
     hitScore: 100,
     pokeScore: 10,
-    pokeAnger: 1,
+    pokeAnger: 0.4,
     crumbleScore: 5000,
     throwEvery: [1.9, 1.1] as const, // undamaged → nearly broken
     throwSpeed: [190, 260] as const,
@@ -265,15 +276,28 @@ function makeRock(
   };
 }
 
-/** A big rock drifting in from a random edge, roughly toward the middle. */
-function rockFromEdge(world: World): Rock {
-  const { random, w, h } = world;
-  const r = TUNING.rock.radius[0];
-  const side = Math.floor(random() * 4);
-  const x = side === 0 ? -r : side === 1 ? w + r : random() * w;
-  const y = side === 2 ? -r : side === 3 ? h + r : random() * h;
-  const toMiddle = Math.atan2(h / 2 - y, w / 2 - x);
-  return makeRock(world, 0, x, y, toMiddle + between(random, -0.6, 0.6));
+/** The rocks are chips of the statue: one breaks off its shoulders and drifts up and away. */
+function chipFromStatue(world: World): Rock {
+  const { random } = world;
+  const { home } = world.statue;
+  const x = home.x + home.w * between(random, 0.25, 0.75);
+  const y = home.y + home.h * between(random, 0.3, 0.45);
+  burst(world, x, y, 10, MARBLE, 120, 300);
+  return makeRock(world, 0, x, y, -Math.PI / 2 + between(random, -1.3, 1.3));
+}
+
+function addDebris(world: World, t: TargetRect, count: number, colors: string[]) {
+  const { random } = world;
+  for (let i = 0; i < count && world.debris.length < TUNING.maxDebris; i++) {
+    // Most of it lies along the bottom edge, like a pile.
+    const drop = random() * random();
+    world.debris.push({
+      x: Math.round(t.x + random() * t.w),
+      y: Math.round(t.y + t.h * (1 - drop * 0.6)),
+      size: 3 + Math.floor(random() * 4),
+      color: colors[Math.floor(random() * colors.length)],
+    });
+  }
 }
 
 export function createWorld(opts: {
@@ -310,6 +334,8 @@ export function createWorld(opts: {
     windowHp: {},
     destroyedIcons: [],
     crashedWindows: [],
+    scars: [],
+    debris: [],
     anger: 0,
     lives: TUNING.lives,
     score: 0,
@@ -323,7 +349,7 @@ export function createWorld(opts: {
   };
   // The pointer "becomes" the ship.
   burst(world, world.ship.x, world.ship.y, 28, SPARK, 240);
-  for (let i = 0; i < TUNING.rock.start; i++) world.rocks.push(rockFromEdge(world));
+  for (let i = 0; i < TUNING.rock.start; i++) world.rocks.push(chipFromStatue(world));
   return world;
 }
 
@@ -386,6 +412,7 @@ function burst(
 const MARBLE = ["#f2f2f2", "#d8d8d8", "#b8b8b8", "#909090"];
 const ICON_BITS = ["#ffd800", "#000080", "#e04040", "#40c040", "#ffffff", "#a0662c"];
 const SPARK = ["#ffffe1", "#ffd800", "#ff8c1a"];
+const WINDOW_BITS = ["#c0c0c0", "#000080", "#ffffff", "#808080"];
 
 function addAnger(world: World, amount: number) {
   if (world.phase !== "play") return;
@@ -490,7 +517,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
     if (ship.respawn <= 0) {
       Object.assign(ship, {
         x: world.w / 2,
-        y: (world.h - world.shipFloor) * 0.4,
+        y: (world.h - world.shipFloor) * 0.18,
         vx: 0,
         vy: 0,
         angle: 0,
@@ -512,10 +539,11 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
     world.spawnIn -= dt;
     if (world.spawnIn <= 0) {
       world.spawnIn = TUNING.rock.spawnEvery;
-      if (world.rocks.length < TUNING.rock.max - 2) world.rocks.push(rockFromEdge(world));
+      if (world.rocks.length < TUNING.rock.max - 2) world.rocks.push(chipFromStatue(world));
     }
     addAnger(world, TUNING.angerPerSecond * dt);
-    if (world.anger >= 100 && world.phaseTime >= TUNING.minPlayTime) {
+    if (world.anger >= 100 || world.phaseTime >= TUNING.maxPlayTime) {
+      world.anger = 100;
       setPhase(world, "awakening");
       events.push({ type: "statueAwake" });
     }
@@ -679,6 +707,7 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
       world.score += TUNING.icon.score;
       addAnger(world, TUNING.icon.anger);
       burst(world, t.x + t.w / 2, t.y + t.h / 2, 26, ICON_BITS, 200, 300);
+      addDebris(world, t, 14, ICON_BITS);
       events.push({ type: "iconDestroyed", id: t.id });
     } else {
       const hp = (world.windowHp[t.id] ?? TUNING.window.hp) - 1;
@@ -687,13 +716,16 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
       if (hp > 0) {
         world.score += TUNING.window.hitScore;
         addAnger(world, TUNING.window.hitAnger);
-        events.push({ type: "windowHit", id: t.id });
+        world.scars.push({ id: t.id, x: Math.round(b.x), y: Math.round(b.y) });
+        events.push({ type: "windowHit", id: t.id, left: hp });
       } else {
         world.crashedWindows.push(t.id);
         delete world.windowHp[t.id];
         world.score += TUNING.window.crashScore;
         addAnger(world, TUNING.window.crashAnger);
-        burst(world, t.x + t.w / 2, t.y + t.h / 2, 30, ["#c0c0c0", "#000080", "#ffffff"], 220, 300);
+        burst(world, t.x + t.w / 2, t.y + t.h / 2, 30, WINDOW_BITS, 220, 300);
+        world.scars = world.scars.filter((s) => s.id !== t.id);
+        addDebris(world, t, 70, WINDOW_BITS);
         events.push({ type: "windowCrashed", id: t.id });
       }
     }

@@ -63,35 +63,70 @@ function drawShip(ctx: CanvasRenderingContext2D, ship: Ship, time: number) {
   ctx.restore();
 }
 
-function drawRock(ctx: CanvasRenderingContext2D, rock: Rock) {
+/** The rock's outline, scaled by `k`, with corners snapped to whole pixels. */
+function rockPath(ctx: CanvasRenderingContext2D, rock: Rock, k: number) {
   const n = rock.shape.length;
-  ctx.save();
-  ctx.translate(rock.x, rock.y);
-  ctx.rotate(rock.angle);
   ctx.beginPath();
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
-    const r = rock.r * rock.shape[i];
-    if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-    else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    const r = rock.r * rock.shape[i] * k;
+    const x = Math.round(Math.cos(a) * r);
+    const y = Math.round(Math.sin(a) * r);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   }
   ctx.closePath();
-  const fill = ctx.createRadialGradient(-rock.r * 0.3, -rock.r * 0.3, 1, 0, 0, rock.r);
-  fill.addColorStop(0, "#f4f4f4");
-  fill.addColorStop(1, "#a8a8a8");
-  ctx.fillStyle = fill;
+}
+
+/** A marble chip in the Windows 98 look: flat colours, hard edges, no smooth shading. */
+function drawRock(ctx: CanvasRenderingContext2D, rock: Rock) {
+  ctx.save();
+  ctx.translate(Math.round(rock.x), Math.round(rock.y));
+  // Turn in 16 steps, like an old sprite.
+  ctx.rotate(Math.round(rock.angle / (Math.PI / 8)) * (Math.PI / 8));
+  rockPath(ctx, rock, 1);
+  ctx.fillStyle = "#b8b8b8";
   ctx.fill();
   ctx.lineWidth = 2;
-  ctx.strokeStyle = "#606060";
+  ctx.lineJoin = "miter";
+  ctx.strokeStyle = "#404040";
   ctx.stroke();
-  // A marble vein.
-  ctx.beginPath();
-  ctx.moveTo(-rock.r * 0.5, -rock.r * 0.15);
-  ctx.quadraticCurveTo(0, rock.r * 0.2, rock.r * 0.45, -rock.r * 0.05);
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = "rgba(90, 90, 90, 0.55)";
-  ctx.stroke();
+  // A lighter face toward the top-left.
+  ctx.translate(-Math.round(rock.r * 0.14), -Math.round(rock.r * 0.14));
+  rockPath(ctx, rock, 0.62);
+  ctx.fillStyle = "#f2f2f2";
+  ctx.fill();
+  // A marble vein, as two straight strokes.
+  const u = rock.r / 8;
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(Math.round(-3 * u), Math.round(u), Math.round(3 * u), 2);
+  ctx.fillRect(0, Math.round(u) + 2, Math.round(3 * u), 2);
   ctx.restore();
+}
+
+/** Wreckage and bullet holes: the damage stays on screen. */
+function drawDamage(ctx: CanvasRenderingContext2D, world: World) {
+  for (const d of world.debris) {
+    ctx.fillStyle = d.color;
+    ctx.fillRect(d.x, d.y, d.size, d.size);
+  }
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#000000";
+  for (const s of world.scars) {
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(s.x - 3, s.y - 3, 6, 6);
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(s.x - 3, s.y - 3, 6, 1);
+    // Four cracks; their directions come from the hole's position, so they don't flicker.
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const a = i * 1.57 + ((s.x * 7 + s.y * 13 + i * 5) % 10) / 8;
+      const len = 7 + ((s.x + s.y * 3 + i * 11) % 9);
+      ctx.moveTo(s.x + 0.5, s.y + 0.5);
+      ctx.lineTo(Math.round(s.x + Math.cos(a) * len) + 0.5, Math.round(s.y + Math.sin(a) * len) + 0.5);
+    }
+    ctx.stroke();
+  }
 }
 
 function drawStatue(ctx: CanvasRenderingContext2D, world: World, art: StatueArt) {
@@ -151,6 +186,8 @@ export function drawWorld(
 
   // The canvas statue only replaces the wallpaper once it is awake.
   if (art && world.phase !== "play") drawStatue(ctx, world, art);
+
+  drawDamage(ctx, world);
 
   for (const rock of world.rocks) drawRock(ctx, rock);
 
