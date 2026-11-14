@@ -1,6 +1,6 @@
 # Olympus — Development Roadmap
 
-Status: **option A chosen (2026-11-14). Build plan written at the bottom, waiting for review.** No game code has been changed.
+Status: **option A built: steps 0–5 are done (2026-11-14). Step 6 (three real people play it) is open, and nothing is merged to `main` yet.** See "What was built" at the very bottom for the changes from the plan.
 Written 2026-11-14, after a code review and three browser playtests.
 
 ## Goal
@@ -208,3 +208,46 @@ Done when: sim shows the Dodger's win rate falling on run 2 and run 3; win, repl
 - Laser fairness on a phone screen: decided by the step 4 phone playtest.
 - Keys stay. Mouse aiming is not planned.
 - iPhone Safari and tablets cannot be tested from this PC. They are part of step 6.
+
+---
+
+# What was built (2026-11-14)
+
+Steps 0–5 are committed on `yapsancode/olympusgame-improvement`, one commit per step.
+
+## Measured result (200 simulated games each, `node scripts/olympus-sim.mjs`)
+
+| Check | Desktop | Phone |
+|---|---|---|
+| Robot that never moves wins | 6% | 9% |
+| Robot that dodges wins | 57% | 94% |
+| Boss fight length (dodging robot, median) | 25 s | 18.5 s |
+| Statue wakes (active player) | 24–28 s | 19–20 s |
+| Statue wakes when nobody shoots | 45 s | 45 s |
+| Dodging robot wins on run 1 / 2 / 3 | 57% / 57% / 45% | not measured |
+
+Also checked: lint, type-check and `npm run build` pass. Headless Edge playtests at 1280 px and 412 px, with no console errors: start dialog, hint, wreckage, wake-up, hot marble, laser aiming line, shrinking statue, win screen, RUN 2 after replay, best run in the start dialog, blue screen with touch wording, quit button.
+
+## Changes from the build plan
+
+- **Thrown marble cannot be shot down.** It is orange ("hot") and must be dodged. With marble that could be shot, a player who stood still and aimed well kept winning.
+- **When the statue wakes, the drifting chips fly back into it.** The boss fight is only thrown marble and the laser.
+- **The laser stage also throws spreads of three.** Without this, later runs were easier, because the laser stage replaced the harder spread stage.
+- **The ship turns and thrusts a little faster** (turn 4.6 → 5.4, thrust 480 → 560).
+- **Statue health is 38 hits** (was 55), and tiles break from the outside toward the eye.
+- **Windows take 14 hits** (plan said about 8), so the first window lasts 4+ seconds.
+- **The phone is easier on purpose.** Touch buttons are much harder for a person than for a robot.
+- **Touch screens get a quit button** (top-left). Before, a phone player could only leave by losing.
+- **Two checks are softer than planned:** "last 5% of the statue" uses the median of won games (a death during the last 5% adds respawn time), and run 2 only has to be no easier than run 1.
+- Not built from step 2: the title bar "flicker" is a short fade on hits when the window is nearly dead, nothing more.
+
+## Not checked
+
+- How the sounds actually sound (headless Edge has no speakers).
+- Real hands: laser fairness on a phone, tablets, iPhone Safari.
+- The simulation uses a stand-in statue shape and one fake window, so its numbers are a guide, not exact.
+- Run 2 and run 3 difficulty on a phone.
+
+## Tuning without editing code
+
+`OLYMPUS_TUNING='{"statue.hp":45,"boss.spread":0.15}' node scripts/olympus-sim.mjs` tries other numbers. All numbers live in `TUNING` in `src/components/game/olympus.ts`.
