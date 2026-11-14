@@ -3,18 +3,18 @@
 import { lazy, Suspense, useEffect, useReducer, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { site, desktopIcons, windowDefaults } from "@/config/site";
-import type { DesktopIconId, WindowId } from "@/config/site";
+import type { WindowId } from "@/config/site";
 import { unlockSound } from "@/components/game/sound";
 import { GameContext, type GameControls } from "@/components/game/GameContext";
 import Window from "@/components/window/Window";
 import { windowRegistry } from "@/components/window/windowRegistry";
 import BootScreen from "./BootScreen";
 import DesktopIcon from "./DesktopIcon";
-import { MusicProvider } from "./music";
+import { MusicProvider, useMusic } from "./music";
 import ShootingStar from "./ShootingStar";
 import Taskbar, { TASKBAR_HEIGHT } from "./Taskbar";
 
-// Olympus (the desktop asteroids game) is only downloaded when someone presses Start.
+// The game is only downloaded when someone presses Start.
 const OlympusGame = lazy(() => import("@/components/game/OlympusGame"));
 
 /* ------------------------------------------------------------------ */
@@ -228,20 +228,8 @@ function DesktopRoot() {
   // "Shut Down..." in the Start menu: a full-screen goodbye until restart.
   const [shutDown, setShutDown] = useState(false);
 
-  // Olympus runs over the whole desktop. While it does, shot-down icons are
-  // hidden, crashed windows are minimized and the statue may be "awake".
-  // Ending the game puts all of it back.
-  // `run` only makes each game a fresh component; `level` is how many wins
-  // in a row the player is on (1 = first game), and makes the fight harder.
-  const [game, setGame] = useState<{
-    run: number;
-    level: number;
-    spawnAt: { x: number; y: number } | null;
-  } | null>(null);
-  const [destroyedIcons, setDestroyedIcons] = useState<DesktopIconId[]>([]);
-  const [crashedWindows, setCrashedWindows] = useState<WindowId[]>([]);
-  const [statueHidden, setStatueHidden] = useState(false);
-  const [statueReturning, setStatueReturning] = useState(false);
+  const [game, setGame] = useState(false);
+  const { volume } = useMusic();
 
   const openWindow = (id: WindowId) => {
     if (isMobile) {
@@ -273,32 +261,15 @@ function DesktopRoot() {
   }, [state.activeId, game]);
 
   const gameControls: GameControls = {
-    start: (spawnAt) => {
-      unlockSound(); // browsers only allow sound from inside a click
-      // On phones the title screen is full-screen; play on the bare desktop,
-      // with the ship in the middle rather than under the touch buttons.
-      dispatch(isMobile ? { type: "CLOSE_ALL" } : { type: "CLOSE", id: "olympus" });
-      setStatueReturning(false);
-      setGame({ run: (game?.run ?? 0) + 1, level: 1, spawnAt: isMobile ? null : spawnAt });
+    start: () => {
+      unlockSound();
+      dispatch({ type: "CLOSE", id: "olympus" });
+      setGame(true);
     },
   };
-
-  const endGame = (replay: boolean, won: boolean) => {
-    for (const id of crashedWindows) {
-      if (state.windows.find((w) => w.id === id)?.minimized) dispatch({ type: "FOCUS", id });
-    }
-    setCrashedWindows([]);
-    setDestroyedIcons([]);
-    if (statueHidden) setStatueReturning(true);
-    setStatueHidden(false);
-    setGame(
-      replay ? { run: (game?.run ?? 0) + 1, level: won ? (game?.level ?? 1) + 1 : 1, spawnAt: null } : null
-    );
-    if (!replay) {
-      requestAnimationFrame(() =>
-        document.querySelector<HTMLElement>('[data-icon-id="olympus"]')?.focus()
-      );
-    }
+  const endGame = () => {
+    setGame(false);
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-icon-id="olympus"]')?.focus());
   };
 
   const renderWindow = (win: WindowState) => {
@@ -337,7 +308,7 @@ function DesktopRoot() {
     // screen, and a "hidden" box can still be scrolled by keyboard focus or
     // scrollIntoView, which would shift the whole desktop with no way back.
     <GameContext value={gameControls}>
-      <div className="fixed inset-0 overflow-clip bg-black">
+      <div className="fixed inset-0 overflow-clip bg-black" inert={game}>
         <BootScreen />
 
         {shutDown && (
@@ -365,8 +336,7 @@ function DesktopRoot() {
         >
           <div
             data-statue
-            className={`wallpaper-statue relative aspect-[736/800] h-[44vh] sm:h-[58vh]${statueReturning ? " statue-return" : ""}`}
-            style={statueHidden ? { visibility: "hidden" } : undefined}
+            className="wallpaper-statue relative aspect-[736/800] h-[44vh] sm:h-[58vh]"
           >
             {/* The file is 1:2 with the figure in its lower half; cover +
                 bottom crops away the empty top. */}
@@ -395,7 +365,6 @@ function DesktopRoot() {
               label={icon.label}
               icon={icon.icon}
               isMobile={isMobile}
-              hidden={destroyedIcons.includes(icon.id)}
               onOpen={() => openWindow(icon.opens)}
             />
           ))}
@@ -413,25 +382,6 @@ function DesktopRoot() {
           </div>
         )}
 
-        {game && (
-          <Suspense fallback={null}>
-            <OlympusGame
-              key={game.run}
-              spawnAt={game.spawnAt}
-              level={game.level}
-              touch={isMobile}
-              windows={state.windows.map((w) => ({ id: w.id, zIndex: w.zIndex, minimized: w.minimized }))}
-              onIconDestroyed={(id) => setDestroyedIcons((list) => [...list, id])}
-              onWindowCrashed={(id) => {
-                dispatch({ type: "MINIMIZE", id });
-                setCrashedWindows((list) => [...list, id]);
-              }}
-              onStatueAwake={() => setStatueHidden(true)}
-              onEnd={endGame}
-            />
-          </Suspense>
-        )}
-
         <Taskbar
           windows={state.windows.map((w) => ({
             id: w.id,
@@ -445,6 +395,9 @@ function DesktopRoot() {
           onShutDown={() => setShutDown(true)}
         />
       </div>
+      {game && <Suspense fallback={<div className="swipe-loading" role="status">Opening olympus.exe…</div>}>
+        <OlympusGame onExit={endGame} volume={volume} />
+      </Suspense>}
     </GameContext>
   );
 }
