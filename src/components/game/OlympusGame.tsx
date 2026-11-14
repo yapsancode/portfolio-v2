@@ -393,7 +393,6 @@ export default function OlympusGame(props: OlympusGameProps) {
     let disposed = false;
     let shakeUntil = 0;
     let shakeSize = 0;
-    let hurtLines = 0;
     let taunts = 0;
     let freezeUntil = 0;
     const killPause = () => {
@@ -489,11 +488,21 @@ export default function OlympusGame(props: OlympusGameProps) {
           case "statueHit":
             playSound("statueHit");
             shake(2, 90);
-            // One line each time it loses another slice of health.
-            if (world && hurtLines < copy.statue.hurt.length) {
-              const slice = 1 - (hurtLines + 1) / (copy.statue.hurt.length + 1);
-              if (world.statue.hp <= world.statue.maxHp * slice) say(copy.statue.hurt[hurtLines++]);
-            }
+            break;
+          case "bossStage":
+            shake(6, 500);
+            say(e.stage === 2 ? copy.statue.stage2 : copy.statue.stage3);
+            setAnnounce(e.stage === 2 ? "The statue throws faster." : "The statue's eye is charging a laser. Keep moving.");
+            break;
+          case "throwWarn":
+            playSound("throwWarn");
+            break;
+          case "laserCharge":
+            playSound("laserCharge");
+            break;
+          case "laserFire":
+            playSound("laserFire");
+            shake(4, 450);
             break;
           case "statueCrumbled":
             playSound("crumble");

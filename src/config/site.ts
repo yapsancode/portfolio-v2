@@ -140,12 +140,9 @@ export const site = {
     crash: "{name} has performed an illegal operation and will be shut down.",
     statue: {
       wakes: "Who keeps shooting my desktop?",
-      /** Said one by one as it loses health. */
-      hurt: [
-        "I am marble. You are a mouse pointer.",
-        "I have stood here for 2,000 years.",
-        "Fine. Look me in the eye.",
-      ],
+      /** Said when the fight gets harder: faster throws, then the laser eye. */
+      stage2: "I am marble. You are a mouse pointer.",
+      stage3: "Fine. Look me in the eye.",
       /** Said when it takes one of your lives. */
       taunts: ["Pointer not responding.", "Have you tried turning it off and on again?", "Click harder."],
       falls: "I was only a wallpaper...",

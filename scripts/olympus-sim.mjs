@@ -15,6 +15,14 @@ writeFileSync(
 );
 const g = await import(pathToFileURL(compiled).href);
 
+// Try other numbers without editing the game:
+//   OLYMPUS_TUNING='{"boss.spread":0.1,"statue.hp":80}' node scripts/olympus-sim.mjs
+for (const [path, value] of Object.entries(JSON.parse(process.env.OLYMPUS_TUNING ?? "{}"))) {
+  const keys = path.split(".");
+  const last = keys.pop();
+  keys.reduce((o, k) => o[k], g.TUNING)[last] = value;
+}
+
 const COLS = 16;
 const ROWS = 18;
 const DT = 1 / 60;
@@ -60,6 +68,7 @@ function aimPoint(world) {
   let best = null;
   let bestD = 260;
   for (const r of world.rocks) {
+    if (r.thrown) continue; // cannot be shot down
     const d = Math.hypot(r.x - s.x, r.y - s.y);
     if (d < bestD) {
       bestD = d;
@@ -85,7 +94,11 @@ function turnTo(world, angle, slack = 0.05) {
 function idleBot(world) {
   const s = world.ship;
   const p = aimPoint(world);
-  const t = turnTo(world, Math.atan2(p.x - s.x, -(p.y - s.y)));
+  // Bullets keep the ship's own speed, so aim a little against the drift.
+  const d = Math.hypot(p.x - s.x, p.y - s.y) || 1;
+  const ax = ((p.x - s.x) / d) * 700 - s.vx;
+  const ay = ((p.y - s.y) / d) * 700 - s.vy;
+  const t = turnTo(world, Math.atan2(ax, -ay));
   return { left: t.left, right: t.right, thrust: false, fire: true };
 }
 
@@ -111,14 +124,21 @@ function dodgerBot(world) {
     // Away from where the rock will pass; straight sideways if it is dead on.
     escape = d > 1 ? Math.atan2(-cx, cy) : Math.atan2(-vy, -vx) + Math.PI / 2;
   }
+  // The laser: what matters is being out of the beam when it fires. So the
+  // robot keeps some sideways speed (the beam follows only while charging),
+  // and goes back to shooting once its drift will carry it clear.
   const laser = world.statue.laser;
   if (laser && laser.state !== "rest") {
+    const L = g.TUNING.boss.laser;
     const eye = eyeOf(world);
     const bx = Math.cos(laser.angle);
     const by = Math.sin(laser.angle);
     const side = (s.x - eye.x) * -by + (s.y - eye.y) * bx;
-    if (Math.abs(side) < 90) {
-      const sign = side >= 0 ? 1 : -1;
+    const drift = s.vx * -by + s.vy * bx;
+    const left = laser.state === "charge" ? L.lock + L.fire : laser.state === "lock" ? laser.t + L.fire : laser.t;
+    const from = laser.state === "charge" ? 0 : side;
+    if (Math.abs(from + drift * left * 0.7) < 55) {
+      const sign = Math.abs(drift) > 15 ? Math.sign(drift) : side >= 0 ? 1 : -1;
       escape = Math.atan2(-by * sign, -(bx * sign));
       urgency = 99;
     }
@@ -126,6 +146,16 @@ function dodgerBot(world) {
   if (escape !== null) {
     const t = turnTo(world, escape, 0.1);
     return { left: t.left, right: t.right, thrust: t.off < 0.7, fire: true };
+  }
+  // In the fight, stay within shooting range of the head.
+  if (world.phase === "boss") {
+    const eye = eyeOf(world);
+    const far = Math.hypot(eye.x - s.x, eye.y - s.y);
+    const closing = ((eye.x - s.x) * s.vx + (eye.y - s.y) * s.vy) / (far || 1);
+    if (far > 380 && closing < 120) {
+      const t = turnTo(world, Math.atan2(eye.x - s.x, -(eye.y - s.y)), 0.1);
+      return { left: t.left, right: t.right, thrust: t.off < 0.5, fire: true };
+    }
   }
   return idleBot(world);
 }
@@ -176,7 +206,7 @@ function stats(screen, bot, run = 1) {
     boss: median(won.map((x) => x.boss)),
     twoLives: reached.filter((x) => x.livesAtBoss >= 2).length / GAMES,
     windowTime: median(games.filter((x) => x.windowTime).map((x) => x.windowTime)),
-    tail: Math.max(0, ...won.map((x) => x.tail)),
+    tail: median(won.map((x) => x.tail)),
   };
 }
 
@@ -191,7 +221,7 @@ for (const [screenName, screen] of Object.entries(SCREENS)) {
     console.log(
       `${screenName.padEnd(8)}${botName.padEnd(7)} wins ${(r.win * 100).toFixed(0).padStart(3)}%` +
         ` | wakes ${r.wake.toFixed(1)}s | boss ${r.boss.toFixed(1)}s | 2+ lives at boss ${(r.twoLives * 100).toFixed(0)}%` +
-        ` | window lasts ${r.windowTime.toFixed(1)}s | slowest last-5% ${r.tail.toFixed(1)}s`
+        ` | window lasts ${r.windowTime.toFixed(1)}s | last-5% ${r.tail.toFixed(1)}s`
     );
   }
 }
@@ -201,7 +231,14 @@ const R = results;
 const all = Object.values(R);
 const ghostWake = play(1, SCREENS.desktop, ghostBot).wake;
 console.log(`nobody shoots: statue wakes at ${ghostWake.toFixed(1)}s`);
+const D = R["desktop.dodger"];
+const P = R["phone.dodger"];
 const checks = [
+  ["step 4: Idle (never moves) wins under 10%", R["desktop.idle"].win < 0.1 && R["phone.idle"].win < 0.1],
+  // The phone is gentler on purpose: touch buttons are much harder for a person than for a robot.
+  ["step 4: Dodger wins 40-70% on desktop, and at least that on phone", D.win >= 0.4 && D.win <= 0.7 && P.win >= 0.4],
+  ["step 4: Dodger's boss fight is 20-25 s on desktop, under 35 s on phone", D.boss >= 20 && D.boss <= 25 && P.boss < 35],
+  ["step 4: the last 5% of the statue takes under 3 s (median of wins)", all.every((r) => r.tail <= 3)],
   ["step 2: an active player wakes the statue between 15 and 30 s", all.every((r) => r.wake >= 15 && r.wake <= 30)],
   ["step 2: with nobody shooting, the statue still wakes at 45 s", Math.abs(ghostWake - 45) < 0.5],
   ["step 2: the first window survives 4+ s of fire", R["desktop.dodger"].windowTime >= 4 && R["desktop.idle"].windowTime >= 4],

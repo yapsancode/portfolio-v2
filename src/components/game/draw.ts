@@ -1,4 +1,4 @@
-import { tileOrigin, type Rock, type Ship, type World } from "./olympus";
+import { EYE, eyePoint, throwPoint, tileOrigin, TUNING, type Rock, type Ship, type World } from "./olympus";
 
 /** The statue picture and the part of it the wallpaper shows. */
 export type StatueArt = {
@@ -8,9 +8,6 @@ export type StatueArt = {
   sw: number;
   sh: number;
 };
-
-/** Where the statue's eye is, as a fraction of the visible picture. */
-const EYE = { x: 0.33, y: 0.265 };
 
 /**
  * The Win98 arrow pointer, tip at (0, 0). Its natural heading leans ~22°
@@ -85,16 +82,17 @@ function drawRock(ctx: CanvasRenderingContext2D, rock: Rock) {
   // Turn in 16 steps, like an old sprite.
   ctx.rotate(Math.round(rock.angle / (Math.PI / 8)) * (Math.PI / 8));
   rockPath(ctx, rock, 1);
-  ctx.fillStyle = "#b8b8b8";
+  // Marble the statue threw at you is hot; drifting chips are cold grey.
+  ctx.fillStyle = rock.thrown ? "#ff8c1a" : "#b8b8b8";
   ctx.fill();
-  ctx.lineWidth = 2;
+  ctx.lineWidth = rock.thrown ? 3 : 2;
   ctx.lineJoin = "miter";
-  ctx.strokeStyle = "#404040";
+  ctx.strokeStyle = rock.thrown ? "#c00000" : "#404040";
   ctx.stroke();
   // A lighter face toward the top-left.
   ctx.translate(-Math.round(rock.r * 0.14), -Math.round(rock.r * 0.14));
   rockPath(ctx, rock, 0.62);
-  ctx.fillStyle = "#f2f2f2";
+  ctx.fillStyle = rock.thrown ? "#ffe9a8" : "#f2f2f2";
   ctx.fill();
   // A marble vein, as two straight strokes.
   const u = rock.r / 8;
@@ -166,7 +164,9 @@ function drawStatue(ctx: CanvasRenderingContext2D, world: World, art: StatueArt)
       const x = statue.home.x + statue.dx + EYE.x * statue.home.w;
       const y = statue.home.y + statue.dy + EYE.y * statue.home.h;
       const pulse = 0.75 + Math.sin(world.time * 6) * 0.25;
-      const flare = waking ? 1 + 2.2 * (1 - statue.wake) : 1;
+      // Bigger while it wakes, and again while the laser charges.
+      const charging = statue.laser && statue.laser.state !== "rest" ? 2.4 : 1;
+      const flare = waking ? 1 + 2.2 * (1 - statue.wake) : charging;
       const r = (8 + statue.home.w * 0.02) * lit * pulse * flare;
       const glow = ctx.createRadialGradient(x, y, 0, x, y, r);
       glow.addColorStop(0, "rgba(255, 240, 240, 1)");
@@ -175,6 +175,49 @@ function drawStatue(ctx: CanvasRenderingContext2D, world: World, art: StatueArt)
       ctx.fillStyle = glow;
       ctx.fillRect(x - r, y - r, r * 2, r * 2);
     }
+  }
+}
+
+/** The statue's attacks: the warning before a throw, and the laser eye. */
+function drawAttacks(ctx: CanvasRenderingContext2D, world: World) {
+  const { statue } = world;
+
+  // Warning before a throw: a square that closes in on the throwing hand.
+  if (statue.windup > 0) {
+    const p = throwPoint(statue);
+    const size = Math.round(10 + (statue.windup / TUNING.boss.windup) * 34);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = Math.floor(world.time * 16) % 2 ? "#ffd800" : "#ff8c1a";
+    ctx.strokeRect(Math.round(p.x) - size, Math.round(p.y) - size, size * 2, size * 2);
+  }
+
+  const laser = statue.laser;
+  if (!laser || laser.state === "rest") return;
+  const eye = eyePoint(statue);
+  const reach = world.w + world.h;
+  const endX = eye.x + Math.cos(laser.angle) * reach;
+  const endY = eye.y + Math.sin(laser.angle) * reach;
+  const line = (width: number, color: string) => {
+    ctx.beginPath();
+    ctx.moveTo(eye.x, eye.y);
+    ctx.lineTo(endX, endY);
+    ctx.lineWidth = width;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  };
+  if (laser.state === "charge") {
+    // A thin aiming line that follows you.
+    ctx.setLineDash([6, 6]);
+    line(2, "rgba(255, 60, 60, 0.7)");
+    ctx.setLineDash([]);
+  } else if (laser.state === "lock") {
+    // Locked: it stops following. Move now.
+    line(4, Math.floor(world.time * 20) % 2 ? "#ffffff" : "#ff2020");
+  } else {
+    const wide = TUNING.boss.laser.halfWidth * 2;
+    line(wide + 10, "rgba(255, 0, 0, 0.35)");
+    line(wide, "#ff2020");
+    line(wide * 0.4, "#ffffff");
   }
 }
 
@@ -194,6 +237,7 @@ export function drawWorld(
   drawDamage(ctx, world);
 
   for (const rock of world.rocks) drawRock(ctx, rock);
+  if (world.phase === "boss") drawAttacks(ctx, world);
 
   // Bullets: a bright streak along the flight path.
   ctx.lineCap = "butt";

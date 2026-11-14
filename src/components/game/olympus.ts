@@ -49,6 +49,17 @@ export type Rock = {
   spin: number;
   /** Radius multipliers for each corner, so every rock has its own shape. */
   shape: number[];
+  /** Thrown by the statue: flies straight off the screen, and cannot be shot down. */
+  thrown?: boolean;
+};
+
+/** The statue's laser eye: it charges (following you), locks, fires, rests. */
+export type Laser = {
+  state: "rest" | "charge" | "lock" | "fire";
+  /** Seconds left in this state. */
+  t: number;
+  /** Direction of the beam, radians (0 = right, clockwise on screen). */
+  angle: number;
 };
 
 export type Bullet = { x: number; y: number; vx: number; vy: number; life: number };
@@ -96,9 +107,21 @@ export type Statue = {
   /** Current offset from home (sway and rise). */
   dx: number;
   dy: number;
+  /** Health in bullet hits. The attached tiles always match it. */
   hp: number;
   maxHp: number;
+  /** Every tile, in the order they break off: furthest from the eye first. */
+  breakOrder: Tile[];
+  /** How many tiles of `breakOrder` have broken off. */
+  broken: number;
+  /** Boss phase: 1 throws, 2 fast spreads, 3 laser eye. */
+  stage: 1 | 2 | 3;
   throwIn: number;
+  /** Seconds left of the warning before a throw (0 = not winding up). */
+  windup: number;
+  /** Which side the next throw comes from: -1 left, 1 right. */
+  side: -1 | 1;
+  laser: Laser | null;
   /** 0 → 1 while it wakes up (eye glow, rise). */
   wake: number;
   time: number;
@@ -113,6 +136,10 @@ export type GameEvent =
   | { type: "windowCrashed"; id: string }
   | { type: "statueAwake" }
   | { type: "statueHit" }
+  | { type: "bossStage"; stage: 2 | 3 }
+  | { type: "throwWarn" }
+  | { type: "laserCharge" }
+  | { type: "laserFire" }
   | { type: "statueCrumbled" }
   | { type: "shipLost"; livesLeft: number }
   | { type: "won" }
@@ -141,6 +168,8 @@ export type World = {
   anger: number;
   lives: number;
   score: number;
+  /** 1 on the first game; each win in a row makes the next run harder. */
+  run: number;
   fireIn: number;
   spawnIn: number;
   /** Below 1 on small screens: rocks are smaller and slower there. */
@@ -179,6 +208,7 @@ export const TUNING = {
     start: 4,
     max: 8,
     spawnEvery: 4,
+    recallSpeed: 700, // px/s, flying back into the waking statue
   },
   window: { hp: 14, hitScore: 50, crashScore: 500, hitAnger: 1, crashAnger: 12 },
   icon: { score: 150, anger: 6 },
@@ -191,17 +221,32 @@ export const TUNING = {
   awakenFreeze: 0.6,
   awakenTime: 2.4,
   statue: {
-    hp: 55,
-    tilesPerHit: [1, 2] as const,
+    hp: 40, // bullet hits
     hitScore: 100,
     pokeScore: 10,
     pokeAnger: 0.4,
     crumbleScore: 5000,
-    throwEvery: [1.9, 1.1] as const, // undamaged → nearly broken
-    throwSpeed: [190, 260] as const,
     sway: 18,
     rise: 34,
     gravity: 900,
+  },
+  /** The fight has three stages, set by the statue's health. */
+  boss: {
+    /** Stage 2 starts at this share of health. */
+    stage2At: 0.6,
+    /** Stage 3 (laser eye) starts here on run 1, and earlier on every later run. */
+    laserAt: 0.25,
+    laserAtPerRun: 0.15,
+    laserAtMax: 0.7,
+    /** Every run after the first is this much faster. */
+    runSpeedUp: 0.12,
+    /** Warning before each throw. */
+    windup: 0.5,
+    throwEvery: [1.5, 1.15, 2.2] as const, // per stage
+    throwSpeed: [[210, 260], [270, 330], [230, 280]] as const, // per stage
+    /** Stage 2 throws three at once, this far apart (radians). */
+    spread: 0.2,
+    laser: { charge: 1, lock: 0.45, fire: 0.5, rest: 0.8, halfWidth: 13 },
   },
   crumbleTime: 2.2,
   lostDelay: 1.2,
@@ -211,6 +256,9 @@ export const TUNING = {
 /* ------------------------------------------------------------------ */
 /* Setup                                                               */
 /* ------------------------------------------------------------------ */
+
+/** Where the statue's eye is, as a fraction of its box. */
+export const EYE = { x: 0.33, y: 0.265 };
 
 /** Small seeded random generator, so simulations can be repeated. */
 export function seededRandom(seed: number): () => number {
@@ -242,6 +290,11 @@ export function createStatue(home: Rect, cols: number, rows: number, cover: numb
       tiles.push({ col, row, solid: filled > 0.35, attached: true, x: 0, y: 0, vx: 0, vy: 0, angle: 0, spin: 0 });
     }
   }
+  // Tiles break from the outside in, toward the eye, so the statue shrinks
+  // to its head and never becomes a hollow shell that shots fly through.
+  // Thin edge tiles go a little earlier, so what is left can always be hit.
+  const far = (t: Tile) =>
+    Math.hypot(t.col + 0.5 - EYE.x * cols, t.row + 0.5 - EYE.y * rows) + (t.solid ? 0 : 1.5);
   return {
     home,
     cols,
@@ -251,7 +304,13 @@ export function createStatue(home: Rect, cols: number, rows: number, cover: numb
     dy: 0,
     hp: TUNING.statue.hp,
     maxHp: TUNING.statue.hp,
-    throwIn: TUNING.statue.throwEvery[0],
+    breakOrder: [...tiles].sort((a, b) => far(b) - far(a)),
+    broken: 0,
+    stage: 1,
+    throwIn: TUNING.boss.throwEvery[0],
+    windup: 0,
+    side: 1,
+    laser: null,
     wake: 0,
     time: 0,
   };
@@ -314,6 +373,7 @@ export function createWorld(opts: {
   random: () => number;
   particleScale?: number;
   shipFloor?: number;
+  run?: number;
 }): World {
   const world: World = {
     w: opts.w,
@@ -345,6 +405,7 @@ export function createWorld(opts: {
     anger: 0,
     lives: TUNING.lives,
     score: 0,
+    run: opts.run ?? 1,
     fireIn: 0,
     spawnIn: TUNING.rock.spawnEvery,
     scale: Math.max(0.6, Math.min(1, opts.w / 900)),
@@ -452,6 +513,120 @@ function attachedTileAt(statue: Statue, x: number, y: number): Tile | undefined 
   return statue.tiles.find((t) => t.attached && t.solid && t.col === col && t.row === row);
 }
 
+/** The eye on screen right now. */
+export function eyePoint(statue: Statue) {
+  return {
+    x: statue.home.x + statue.dx + EYE.x * statue.home.w,
+    y: statue.home.y + statue.dy + EYE.y * statue.home.h,
+  };
+}
+
+/** Where the next throw leaves from: the shoulder, sliding toward the head as the statue shrinks. */
+export function throwPoint(statue: Statue) {
+  const left = statue.hp / statue.maxHp;
+  const eye = eyePoint(statue);
+  const shoulderX = statue.home.x + statue.dx + statue.home.w * (0.5 + statue.side * 0.26);
+  const shoulderY = statue.home.y + statue.dy + statue.home.h * 0.38;
+  return { x: eye.x + (shoulderX - eye.x) * left, y: eye.y + (shoulderY - eye.y) * left };
+}
+
+/** Boss stage from the statue's health: 1 throws, 2 fast spreads, 3 laser eye. */
+export function bossStage(world: World): 1 | 2 | 3 {
+  const left = world.statue.hp / world.statue.maxHp;
+  const { laserAt, laserAtPerRun, laserAtMax, stage2At } = TUNING.boss;
+  if (left <= Math.min(laserAtMax, laserAt + laserAtPerRun * (world.run - 1))) return 3;
+  return left <= stage2At ? 2 : 1;
+}
+
+function loseShip(world: World, events: GameEvent[]) {
+  const { ship, statue } = world;
+  ship.alive = false;
+  ship.respawn = TUNING.ship.respawnTime;
+  world.lives -= 1;
+  burst(world, ship.x, ship.y, 40, SPARK, 260);
+  burst(world, ship.x, ship.y, 20, ["#ffffff", "#000000"], 180);
+  events.push({ type: "shipLost", livesLeft: world.lives });
+  // The laser starts over, so it never fires at an empty screen.
+  if (statue.laser) statue.laser = { state: "rest", t: TUNING.boss.laser.rest, angle: 0 };
+  statue.windup = 0;
+  if (world.lives <= 0) setPhase(world, "lost");
+}
+
+/** The statue's turn: warn, throw, and (in stage 3) the laser eye. */
+function bossAttack(world: World, dt: number, events: GameEvent[]) {
+  const { ship, statue, random } = world;
+  const B = TUNING.boss;
+  const fast = 1 + B.runSpeedUp * (world.run - 1);
+
+  const stage = bossStage(world);
+  if (stage !== statue.stage) {
+    statue.stage = stage;
+    if (stage === 3) statue.laser = { state: "rest", t: B.laser.rest, angle: 0 };
+    if (stage !== 1) events.push({ type: "bossStage", stage });
+  }
+
+  if (statue.windup > 0) {
+    statue.windup -= dt;
+    if (statue.windup <= 0) {
+      statue.windup = 0;
+      const from = throwPoint(statue);
+      const aim = Math.atan2(ship.y - from.y, ship.x - from.x) + between(random, -0.03, 0.03);
+      const [slow, quick] = B.throwSpeed[stage - 1];
+      for (const turn of stage === 2 ? [-B.spread, 0, B.spread] : [0]) {
+        const chunk = makeRock(world, stage === 1 && random() < 0.5 ? 1 : 2, from.x, from.y, aim + turn);
+        // Only half the small-screen shrink and slow-down: a phone is narrow, but the ship is just as far away.
+        const small = (1 + world.scale) / 2;
+        const speed = between(random, slow, quick) * small * fast;
+        chunk.r = TUNING.rock.radius[chunk.size] * small;
+        chunk.vx = Math.cos(aim + turn) * speed;
+        chunk.vy = Math.sin(aim + turn) * speed;
+        chunk.thrown = true;
+        world.rocks.push(chunk);
+      }
+    }
+  } else {
+    statue.throwIn -= dt;
+    if (statue.throwIn <= 0) {
+      statue.throwIn = B.throwEvery[stage - 1] / fast;
+      statue.windup = B.windup;
+      statue.side = ship.x < statue.home.x + statue.dx + statue.home.w / 2 ? -1 : 1;
+      events.push({ type: "throwWarn" });
+    }
+  }
+
+  const laser = statue.laser;
+  if (!laser) return;
+  const eye = eyePoint(statue);
+  laser.t -= dt;
+  // While charging, the beam follows the ship. Once locked it stays put: that is the moment to move.
+  if (laser.state === "charge") laser.angle = Math.atan2(ship.y - eye.y, ship.x - eye.x);
+  if (laser.t <= 0) {
+    if (laser.state === "rest") {
+      laser.state = "charge";
+      laser.t = B.laser.charge / fast;
+      laser.angle = Math.atan2(ship.y - eye.y, ship.x - eye.x);
+      events.push({ type: "laserCharge" });
+    } else if (laser.state === "charge") {
+      laser.state = "lock";
+      laser.t = B.laser.lock;
+    } else if (laser.state === "lock") {
+      laser.state = "fire";
+      laser.t = B.laser.fire;
+      events.push({ type: "laserFire" });
+    } else {
+      laser.state = "rest";
+      laser.t = B.laser.rest / fast;
+    }
+  }
+  if (laser.state === "fire" && ship.safe <= 0) {
+    const px = ship.x - eye.x;
+    const py = ship.y - eye.y;
+    const along = px * Math.cos(laser.angle) + py * Math.sin(laser.angle);
+    const off = Math.abs(py * Math.cos(laser.angle) - px * Math.sin(laser.angle));
+    if (along > 0 && off < B.laser.halfWidth + TUNING.ship.radius * 0.5) loseShip(world, events);
+  }
+}
+
 function breakTile(world: World, tile: Tile, fromX: number, fromY: number) {
   const o = tileOrigin(world.statue, tile);
   tile.attached = false;
@@ -470,7 +645,6 @@ function breakTile(world: World, tile: Tile, fromX: number, fromY: number) {
 
 export function step(world: World, input: Input, dt: number): GameEvent[] {
   const events: GameEvent[] = [];
-  const { random } = world;
   const { ship, statue } = world;
   // After a loss the world keeps moving a little longer, so the explosion plays.
   if (world.phase === "won") return events;
@@ -535,12 +709,28 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   }
 
   /* Rocks */
+  if (world.phase === "awakening") {
+    // The chips fly home: the statue pulls itself back together, and the
+    // fight that follows is only what it throws at you.
+    const cx = statue.home.x + statue.home.w / 2;
+    const cy = statue.home.y + statue.home.h * 0.45;
+    for (const rock of world.rocks) {
+      const d = Math.hypot(cx - rock.x, cy - rock.y) || 1;
+      rock.vx = ((cx - rock.x) / d) * TUNING.rock.recallSpeed;
+      rock.vy = ((cy - rock.y) / d) * TUNING.rock.recallSpeed;
+    }
+    world.rocks = world.rocks.filter((r) => Math.hypot(cx - r.x, cy - r.y) > 30);
+  }
   for (const rock of world.rocks) {
     rock.x += rock.vx * dt;
     rock.y += rock.vy * dt;
     rock.angle += rock.spin * dt;
-    wrap(world, rock, rock.r);
+    if (!rock.thrown && world.phase === "play") wrap(world, rock, rock.r);
   }
+  // Thrown marble that missed leaves the screen for good.
+  world.rocks = world.rocks.filter(
+    (r) => !r.thrown || (r.x > -r.r && r.x < world.w + r.r && r.y > -r.r && r.y < world.h + r.r)
+  );
 
   if (world.phase === "play") {
     world.spawnIn -= dt;
@@ -560,32 +750,16 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   statue.time += dt;
   if (world.phase === "awakening") {
     statue.wake = Math.min(1, (world.phaseTime - TUNING.awakenFreeze) / TUNING.awakenTime);
-    if (statue.wake >= 1) setPhase(world, "boss");
+    if (statue.wake >= 1) {
+      world.rocks = [];
+      setPhase(world, "boss");
+    }
   }
   if (world.phase === "awakening" || world.phase === "boss") {
     statue.dx = Math.sin(statue.time * 0.8) * TUNING.statue.sway * statue.wake;
     statue.dy = -TUNING.statue.rise * statue.wake + Math.sin(statue.time * 1.7) * 4 * statue.wake;
   }
-  if (world.phase === "boss" && ship.alive) {
-    statue.throwIn -= dt;
-    if (statue.throwIn <= 0) {
-      const damage = 1 - statue.hp / statue.maxHp;
-      const [slow, fast] = TUNING.statue.throwEvery;
-      statue.throwIn = slow + (fast - slow) * damage;
-      const { home } = statue;
-      const left = ship.x < home.x + statue.dx + home.w / 2;
-      const fromX = home.x + statue.dx + home.w * (left ? 0.24 : 0.76);
-      const fromY = home.y + statue.dy + home.h * 0.38;
-      const aim = Math.atan2(ship.y - fromY, ship.x - fromX) + between(random, -0.12, 0.12);
-      if (world.rocks.length < TUNING.rock.max + 2) {
-        const chunk = makeRock(world, random() < 0.5 ? 1 : 2, fromX, fromY, aim);
-        const speed = between(random, ...TUNING.statue.throwSpeed) * world.scale;
-        chunk.vx = Math.cos(aim) * speed;
-        chunk.vy = Math.sin(aim) * speed;
-        world.rocks.push(chunk);
-      }
-    }
-  }
+  if (world.phase === "boss" && ship.alive) bossAttack(world, dt, events);
   for (const tile of statue.tiles) {
     if (tile.attached) continue;
     tile.vy += TUNING.statue.gravity * dt;
@@ -609,18 +783,12 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   }
   world.bullets = keep;
 
-  /* Ship vs rocks */
-  if (ship.alive && ship.safe <= 0) {
+  /* Ship vs rocks (not while the chips fly home: that would be unfair) */
+  if (ship.alive && ship.safe <= 0 && world.phase !== "awakening") {
     for (const rock of world.rocks) {
       const reach = rock.r * 0.85 + TUNING.ship.radius;
       if ((rock.x - ship.x) ** 2 + (rock.y - ship.y) ** 2 < reach * reach) {
-        ship.alive = false;
-        ship.respawn = TUNING.ship.respawnTime;
-        world.lives -= 1;
-        burst(world, ship.x, ship.y, 40, SPARK, 260);
-        burst(world, ship.x, ship.y, 20, ["#ffffff", "#000000"], 180);
-        events.push({ type: "shipLost", livesLeft: world.lives });
-        if (world.lives <= 0) setPhase(world, "lost");
+        loseShip(world, events);
         break;
       }
     }
@@ -655,6 +823,11 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
   for (let i = 0; i < world.rocks.length; i++) {
     const rock = world.rocks[i];
     if ((rock.x - b.x) ** 2 + (rock.y - b.y) ** 2 > rock.r * rock.r) continue;
+    // Thrown marble is too hot to break: the shot just sparks off it. Dodge it.
+    if (rock.thrown) {
+      burst(world, b.x, b.y, 4, SPARK, 120);
+      return true;
+    }
     world.rocks.splice(i, 1);
     world.score += TUNING.rock.score[rock.size];
     addAnger(world, TUNING.rock.anger[rock.size]);
@@ -685,19 +858,17 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
       world.score += TUNING.statue.hitScore;
       events.push({ type: "statueHit" });
       burst(world, b.x, b.y, 8, MARBLE, 140, 500);
-      const [min, max] = TUNING.statue.tilesPerHit;
-      const count = min + Math.floor(random() * (max - min + 1));
-      const near = statue.tiles
-        .filter((t) => t.attached)
-        .map((t) => {
-          const o = tileOrigin(statue, t);
-          return { t, d: (o.x + o.w / 2 - b.x) ** 2 + (o.y + o.h / 2 - b.y) ** 2 };
-        })
-        .sort((p, q) => p.d - q.d)
-        .slice(0, count);
-      for (const { t } of near) breakTile(world, t, b.x, b.y);
-      if (statue.hp <= 0) {
+      // Break tiles until the picture matches the health bar again.
+      const keep = Math.ceil((statue.breakOrder.length * Math.max(0, statue.hp)) / statue.maxHp);
+      while (statue.breakOrder.length - statue.broken > keep) {
+        breakTile(world, statue.breakOrder[statue.broken++], b.x, b.y);
+      }
+      // (If only unhittable edge tiles were left, it would be over too.)
+      if (statue.hp <= 0 || !statue.tiles.some((t) => t.attached && t.solid)) {
         for (const t of statue.tiles) if (t.attached) breakTile(world, t, b.x, b.y - 200);
+        statue.hp = 0;
+        statue.laser = null;
+        statue.windup = 0;
         world.score += TUNING.statue.crumbleScore;
         world.rocks = [];
         setPhase(world, "crumbling");
