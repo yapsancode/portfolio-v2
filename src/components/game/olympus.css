@@ -45,7 +45,8 @@
 .swipe-object svg { width: clamp(20px, 7vw, 32px); height: auto; }
 .swipe-debris { color: #b8bea0; font-size: 20px; }
 .swipe-debris.fresh { animation: swipe-burst .22s ease-out; }
-.swipe-cursor { position: absolute; width: 20%; height: calc(100% / 6); display: grid; place-items: center; pointer-events: none; transition: left .15s ease-out, top .15s ease-out; z-index: 2; }
+.swipe-cursor { position: absolute; width: 20%; height: calc(100% / 6); display: grid; place-items: center; pointer-events: none; z-index: 2; }
+.swipe-cursor.moving { transition: left .15s ease-out, top .15s ease-out; }
 .swipe-cursor svg { width: 26px; height: 32px; stroke: #0a181e; stroke-width: 2px; filter: drop-shadow(2px 3px 0 #0006); }
 .swipe-destination { position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; background: #d7eab94d; color: #fff3ba; font-size: 30px; }
 .swipe-chain { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) rotate(-6deg); white-space: nowrap; font-size: 36px; color: #ffe1a2; text-shadow: 3px 3px #152429; pointer-events: none; z-index: 5; animation: swipe-burst .22s ease-out; }

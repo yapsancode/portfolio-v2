@@ -169,6 +169,7 @@ function GameSession({ onExit, volume = 1 }: Props) {
 
   const pointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (pointer.current || pausedRef.current || busy.current || ended || event.button > 0) return;
+    event.preventDefault();
     pointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
     try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* Pointer already cancelled by the browser. */ }
   };
@@ -260,7 +261,7 @@ function GameSession({ onExit, volume = 1 }: Props) {
                   {cell === destination && <span className="swipe-destination">{game.warning.includes(cell) ? "!" : "◎"}</span>}
                 </div>;
               })}
-              <div className="swipe-cursor" style={cellPosition(game.position)}><svg viewBox="0 0 24 30" aria-hidden="true" style={{ fill: SKINS[session.profile.skin].colour }}><path d="M3 2v22l6-6 5 10 5-3-5-9h9Z" /></svg></div>
+              <div className={`swipe-cursor ${turn ? "moving" : ""}`} style={cellPosition(game.position)}><svg viewBox="0 0 24 30" aria-hidden="true" style={{ fill: SKINS[session.profile.skin].colour }}><path d="M3 2v22l6-6 5 10 5-3-5-9h9Z" /></svg></div>
               {turn && turn.smashed.length > 1 && <div className="swipe-chain" key={game.moves}>{turn.smashed.length}× SMASH!</div>}
               {game.moves === 0 && game.board === 0 && game.variant === 0 && <div className="swipe-first-arrow" aria-hidden="true">→ → →</div>}
             </div>

@@ -308,7 +308,7 @@ function DesktopRoot() {
     // screen, and a "hidden" box can still be scrolled by keyboard focus or
     // scrollIntoView, which would shift the whole desktop with no way back.
     <GameContext value={gameControls}>
-      <div className="fixed inset-0 overflow-clip bg-black" inert={game}>
+      <div className="fixed inset-0 overflow-clip bg-black" hidden={game}>
         <BootScreen />
 
         {shutDown && (

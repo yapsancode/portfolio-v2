@@ -1,7 +1,7 @@
 # Olympus — Swipe & Smash build and release plan
 
 Date: 2026-11-15.
-Status: planned; implementation has not started.
+Status: implemented and locally verified; PR / production release in progress.
 Destination: implement, verify, commit, push, merge into `main`, and verify the production deployment.
 
 This plan supersedes the gameplay direction and release gates in `OLYMPUS_ROADMAP.md`. That document remains the history of the Asteroids version.
@@ -151,11 +151,35 @@ The user's request includes push and merge to `main`; do not introduce an additi
 
 ## Definition of done
 
-- [ ] One-thumb Swipe & Smash is the playable Olympus experience on phone and desktop.
-- [ ] Six authored boards, readable statue attacks, chain scoring, immediate replay and small cosmetic progression work.
-- [ ] No time pressure or hidden damage while the player is idle; interruptions and reloads preserve progress.
-- [ ] `/olympus` and the portfolio launcher use the same tested implementation.
+- [x] One-thumb Swipe & Smash is the playable Olympus experience on phone and desktop.
+- [x] Six authored boards, readable statue attacks, chain scoring, immediate replay and small cosmetic progression work.
+- [x] No time pressure or hidden damage while the player is idle; interruptions and reloads preserve progress.
+- [x] `/olympus` and the portfolio launcher use the same tested implementation.
 - [ ] Lint, type checks, rule/board checks, build and browser tests pass on the released revision.
 - [ ] Changes are committed and pushed; the PR is merged into `main`.
 - [ ] The production deployment for that merge succeeds and its public routes pass smoke checks.
 - [ ] Final handoff includes links and honest verification limits.
+
+
+## Delivery record — 2026-11-15
+
+Implemented the shared phone/desktop game, six authored layouts and four reflections per layout, previewed swipes, readable turn attacks, three hearts, chain scoring, sound/mute, pause/help, direct route, desktop launcher, versioned save/resume, cross-tab save updates, immediate retry/next board, and three cosmetic unlocks.
+
+Implementation choices:
+
+- The board uses a small DOM grid and SVG/pixel icons with event-driven CSS animation instead of a canvas loop. This makes the responsive layout and accessible controls easier to inspect and leaves no gameplay timer running while idle.
+- Objects are placed deterministically on the swept paths of each authored layout. Geometry changes are checked by the solver; connected but unsweepable cells never receive objects.
+- Snapshot and profile are separate fields in one atomic localStorage record, so a terminal result and its completion credit cannot be written separately. Old Asteroids scores are not mixed into the new game.
+- The initial game/saving/layout stages were implemented as one integrated commit, followed by browser verification/polish and release documentation, because they share the same component contract.
+- The original statue PNG is served directly in the game to avoid a slow first image-optimization request. The renderer reuses the existing art and sound assets.
+
+Local verification:
+
+- Existing lint/build/simulation baseline passed before changes (lint had one existing warning in `src/app/opengraph-image.tsx`).
+- New rule checks solve 96 board/reflection/attack-seed combinations with normal damage and verify turn ordering, fairness, terminal states, scoring, gestures, and save validation. Winning solver routes take 7–18 swipes; human session duration and retention remain unmeasured.
+- Production build and TypeScript checks pass. Lint has no errors and the same existing image warning.
+- Production-browser suite: 23 passed, one intentional skip. Chromium tests actual touch injection; that CDP-only test is skipped in WebKit, which still runs gesture-handler, phone-launcher, pause/focus, replay, storage and layout checks.
+- Both browsers exercise 360/390/412 px phones, tablet/desktop sizing, and a short landscape viewport. Desktop-launcher contexts explicitly use desktop input and pixel ratio rather than inheriting the phone project's settings.
+- Screenshots inspected for introduction, marked attack, pause/help, win/unlock, next board and landscape. Portrait controls fit the tested short phone; landscape permits vertical scrolling while keeping the board and swipe pad accessible.
+
+Limits: no physical iPhone/Android hand-comfort study, human retention test, or acoustic listening test has been performed. Browser WebKit is not physical Safari hardware. Offline cold starts remain outside this release.
