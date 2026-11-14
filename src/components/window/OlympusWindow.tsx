@@ -1,86 +1,20 @@
 "use client";
-
-import { useState } from "react";
-import type { MouseEvent } from "react";
+import Link from "next/link";
 import { site } from "@/config/site";
-import { BEST_RUN_KEY, loadBest, useGame } from "@/components/game/GameContext";
+import { useGame } from "@/components/game/GameContext";
+import PixelIcon from "@/components/desktop/PixelIcon";
+import "@/components/game/olympus.css";
 
-const copy = site.olympus.title;
-
-/** One key (or on-screen button), drawn as a grey Windows 98 keycap. */
-function Key({ children }: { children: string }) {
-  return <kbd className="olympus-key bevel-out">{children}</kbd>;
-}
-
-/**
- * The title screen of olympus.exe: an old DOS game running in a window.
- * Enter (or a tap) starts the game; the window's close button leaves.
- */
 export default function OlympusWindow() {
   const { start } = useGame();
-  const [best] = useState(() => loadBest());
-  const [bestRun] = useState(() => loadBest(BEST_RUN_KEY));
-  // Same test the game uses to show its on-screen buttons.
-  const [touch] = useState(
-    () => navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches
-  );
-
-  // A mouse click spawns the ship where the pointer is; Enter starts it in the middle.
-  const onStart = (e: MouseEvent<HTMLButtonElement>) =>
-    start(e.detail === 0 ? null : { x: e.clientX, y: e.clientY });
-
-  return (
-    <div className="olympus-title">
-      <p className="olympus-title-dim">{copy.presents}</p>
-      <h1 className="olympus-logo">OLYMPUS</h1>
-      <p>{copy.tagline}</p>
-
-      <button type="button" className="olympus-title-start" onClick={onStart} autoFocus>
-        {touch ? copy.startTouch : copy.start}
-      </button>
-
-      {touch ? (
-        <p className="olympus-title-keys">
-          <span>
-            <Key>◄</Key> <Key>►</Key> turn
-          </span>
-          <span>
-            <Key>▲</Key> thrust
-          </span>
-          <span>
-            <Key>FIRE</Key> fire
-          </span>
-          <span>
-            <Key>✕</Key> quit
-          </span>
-        </p>
-      ) : (
-        <p className="olympus-title-keys">
-          <span>
-            <Key>←</Key> <Key>→</Key> turn
-          </span>
-          <span>
-            <Key>↑</Key> thrust
-          </span>
-          <span>
-            <Key>Space</Key> fire
-          </span>
-          <span>
-            <Key>P</Key> pause
-          </span>
-          <span>
-            <Key>Esc</Key> quit
-          </span>
-        </p>
-      )}
-
-      {best > 0 && (
-        <p className="olympus-title-score">
-          HI-SCORE {String(best).padStart(6, "0")}
-          {bestRun > 0 && ` · RUN ${bestRun}`}
-        </p>
-      )}
-      <p className="olympus-title-dim">{copy.warning}</p>
-    </div>
-  );
+  return <div className="olympus-title">
+    <p className="olympus-title-dim">ISYRAF 98 PRESENTS</p>
+    <h1 className="olympus-logo">OLYMPUS</h1>
+    <p>{site.olympus.title.tagline}</p>
+    <div className="olympus-preview" aria-hidden="true"><span>↖</span><span>→</span><PixelIcon name="folder" size={32} /><PixelIcon name="terminal" size={32} /><span>✦</span></div>
+    <p className="olympus-title-dim">One thumb. Zero rush. Your progress saves.</p>
+    <button type="button" className="swipe-primary" onClick={start} autoFocus>LET’S BREAK THINGS →</button>
+    <Link className="swipe-secondary" href="/olympus">Open direct game link ↗</Link>
+  </div>;
 }
+
