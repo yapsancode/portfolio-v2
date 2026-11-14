@@ -191,8 +191,8 @@ export const TUNING = {
   lives: 3,
   ship: {
     radius: 10,
-    turn: 4.6, // rad/s (~260°/s)
-    thrust: 480, // px/s²
+    turn: 5.4, // rad/s (~310°/s)
+    thrust: 560, // px/s²
     drag: 0.8, // per second
     maxSpeed: 520,
     safeTime: 2,
@@ -221,7 +221,7 @@ export const TUNING = {
   awakenFreeze: 0.6,
   awakenTime: 2.4,
   statue: {
-    hp: 40, // bullet hits
+    hp: 38, // bullet hits
     hitScore: 100,
     pokeScore: 10,
     pokeAnger: 0.4,
@@ -242,9 +242,9 @@ export const TUNING = {
     runSpeedUp: 0.12,
     /** Warning before each throw. */
     windup: 0.5,
-    throwEvery: [1.5, 1.15, 2.2] as const, // per stage
+    throwEvery: [1.5, 1.2, 1.7] as const, // per stage
     throwSpeed: [[210, 260], [270, 330], [230, 280]] as const, // per stage
-    /** Stage 2 throws three at once, this far apart (radians). */
+    /** Stages 2 and 3 throw three at once, this far apart (radians). */
     spread: 0.2,
     laser: { charge: 1, lock: 0.45, fire: 0.5, rest: 0.8, halfWidth: 13 },
   },
@@ -572,7 +572,7 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
       const from = throwPoint(statue);
       const aim = Math.atan2(ship.y - from.y, ship.x - from.x) + between(random, -0.03, 0.03);
       const [slow, quick] = B.throwSpeed[stage - 1];
-      for (const turn of stage === 2 ? [-B.spread, 0, B.spread] : [0]) {
+      for (const turn of stage === 1 ? [0] : [-B.spread, 0, B.spread]) {
         const chunk = makeRock(world, stage === 1 && random() < 0.5 ? 1 : 2, from.x, from.y, aim + turn);
         // Only half the small-screen shrink and slow-down: a phone is narrow, but the ship is just as far away.
         const small = (1 + world.scale) / 2;

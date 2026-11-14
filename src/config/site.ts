@@ -147,7 +147,10 @@ export const site = {
       taunts: ["Pointer not responding.", "Have you tried turning it off and on again?", "Click harder."],
       falls: "I was only a wallpaper...",
     },
-    win: ["The statue crumbled.", "It was only a wallpaper anyway."],
+    win: {
+      title: "It is now safe to turn off your statue.",
+      lines: ["The statue crumbled. Your desktop will be restored."],
+    },
     bsod: [
       "A fatal exception 0E has occurred at 0028:C0DE1998 in VXD STATUE(01).",
       "The statue won. Your mouse pointer has been terminated.",

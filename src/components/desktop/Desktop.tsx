@@ -231,7 +231,13 @@ function DesktopRoot() {
   // Olympus runs over the whole desktop. While it does, shot-down icons are
   // hidden, crashed windows are minimized and the statue may be "awake".
   // Ending the game puts all of it back.
-  const [game, setGame] = useState<{ run: number; spawnAt: { x: number; y: number } | null } | null>(null);
+  // `run` only makes each game a fresh component; `level` is how many wins
+  // in a row the player is on (1 = first game), and makes the fight harder.
+  const [game, setGame] = useState<{
+    run: number;
+    level: number;
+    spawnAt: { x: number; y: number } | null;
+  } | null>(null);
   const [destroyedIcons, setDestroyedIcons] = useState<DesktopIconId[]>([]);
   const [crashedWindows, setCrashedWindows] = useState<WindowId[]>([]);
   const [statueHidden, setStatueHidden] = useState(false);
@@ -273,12 +279,12 @@ function DesktopRoot() {
       // with the ship in the middle rather than under the touch buttons.
       dispatch(isMobile ? { type: "CLOSE_ALL" } : { type: "CLOSE", id: "olympus" });
       setStatueReturning(false);
-      setGame({ run: (game?.run ?? 0) + 1, spawnAt: isMobile ? null : spawnAt });
+      setGame({ run: (game?.run ?? 0) + 1, level: 1, spawnAt: isMobile ? null : spawnAt });
     },
     cancel: () => dispatch({ type: "CLOSE", id: "olympus" }),
   };
 
-  const endGame = (replay: boolean) => {
+  const endGame = (replay: boolean, won: boolean) => {
     for (const id of crashedWindows) {
       if (state.windows.find((w) => w.id === id)?.minimized) dispatch({ type: "FOCUS", id });
     }
@@ -286,7 +292,9 @@ function DesktopRoot() {
     setDestroyedIcons([]);
     if (statueHidden) setStatueReturning(true);
     setStatueHidden(false);
-    setGame(replay ? { run: (game?.run ?? 0) + 1, spawnAt: null } : null);
+    setGame(
+      replay ? { run: (game?.run ?? 0) + 1, level: won ? (game?.level ?? 1) + 1 : 1, spawnAt: null } : null
+    );
     if (!replay) {
       requestAnimationFrame(() =>
         document.querySelector<HTMLElement>('[data-icon-id="olympus"]')?.focus()
@@ -411,6 +419,7 @@ function DesktopRoot() {
             <OlympusGame
               key={game.run}
               spawnAt={game.spawnAt}
+              level={game.level}
               touch={isMobile}
               windows={state.windows.map((w) => ({ id: w.id, zIndex: w.zIndex, minimized: w.minimized }))}
               onIconDestroyed={(id) => setDestroyedIcons((list) => [...list, id])}

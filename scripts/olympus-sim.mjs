@@ -26,7 +26,7 @@ for (const [path, value] of Object.entries(JSON.parse(process.env.OLYMPUS_TUNING
 const COLS = 16;
 const ROWS = 18;
 const DT = 1 / 60;
-const GAMES = 200;
+const GAMES = Number(process.env.GAMES ?? 200);
 const TASKBAR = 36;
 const EYE = g.EYE ?? { x: 0.33, y: 0.265 };
 
@@ -231,9 +231,13 @@ const R = results;
 const all = Object.values(R);
 const ghostWake = play(1, SCREENS.desktop, ghostBot).wake;
 console.log(`nobody shoots: statue wakes at ${ghostWake.toFixed(1)}s`);
+const run2 = stats(SCREENS.desktop, dodgerBot, 2).win;
+const run3 = stats(SCREENS.desktop, dodgerBot, 3).win;
+console.log(`desktop dodger wins: run 1 ${(R["desktop.dodger"].win * 100).toFixed(0)}%, run 2 ${(run2 * 100).toFixed(0)}%, run 3 ${(run3 * 100).toFixed(0)}%`);
 const D = R["desktop.dodger"];
 const P = R["phone.dodger"];
 const checks = [
+  ["step 5: each run after a win is harder (run 1 > run 2 > run 3), but still beatable", D.win >= run2 && run2 > run3 && run3 > 0.03],
   ["step 4: Idle (never moves) wins under 10%", R["desktop.idle"].win < 0.1 && R["phone.idle"].win < 0.1],
   // The phone is gentler on purpose: touch buttons are much harder for a person than for a robot.
   ["step 4: Dodger wins 40-70% on desktop, and at least that on phone", D.win >= 0.4 && D.win <= 0.7 && P.win >= 0.4],

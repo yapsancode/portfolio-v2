@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { site, windowDefaults } from "@/config/site";
 import type { DesktopIconId, WindowId } from "@/config/site";
-import PixelIcon from "@/components/desktop/PixelIcon";
 import { TASKBAR_HEIGHT } from "@/components/desktop/Taskbar";
 import { drawWorld, type StatueArt } from "./draw";
 import { useMusic } from "@/components/desktop/music";
-import { loadBest, saveBest } from "./GameContext";
+import { BEST_RUN_KEY, loadBest, saveBest } from "./GameContext";
 import { playSound, setSoundVolume, unlockSound } from "./sound";
 import {
   createStatue,
@@ -44,8 +43,10 @@ export type OlympusGameProps = {
   onIconDestroyed: (id: DesktopIconId) => void;
   onWindowCrashed: (id: WindowId) => void;
   onStatueAwake: () => void;
-  /** Put the desktop back; `replay` starts a fresh game straight away. */
-  onEnd: (replay: boolean) => void;
+  /** 1 on a fresh game. Each win in a row raises it, and the fight gets harder. */
+  level: number;
+  /** Put the desktop back; `replay` starts a fresh game straight away (a harder one after a win). */
+  onEnd: (replay: boolean, won: boolean) => void;
 };
 
 type Hud = { score: number; lives: number; anger: number; statue: number; phase: Phase };
@@ -182,24 +183,26 @@ function CursorGlyph() {
   );
 }
 
-const dialogButton =
-  "bevel-out min-w-20 bg-win-face px-4 py-1 font-pixel text-base leading-none focus-visible:outline-1 focus-visible:-outline-offset-4 focus-visible:outline-dotted focus-visible:outline-black active:translate-x-px active:translate-y-px";
-
-function BlueScreen({
-  score,
-  best,
+/**
+ * The end of a game, full screen. Losing is the blue screen; winning is the
+ * black "safe to turn off" screen. Enter plays again, any other key leaves.
+ */
+function EndScreen({
+  ending,
+  level,
   touch,
   onReplay,
   onExit,
 }: {
-  score: number;
-  best: number;
+  ending: Ending;
+  level: number;
   touch: boolean;
   onReplay: () => void;
   onExit: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const actions = useRef({ onReplay, onExit });
+  const won = ending.kind === "won";
 
   useEffect(() => {
     actions.current = { onReplay, onExit };
@@ -220,74 +223,38 @@ function BlueScreen({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  const again = won ? `to play run ${level + 1} (harder)` : "to play again";
   return (
-    <div ref={ref} className="bsod" role="alertdialog" aria-label="Game over" tabIndex={-1}>
+    <div
+      ref={ref}
+      className={won ? "bsod bsod-win" : "bsod"}
+      role="alertdialog"
+      aria-label={won ? "You won" : "Game over"}
+      tabIndex={-1}
+    >
       <div className="bsod-inner">
-        <p className="bsod-title">
-          <span>Olympus</span>
-        </p>
-        {copy.bsod.map((line) => (
+        {won ? (
+          <p className="bsod-win-title">{copy.win.title}</p>
+        ) : (
+          <p className="bsod-title">
+            <span>Olympus</span>
+          </p>
+        )}
+        {(won ? copy.win.lines : copy.bsod).map((line) => (
           <p key={line}>{line}</p>
         ))}
         <p>
-          Score: {score.toLocaleString("en")} &nbsp; Best: {best.toLocaleString("en")}
+          Score: {ending.score.toLocaleString("en")} &nbsp;{" "}
+          {ending.newBest ? "New best!" : `Best: ${ending.best.toLocaleString("en")}`}
+          {level > 1 && <> &nbsp; Run {level}</>}
         </p>
         <button type="button" className="bsod-option" onClick={onReplay}>
-          {touch ? "* Tap here to play again." : "* Press Enter or click here to play again."}
+          {touch ? `* Tap here ${again}.` : `* Press Enter or click here ${again}.`}
         </button>
         <button type="button" className="bsod-option" onClick={onExit}>
           {touch ? "* Tap here to return to the desktop." : "* Press any other key to return to the desktop."}{" "}
           <span className="terminal-cursor" />
         </button>
-      </div>
-    </div>
-  );
-}
-
-function WinDialog({
-  ending,
-  onReplay,
-  onExit,
-}: {
-  ending: Ending;
-  onReplay: () => void;
-  onExit: () => void;
-}) {
-  return (
-    <div className="olympus-dialog-layer">
-      <div
-        className="win-window bevel-out w-[min(360px,calc(100vw-24px))]"
-        role="alertdialog"
-        aria-labelledby="olympus-win-title"
-      >
-        <div className="win-titlebar">
-          <PixelIcon name="olympus" className="shrink-0" />
-          <span className="title" id="olympus-win-title">
-            olympus.exe
-          </span>
-        </div>
-        <div className="flex gap-3 p-4 font-content text-sm leading-snug">
-          <PixelIcon name="olympus" size={32} className="shrink-0" />
-          <div>
-            {copy.win.map((line) => (
-              <p key={line} className="mb-1">
-                {line}
-              </p>
-            ))}
-            <p className="mt-2 font-bold">
-              Score {ending.score.toLocaleString("en")}
-              {ending.newBest ? " — new best!" : ` (best ${ending.best.toLocaleString("en")})`}
-            </p>
-          </div>
-        </div>
-        <div className="flex justify-center gap-2 pb-3">
-          <button type="button" className={dialogButton} onClick={onReplay}>
-            Play again
-          </button>
-          <button type="button" className={dialogButton} onClick={onExit} autoFocus>
-            OK
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -525,7 +492,10 @@ export default function OlympusGame(props: OlympusGameProps) {
             const best = loadBest();
             const newBest = world.score > best;
             if (newBest) saveBest(world.score);
-            if (e.type === "won") playSound("win");
+            if (e.type === "won") {
+              playSound("win");
+              if (propsRef.current.level > loadBest(BEST_RUN_KEY)) saveBest(propsRef.current.level, BEST_RUN_KEY);
+            }
             setEnding({ kind: e.type, score: world.score, best: Math.max(best, world.score), newBest });
             setAnnounce(
               `${e.type === "won" ? "You won" : "Game over"}. Score ${world.score.toLocaleString("en")}.`
@@ -600,6 +570,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         random: Math.random,
         particleScale: reducedMotion ? 0.35 : 1,
         shipFloor: touchRef.current ? TOUCH_STRIP : 0,
+        run: propsRef.current.level,
       });
       setTargets(world, readTargets(propsRef.current.windows));
       last = performance.now();
@@ -620,7 +591,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        propsRef.current.onEnd(false);
+        propsRef.current.onEnd(false, false);
         return;
       }
       if (e.key === "p" || e.key === "P") {
@@ -709,6 +680,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         <div className="player-lcd">
           <div className="flex justify-between gap-4">
             <span>SCORE {String(hud.score).padStart(6, "0")}</span>
+            {props.level > 1 && <span>RUN {props.level}</span>}
             <span className="flex items-center gap-1">
               {Array.from({ length: Math.max(0, hud.lives) }, (_, i) => (
                 <CursorGlyph key={i} />
@@ -764,18 +736,15 @@ export default function OlympusGame(props: OlympusGameProps) {
         </button>
       )}
 
-      {touch && !ending && <TouchPad onPress={press} onQuit={() => props.onEnd(false)} />}
+      {touch && !ending && <TouchPad onPress={press} onQuit={() => props.onEnd(false, false)} />}
 
-      {ending?.kind === "won" && (
-        <WinDialog ending={ending} onReplay={() => props.onEnd(true)} onExit={() => props.onEnd(false)} />
-      )}
-      {ending?.kind === "lost" && (
-        <BlueScreen
-          score={ending.score}
-          best={ending.best}
+      {ending && (
+        <EndScreen
+          ending={ending}
+          level={props.level}
           touch={touch}
-          onReplay={() => props.onEnd(true)}
-          onExit={() => props.onEnd(false)}
+          onReplay={() => props.onEnd(true, ending.kind === "won")}
+          onExit={() => props.onEnd(false, ending.kind === "won")}
         />
       )}
 

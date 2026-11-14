@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { MouseEvent } from "react";
 import { site } from "@/config/site";
-import { loadBest, useGame } from "@/components/game/GameContext";
+import { BEST_RUN_KEY, loadBest, useGame } from "@/components/game/GameContext";
 
 const copy = site.olympus;
 
@@ -39,7 +39,8 @@ const button =
 
 export default function OlympusWindow() {
   const { start, cancel } = useGame();
-  const [best] = useState(loadBest);
+  const [best] = useState(() => loadBest());
+  const [bestRun] = useState(() => loadBest(BEST_RUN_KEY));
   // Same test the game uses to show its on-screen buttons.
   const [touch] = useState(
     () => navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches
@@ -83,6 +84,7 @@ export default function OlympusWindow() {
       <div className="mt-3 flex shrink-0 items-center gap-2">
         <span className="mr-auto font-pixel text-base leading-none">
           Best: {best.toLocaleString("en")}
+          {bestRun > 0 && ` · run ${bestRun}`}
         </span>
         <button type="button" className={button} onClick={onStart} autoFocus>
           Start

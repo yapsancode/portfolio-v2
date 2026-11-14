@@ -22,19 +22,21 @@ export function useGame(): GameControls {
 }
 
 export const BEST_SCORE_KEY = "isyraf98:olympus-best";
+/** The highest run (wins in a row) the visitor has cleared. */
+export const BEST_RUN_KEY = "isyraf98:olympus-best-run";
 
-export function loadBest(): number {
+export function loadBest(key = BEST_SCORE_KEY): number {
   try {
-    return Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+    return Number(localStorage.getItem(key)) || 0;
   } catch {
     return 0;
   }
 }
 
-export function saveBest(score: number) {
+export function saveBest(value: number, key = BEST_SCORE_KEY) {
   try {
-    localStorage.setItem(BEST_SCORE_KEY, String(score));
+    localStorage.setItem(key, String(value));
   } catch {
-    // Storage blocked: the best score just won't be remembered.
+    // Storage blocked: the best just won't be remembered.
   }
 }
