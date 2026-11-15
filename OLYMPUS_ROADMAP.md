@@ -1,8 +1,6 @@
 # Olympus — Development Roadmap
 
-Current plan: **[Swipe & Smash build and release plan](OLYMPUS-SWIPE-PLAN.md)** (2026-11-15). It supersedes this document's gameplay direction and release gates. The earlier improvements below are already on `main`; verified against GitHub on 2026-11-15.
-
-Historical status as written on 2026-11-14: **option A built: steps 0–5 were done; step 6 (three real people play it) was open and the branch had not yet been merged.** See "What was built" at the very bottom for the changes from that plan.
+Status: **option A built: steps 0–5 are done (2026-11-14). Step 6 (three real people play it) is open, and nothing is merged to `main` yet.** See "What was built" at the very bottom for the changes from the plan.
 Written 2026-11-14, after a code review and three browser playtests.
 
 ## Goal
