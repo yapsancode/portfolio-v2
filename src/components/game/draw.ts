@@ -26,14 +26,14 @@ const CURSOR_CENTER = { x: 4, y: 11 };
 const CURSOR_LEAN = Math.atan2(CURSOR_CENTER.x, CURSOR_CENTER.y);
 const CURSOR_SCALE = 2;
 
-function drawShip(ctx: CanvasRenderingContext2D, ship: Ship, time: number) {
+function drawShip(ctx: CanvasRenderingContext2D, ship: Ship, time: number, scale: number) {
   if (!ship.alive) return;
   ctx.save();
   // Flicker while it can't be hit (never fully invisible).
   if (ship.safe > 0 && Math.floor(time * 10) % 2 === 0) ctx.globalAlpha = 0.35;
   ctx.translate(ship.x, ship.y);
   ctx.rotate(ship.angle + CURSOR_LEAN);
-  ctx.scale(CURSOR_SCALE, CURSOR_SCALE);
+  ctx.scale(CURSOR_SCALE * scale, CURSOR_SCALE * scale);
   ctx.translate(-CURSOR_CENTER.x, -CURSOR_CENTER.y);
 
   if (ship.thrusting) {
@@ -275,6 +275,6 @@ export function drawWorld(
     ctx.globalAlpha = 1;
   }
 
-  drawShip(ctx, world.ship, world.time);
+  drawShip(ctx, world.ship, world.time, world.phoneMode ? TUNING.phone.shipScale : 1);
   ctx.restore();
 }

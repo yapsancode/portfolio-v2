@@ -5,6 +5,8 @@ import Image from "next/image";
 import { site, desktopIcons, windowDefaults } from "@/config/site";
 import type { DesktopIconId, WindowId } from "@/config/site";
 import { unlockSound } from "@/components/game/sound";
+import { enterGameFullscreen, leaveGameFullscreen } from "@/components/game/fullscreen";
+import { usesTouchControls } from "@/components/game/touch-controls";
 import { GameContext, type GameControls } from "@/components/game/GameContext";
 import Window from "@/components/window/Window";
 import { windowRegistry } from "@/components/window/windowRegistry";
@@ -236,12 +238,16 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
   const [game, setGame] = useState<{
     run: number;
     level: number;
+    touchDevice: boolean;
     spawnAt: { x: number; y: number } | null;
   } | null>(null);
   const [destroyedIcons, setDestroyedIcons] = useState<DesktopIconId[]>([]);
   const [crashedWindows, setCrashedWindows] = useState<WindowId[]>([]);
   const [statueHidden, setStatueHidden] = useState(false);
   const [statueReturning, setStatueReturning] = useState(false);
+  const touchGame = Boolean(game?.touchDevice);
+
+  useEffect(() => () => leaveGameFullscreen(), []);
 
   const openWindow = (id: WindowId) => {
     if (isMobile) {
@@ -280,11 +286,12 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
     close: () => dispatch({ type: "CLOSE", id: "olympus" }),
     start: (spawnAt) => {
       unlockSound(); // browsers only allow sound from inside a click
+      enterGameFullscreen();
       // On phones the title screen is full-screen; play on the bare desktop,
       // with the ship in the middle rather than under the touch buttons.
       dispatch(isMobile ? { type: "CLOSE_ALL" } : { type: "CLOSE", id: "olympus" });
       setStatueReturning(false);
-      setGame({ run: (game?.run ?? 0) + 1, level: 1, spawnAt: isMobile ? null : spawnAt });
+      setGame({ run: (game?.run ?? 0) + 1, level: 1, touchDevice: usesTouchControls(), spawnAt: isMobile ? null : spawnAt });
     },
   };
 
@@ -297,9 +304,10 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
     if (statueHidden) setStatueReturning(true);
     setStatueHidden(false);
     setGame(
-      replay ? { run: (game?.run ?? 0) + 1, level: won ? (game?.level ?? 1) + 1 : 1, spawnAt: null } : null
+      replay ? { run: (game?.run ?? 0) + 1, level: won ? (game?.level ?? 1) + 1 : 1, touchDevice: game?.touchDevice ?? usesTouchControls(), spawnAt: null } : null
     );
     if (!replay) {
+      leaveGameFullscreen();
       requestAnimationFrame(() =>
         document.querySelector<HTMLElement>('[data-icon-id="olympus"]')?.focus()
       );
@@ -342,7 +350,11 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
     // screen, and a "hidden" box can still be scrolled by keyboard focus or
     // scrollIntoView, which would shift the whole desktop with no way back.
     <GameContext value={gameControls}>
-      <div className="fixed inset-0 overflow-clip bg-black">
+      <div
+        className={`fixed inset-0 overflow-clip bg-black${game ? " olympus-playing" : ""}${touchGame ? " olympus-touch-playing" : ""}`}
+        onContextMenu={(e) => { if (game) e.preventDefault(); }}
+        onDragStart={(e) => { if (game) e.preventDefault(); }}
+      >
         {!launchOlympus && <BootScreen />}
 
         {shutDown && (
@@ -365,7 +377,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
             standing on the taskbar. */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 z-0 flex items-end justify-center"
-          style={{ bottom: TASKBAR_HEIGHT }}
+          style={{ bottom: touchGame ? 0 : TASKBAR_HEIGHT }}
           aria-hidden="true"
         >
           <div
@@ -436,18 +448,20 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
           </Suspense>
         )}
 
-        <Taskbar
-          windows={state.windows.map((w) => ({
-            id: w.id,
-            title: w.title,
-            icon: windowDefaults[w.id].icon,
-            minimized: w.minimized,
-            active: state.activeId === w.id,
-          }))}
-          onTaskClick={(id) => dispatch({ type: "TASK_CLICK", id })}
-          onOpenIcon={openWindow}
-          onShutDown={() => setShutDown(true)}
-        />
+        <div className="desktop-taskbar">
+          <Taskbar
+            windows={state.windows.map((w) => ({
+              id: w.id,
+              title: w.title,
+              icon: windowDefaults[w.id].icon,
+              minimized: w.minimized,
+              active: state.activeId === w.id,
+            }))}
+            onTaskClick={(id) => dispatch({ type: "TASK_CLICK", id })}
+            onOpenIcon={openWindow}
+            onShutDown={() => setShutDown(true)}
+          />
+        </div>
       </div>
     </GameContext>
   );

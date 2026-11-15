@@ -5,6 +5,10 @@ export function usesTouchControls(): boolean {
   return window.matchMedia("(pointer: coarse)").matches;
 }
 
+export function isPhoneTouchDevice(): boolean {
+  return usesTouchControls() && Math.min(window.innerWidth, window.innerHeight) <= 600;
+}
+
 export function joystickVector(x: number, y: number, radius: number): StickVector {
   const distance = Math.hypot(x, y);
   const magnitude = Math.min(1, distance / radius);

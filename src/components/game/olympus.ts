@@ -155,6 +155,7 @@ export type World = {
   phaseTime: number;
   time: number;
   ship: Ship;
+  phoneMode: boolean;
   rocks: Rock[];
   bullets: Bullet[];
   particles: Particle[];
@@ -192,6 +193,7 @@ export type World = {
 export const TUNING = {
   lives: 3,
   joystick: { maxSpeed: 360, response: 14, brake: 22 },
+  phone: { maxSpeed: 270, shipScale: 0.75 },
   ship: {
     radius: 10,
     turn: 5.4, // rad/s (~310°/s)
@@ -376,11 +378,13 @@ export function createWorld(opts: {
   random: () => number;
   particleScale?: number;
   shipFloor?: number;
+  phoneMode?: boolean;
   run?: number;
 }): World {
   const world: World = {
     w: opts.w,
     h: opts.h,
+    phoneMode: opts.phoneMode ?? false,
     phase: "play",
     phaseTime: 0,
     time: 0,
@@ -626,7 +630,7 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
     const py = ship.y - eye.y;
     const along = px * Math.cos(laser.angle) + py * Math.sin(laser.angle);
     const off = Math.abs(py * Math.cos(laser.angle) - px * Math.sin(laser.angle));
-    if (along > 0 && off < B.laser.halfWidth + TUNING.ship.radius * 0.5) loseShip(world, events);
+    if (along > 0 && off < B.laser.halfWidth + TUNING.ship.radius * (world.phoneMode ? TUNING.phone.shipScale : 1) * 0.5) loseShip(world, events);
   }
 }
 
@@ -666,8 +670,9 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
       if (ship.thrusting) ship.angle = Math.atan2(x, -y);
       const response = ship.thrusting ? TUNING.joystick.response : TUNING.joystick.brake;
       const blend = 1 - Math.exp(-response * dt);
-      ship.vx += (x * scale * TUNING.joystick.maxSpeed - ship.vx) * blend;
-      ship.vy += (y * scale * TUNING.joystick.maxSpeed - ship.vy) * blend;
+      const maxSpeed = world.phoneMode ? TUNING.phone.maxSpeed : TUNING.joystick.maxSpeed;
+      ship.vx += (x * scale * maxSpeed - ship.vx) * blend;
+      ship.vy += (y * scale * maxSpeed - ship.vy) * blend;
       if (!ship.thrusting && Math.hypot(ship.vx, ship.vy) < 1) {
         ship.vx = 0;
         ship.vy = 0;
@@ -807,7 +812,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   /* Ship vs rocks (not while the chips fly home: that would be unfair) */
   if (ship.alive && ship.safe <= 0 && world.phase !== "awakening") {
     for (const rock of world.rocks) {
-      const reach = rock.r * 0.85 + TUNING.ship.radius;
+      const reach = rock.r * 0.85 + TUNING.ship.radius * (world.phoneMode ? TUNING.phone.shipScale : 1);
       if ((rock.x - ship.x) ** 2 + (rock.y - ship.y) ** 2 < reach * reach) {
         loseShip(world, events);
         break;

@@ -10,7 +10,8 @@ import { useMusic } from "@/components/desktop/music";
 import { BEST_RUN_KEY, loadBest, saveBest } from "./GameContext";
 import { playSound, setSoundVolume, unlockSound } from "./sound";
 import TouchJoystick from "./TouchJoystick";
-import { usesTouchControls, type StickVector } from "./touch-controls";
+import { isPhoneTouchDevice, usesTouchControls, type StickVector } from "./touch-controls";
+import { enterGameFullscreen } from "./fullscreen";
 import {
   createStatue,
   createWorld,
@@ -75,7 +76,7 @@ const NO_INPUT: Input = { left: false, right: false, thrust: false, fire: false 
 /* ------------------------------------------------------------------ */
 
 function worldSize() {
-  return { w: window.innerWidth, h: Math.max(100, window.innerHeight - TASKBAR_HEIGHT) };
+  return { w: window.innerWidth, h: Math.max(100, window.innerHeight - (usesTouchControls() ? 0 : TASKBAR_HEIGHT)) };
 }
 
 function statueBox(): Rect {
@@ -296,7 +297,7 @@ function TouchPad({
   );
   return (
     <>
-      <div className="olympus-touch" style={{ bottom: TASKBAR_HEIGHT + 8 }}>
+      <div className="olympus-touch">
         <TouchJoystick onMove={onMove} />
         {button("fire", "FIRE", "Fire", "olympus-touch-fire")}
       </div>
@@ -331,6 +332,7 @@ export default function OlympusGame(props: OlympusGameProps) {
   const [rotateRequired, setRotateRequired] = useState(needsLandscape);
   const rotateRequiredRef = useRef(rotateRequired);
   const endedRef = useRef(false);
+  const [touchDevice] = useState(usesTouchControls);
   // On-screen buttons follow the last input used: a touch shows them, a game key hides them.
   const [touch, setTouch] = useState(usesTouchControls);
   const touchRef = useRef(touch);
@@ -592,10 +594,11 @@ export default function OlympusGame(props: OlympusGameProps) {
         w,
         h,
         shipAt: spawn ? { x: Math.min(w - 20, spawn.x), y: Math.min(h - 20, spawn.y) } : undefined,
-        statue: createStatue(box, COLS, ROWS, tileCover(loaded)),
+        statue: createStatue(statueBox(), COLS, ROWS, tileCover(loaded)),
         random: Math.random,
         particleScale: reducedMotion ? 0.35 : 1,
         shipFloor: touchRef.current ? TOUCH_STRIP : 0,
+        phoneMode: isPhoneTouchDevice(),
         run: propsRef.current.level,
       });
       setTargets(world, readTargets(propsRef.current.windows));
@@ -655,6 +658,12 @@ export default function OlympusGame(props: OlympusGameProps) {
     const onVisibility = () => {
       if (document.hidden) pause(true);
     };
+    const onFullscreenChange = () => {
+      fit();
+      if (usesTouchControls() && !document.fullscreenElement) pause(true);
+    };
+    const preventSelection = (e: Event) => e.preventDefault();
+    window.getSelection()?.removeAllRanges();
 
     window.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("keyup", onKeyUp);
@@ -662,6 +671,8 @@ export default function OlympusGame(props: OlympusGameProps) {
     window.addEventListener("blur", onBlur);
     window.addEventListener("resize", fit);
     document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.addEventListener("selectstart", preventSelection);
 
     return () => {
       disposed = true;
@@ -673,6 +684,8 @@ export default function OlympusGame(props: OlympusGameProps) {
       window.removeEventListener("blur", onBlur);
       window.removeEventListener("resize", fit);
       document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      document.removeEventListener("selectstart", preventSelection);
     };
   }, []);
 
@@ -683,6 +696,7 @@ export default function OlympusGame(props: OlympusGameProps) {
 
   const resume = () => {
     if (rotateRequiredRef.current) return;
+    enterGameFullscreen();
     pausedRef.current = false;
     setPaused(false);
     canvasRef.current?.focus();
@@ -707,7 +721,8 @@ export default function OlympusGame(props: OlympusGameProps) {
       <canvas
         ref={canvasRef}
         className="olympus-canvas"
-        style={{ height: `calc(100% - ${TASKBAR_HEIGHT}px)` }}
+        style={{ height: touchDevice ? "100%" : `calc(100% - ${TASKBAR_HEIGHT}px)` }}
+        onPointerDown={(e) => { if (e.pointerType === "touch") e.preventDefault(); }}
         tabIndex={paused || ending ? -1 : 0}
         role="application"
         aria-label="Olympus. Left and right arrows turn, up arrow thrusts, Space fires, P or Escape opens the pause menu."

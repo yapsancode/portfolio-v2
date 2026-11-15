@@ -69,3 +69,24 @@ test("desktop arrow turning, thrust, and drag retain their original physics", ()
   assert.ok(Math.abs(world.ship.vx - Math.sin(angle) * TUNING.ship.thrust / 60 * drag) < 1e-10);
   assert.ok(Math.abs(world.ship.vy + Math.cos(angle) * TUNING.ship.thrust / 60 * drag) < 1e-10);
 });
+
+test("phones move 25% slower without changing tablet speed", () => {
+  const phone = makeWorld();
+  phone.phoneMode = true;
+  const tablet = makeWorld();
+  advance(phone, { x: 1, y: 0 });
+  advance(tablet, { x: 1, y: 0 });
+  assert.ok(Math.abs(phone.ship.vx - TUNING.phone.maxSpeed) < 1);
+  assert.ok(Math.abs(phone.ship.vx / tablet.ship.vx - 0.75) < 1e-10);
+});
+
+test("phone collision radius matches its smaller ship", () => {
+  for (const phoneMode of [false, true]) {
+    const world = makeWorld();
+    world.phoneMode = phoneMode;
+    world.ship.safe = 0;
+    world.rocks = [{ x: world.ship.x + 17, y: world.ship.y, vx: 0, vy: 0, size: 2, r: 10, angle: 0, spin: 0, shape: [1, 1, 1, 1] }];
+    step(world, neutral, 1 / 60);
+    assert.equal(world.ship.alive, phoneMode);
+  }
+});

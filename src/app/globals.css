@@ -588,7 +588,21 @@ body {
   color: #00e000;
 }
 
-/* The game draws over the desktop and windows, but under the taskbar. */
+/* Selection/callouts must never interrupt a held game control. */
+.olympus-playing,
+.olympus-playing *,
+.olympus-title,
+.olympus-title * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.olympus-playing { touch-action: none; }
+.olympus-touch-playing .desktop-taskbar { display: none; }
+
+/* Touch play uses the whole viewport; desktop keeps its taskbar. */
 .olympus-canvas {
   position: fixed;
   top: 0;
@@ -618,8 +632,8 @@ body {
 
 .olympus-hud {
   position: fixed;
-  top: 8px;
-  right: 8px;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
   z-index: 26;
   min-width: 220px;
   padding: 2px;
@@ -772,6 +786,7 @@ body {
 /* On-screen controls for touch screens. */
 .olympus-touch {
   position: fixed;
+  bottom: max(12px, env(safe-area-inset-bottom));
   right: max(16px, env(safe-area-inset-right));
   left: max(16px, env(safe-area-inset-left));
   z-index: 27;
