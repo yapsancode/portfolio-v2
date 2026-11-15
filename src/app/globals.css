@@ -706,9 +706,19 @@ body {
 .olympus-scores th { color: #aaa; font-weight: normal; border-bottom: 1px solid #555; }
 .olympus-scores th, .olympus-scores td { padding: 4px; text-align: right; white-space: nowrap; }
 .olympus-scores th:nth-child(2), .olympus-scores td:nth-child(2) { text-align: left; }
-.olympus-score-name { max-width: 17ch; overflow: hidden; text-overflow: ellipsis; }
+.olympus-score-name { max-width: 17ch; }
+.olympus-score-player { display: flex; align-items: center; gap: 6px; }
+.olympus-score-player-text { overflow: hidden; text-overflow: ellipsis; }
 .olympus-score-you { color: #00e000; background: #082008; }
-.olympus-score-marker { font-size: 12px; }
+.olympus-score-marker { flex-shrink: 0; padding: 1px 3px; border: 1px solid #00e000; color: #00e000; background: #082008; font-size: 12px; line-height: 1; }
+.olympus-score-gold { --medal-color: #ffd800; background: #231e08; }
+.olympus-score-silver { --medal-color: #d5deeb; }
+.olympus-score-bronze { --medal-color: #e4a06b; }
+.olympus-score-rank { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--medal-color, inherit); }
+.olympus-score-medal { width: 14px; height: 18px; flex-shrink: 0; }
+.olympus-score-gold td { border-top: 1px solid #8c761b; border-bottom: 1px solid #8c761b; }
+.olympus-score-gold td:first-child { border-left: 1px solid #8c761b; }
+.olympus-score-gold td:last-child { border-right: 1px solid #8c761b; }
 .olympus-score-entry { border-top: 1px solid currentColor; padding-top: 12px; font-size: 20px; }
 .olympus-score-entry > .olympus-scores { margin-top: 8px; }
 .olympus-score-entry .olympus-scores-scroll { max-height: 200px; }
