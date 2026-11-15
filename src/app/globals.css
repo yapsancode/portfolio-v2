@@ -481,6 +481,44 @@ body {
   font-size: 15px;
 }
 
+.olympus-guide-link {
+  min-height: 44px;
+  padding: 8px 16px;
+  color: #ffd800;
+  background: none;
+  border: none;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.olympus-title.olympus-guide { justify-content: flex-start; overflow: hidden; gap: 8px; }
+.olympus-guide-heading { color: #ffd800; font-size: 30px; line-height: 1; flex-shrink: 0; }
+.olympus-guide-content {
+  width: min(100%, 680px);
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 4px 8px;
+  text-align: left;
+  line-height: 1.3;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+.olympus-guide-content h2 { color: #ffd800; font-size: 21px; margin-bottom: 8px; }
+.olympus-guide-content h3,
+.olympus-guide-content dt { color: #f0f0f0; font-size: 18px; }
+.olympus-guide-story { margin-bottom: 20px; }
+.olympus-guide-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; }
+.olympus-guide-content ol { list-style: decimal; padding-left: 24px; }
+.olympus-guide-content li,
+.olympus-guide-content dl > div { margin-bottom: 12px; }
+.olympus-guide-tip { color: #e5cd68; margin-top: 16px; }
+.olympus-guide-reassurance { color: #a0a0a0; margin: 16px 0 4px; }
+.olympus-actions.olympus-guide-actions { flex-direction: row; width: min(100%, 560px); margin: 4px auto 6px; }
+.olympus-guide-actions .olympus-button { flex: 1; padding-inline: 12px; }
+
 .olympus-fullscreen-help {
   width: min(100%, 400px);
   flex-shrink: 0;

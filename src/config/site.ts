@@ -141,6 +141,33 @@ export const site = {
       startTouch: "Tap to start",
       warning: "Windows may crash. Icons may not survive. Everything comes back when you quit.",
     },
+    guide: {
+      label: "Story & how to play",
+      title: "Welcome to Olympus",
+      storyTitle: "The desktop has a guardian",
+      story: "Deep inside Isyraf 98, a marble guardian watches over the desktop. Your pointer has escaped its everyday job and become a tiny fighter. Every shattered icon and flying marble chip stirs the guardian's temper. Survive the chaos, bring the statue down, and reclaim the desktop.",
+      missionTitle: "Your mission",
+      steps: [
+        { title: "Cause a little chaos", text: "Shoot drifting rocks, desktop icons, and open windows to score points. Watch the ANGER meter rise." },
+        { title: "Take on the guardian", text: "When the statue wakes, shoot the marble still attached to it to drain its health. Dodge its thrown rocks and charged eye laser. Thrown rocks cannot be shot down." },
+        { title: "Bring Olympus down", text: "You have three lives. Destroy the statue before you lose them all. After a win, choose Next run for a harder fight." },
+      ],
+      controlsTitle: "Your controls",
+      touch: [
+        { title: "Steer", text: "Drag the left joystick toward the direction you want to go. Push farther to move faster; release to brake." },
+        { title: "Fire", text: "Hold FIRE with your other thumb to keep shooting. Shots follow the direction your pointer faces." },
+        { title: "Pause or leave", text: "Tap Pause, then Resume or Exit to desktop. Rotate your phone or tablet to landscape to play." },
+      ],
+      keyboard: [
+        { title: "Steer", text: "Use ← and → to turn. Hold ↑ to thrust. The pointer keeps drifting when you release thrust." },
+        { title: "Fire", text: "Hold Space to keep shooting in the direction your pointer faces. You can turn, thrust, and fire together." },
+        { title: "Pause or leave", text: "Press P or Esc to open the pause menu, then choose Resume or Exit to desktop." },
+      ],
+      tip: "A blinking pointer is briefly protected after a hit. Keep moving when the blinking stops!",
+      reassurance: "Everything on the desktop comes back when you exit the game.",
+      back: "Back",
+      play: "Play Olympus",
+    },
     hint: "← → turn · ↑ thrust · Space fire · P pause · Esc menu",
     crash: "{name} has performed an illegal operation and will be shut down.",
     statue: {
