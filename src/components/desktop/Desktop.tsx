@@ -222,7 +222,7 @@ function useIsMobile(): boolean {
 /* Desktop                                                             */
 /* ------------------------------------------------------------------ */
 
-function DesktopRoot() {
+function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const isMobile = useIsMobile();
   // "Shut Down..." in the Start menu: a full-screen goodbye until restart.
@@ -256,9 +256,13 @@ function DesktopRoot() {
 
   // Give desktop visitors immediate context without covering the mobile desktop.
   useEffect(() => {
+    if (launchOlympus) {
+      dispatch({ type: "OPEN", id: "olympus", rect: getDesktopRect("olympus") });
+      return;
+    }
     if (window.matchMedia(MOBILE_QUERY).matches) return;
     dispatch({ type: "OPEN", id: "about", rect: getDesktopRect("about") });
-  }, []);
+  }, [launchOlympus]);
 
   // Escape closes the focused window (but not while Olympus is running).
   useEffect(() => {
@@ -338,7 +342,7 @@ function DesktopRoot() {
     // scrollIntoView, which would shift the whole desktop with no way back.
     <GameContext value={gameControls}>
       <div className="fixed inset-0 overflow-clip bg-black">
-        <BootScreen />
+        {!launchOlympus && <BootScreen />}
 
         {shutDown && (
           <button
@@ -449,12 +453,12 @@ function DesktopRoot() {
   );
 }
 
-export default function Desktop() {
+export default function Desktop({ launchOlympus = false }: { launchOlympus?: boolean }) {
   // The music provider holds the one audio element, so the track keeps
   // playing no matter which windows are open.
   return (
     <MusicProvider>
-      <DesktopRoot />
+      <DesktopRoot launchOlympus={launchOlympus} />
     </MusicProvider>
   );
 }

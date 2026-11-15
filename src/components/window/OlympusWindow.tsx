@@ -81,6 +81,8 @@ export default function OlympusWindow() {
         </p>
       )}
       <p className="olympus-title-dim">{copy.warning}</p>
+      {touch && <p className="olympus-title-dim">Play in landscape — turn your phone sideways.</p>}
+      <a className="olympus-shortcut" href="/olympus">Direct game shortcut · /olympus</a>
     </div>
   );
 }

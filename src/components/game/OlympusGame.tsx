@@ -155,6 +155,10 @@ function hasTouchScreen() {
   return navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches;
 }
 
+function needsLandscape() {
+  return hasTouchScreen() && window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
+}
+
 function fileName(id: WindowId) {
   return windowDefaults[id].title.split("\\").pop() ?? id;
 }
@@ -316,6 +320,8 @@ export default function OlympusGame(props: OlympusGameProps) {
   const propsRef = useRef(props);
   const inputRef = useRef<Input>({ ...NO_INPUT });
   const pausedRef = useRef(false);
+  const [rotateRequired, setRotateRequired] = useState(needsLandscape);
+  const rotateRequiredRef = useRef(rotateRequired);
   const endedRef = useRef(false);
   // On-screen buttons follow the last input used: a touch shows them, a game key hides them.
   const [touch, setTouch] = useState(() => props.touch || hasTouchScreen());
@@ -367,6 +373,15 @@ export default function OlympusGame(props: OlympusGameProps) {
     };
 
     const fit = () => {
+      const portrait = needsLandscape();
+      rotateRequiredRef.current = portrait;
+      setRotateRequired(portrait);
+      if (portrait) {
+        // Preserve the run and require an explicit resume after rotation.
+        pausedRef.current = true;
+        inputRef.current = { ...NO_INPUT };
+        setPaused(true);
+      }
       const { w, h } = worldSize();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = Math.round(w * dpr);
@@ -515,7 +530,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (!world) return;
       const elapsed = Math.min(0.1, (now - last) / 1000);
       last = now;
-      if (!pausedRef.current && !endedRef.current) {
+      if (!pausedRef.current && !rotateRequiredRef.current && !endedRef.current) {
         if (now >= nextSync) {
           nextSync = now + 250;
           setTargets(world, readTargets(propsRef.current.windows));
@@ -579,6 +594,7 @@ export default function OlympusGame(props: OlympusGameProps) {
 
     const pause = (value: boolean) => {
       if (endedRef.current) return;
+      if (!value && rotateRequiredRef.current) return;
       pausedRef.current = value;
       inputRef.current = { ...NO_INPUT };
       setPaused(value);
@@ -611,7 +627,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         setTouch(false);
         inputRef.current = { ...NO_INPUT };
       }
-      if (pausedRef.current) return;
+      if (pausedRef.current || rotateRequiredRef.current) return;
       inputRef.current = { ...inputRef.current, [control]: true };
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -650,11 +666,12 @@ export default function OlympusGame(props: OlympusGameProps) {
   }, []);
 
   const press = (control: Control, down: boolean) => {
-    if (pausedRef.current || endedRef.current) return;
+    if (pausedRef.current || rotateRequiredRef.current || endedRef.current) return;
     inputRef.current = { ...inputRef.current, [control]: down };
   };
 
   const resume = () => {
+    if (rotateRequiredRef.current) return;
     pausedRef.current = false;
     setPaused(false);
     canvasRef.current?.focus();
@@ -728,15 +745,29 @@ export default function OlympusGame(props: OlympusGameProps) {
         </div>
       )}
 
-      {paused && !ending && (
+      {rotateRequired && !ending && (
+        <div className="olympus-rotate">
+          <div role="status">
+            <span className="olympus-rotate-icon" aria-hidden="true">↻</span>
+            <h2>Rotate to play Olympus</h2>
+            <p>Turn your phone sideways to landscape.</p>
+            <p>Your game is paused while you rotate.</p>
+          </div>
+          <button type="button" className="bevel-out px-4 py-2" onClick={() => props.onEnd(false, false)}>
+            Back to desktop
+          </button>
+        </div>
+      )}
+
+      {paused && !rotateRequired && !ending && (
         <button type="button" className="olympus-paused" onClick={resume}>
           <span className="win-window bevel-out px-6 py-3 font-pixel text-2xl leading-none">
-            Paused — press P or click to continue
+            {touch ? "Paused — tap to continue" : "Paused — press P or click to continue"}
           </span>
         </button>
       )}
 
-      {touch && !ending && <TouchPad onPress={press} onQuit={() => props.onEnd(false, false)} />}
+      {touch && !rotateRequired && !ending && <TouchPad onPress={press} onQuit={() => props.onEnd(false, false)} />}
 
       {ending && (
         <EndScreen

@@ -481,6 +481,58 @@ body {
   font-size: 15px;
 }
 
+.olympus-shortcut {
+  color: #c0c0c0;
+  font-size: 15px;
+  text-decoration: underline;
+  padding: 8px;
+}
+
+.olympus-rotate {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px;
+  background: #000;
+  color: #c0c0c0;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  text-align: center;
+}
+
+.olympus-rotate h2 {
+  color: #ffd800;
+  font-size: 30px;
+}
+
+.olympus-rotate-icon {
+  display: block;
+  color: #ffd800;
+  font-size: 72px;
+}
+
+.olympus-rotate button {
+  background: var(--color-win-face);
+  color: #000;
+  cursor: pointer;
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .olympus-title {
+    justify-content: safe center;
+    gap: 4px;
+  }
+
+  .olympus-logo {
+    font-size: 44px;
+  }
+}
+
 /* Marble letters with a hard red shadow, like a 1990s game logo. */
 .olympus-logo {
   color: #fff;
