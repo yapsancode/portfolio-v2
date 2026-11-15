@@ -7,6 +7,7 @@ import { site } from "@/config/site";
 import { loadBest, useGame } from "@/components/game/GameContext";
 import { usesTouchControls } from "@/components/game/touch-controls";
 import FullscreenHelp from "@/components/game/FullscreenHelp";
+import { missionInfo } from "@/lib/olympus/missions";
 import HighScores from "@/components/game/HighScores";
 import PlayerNamePrompt from "@/components/game/PlayerNamePrompt";
 
@@ -82,10 +83,11 @@ export default function OlympusWindow() {
           </section>
         </div>
         <section>
-          <h2>Six encounters, six powers</h2>
-          <ol>{LEVELS.map((level) => <li key={level.id}><h3>Level {level.id} · {level.name}</h3><p>{level.hint}</p></li>)}</ol>
-          <p>Higher levels change the guardian’s power, not its health or your lives. Continue restarts your saved level; Start Over resets the campaign and keeps your best score.</p>
+          <h2>Six encounters, six missions</h2>
+          <ol>{LEVELS.map((level) => <li key={level.id}><h3>Level {level.id} · {level.name}</h3><p>{missionInfo(level.id).briefing}</p><p>{level.hint}</p></li>)}</ol>
+          <p>Each level reveals a different guardian power, with its own patterns and challenge. Continue restarts your saved level; Start Over resets the campaign and keeps your marble bank, upgrades and best haul.</p>
         </section>
+        <section><h2>Marble bank & ship upgrades</h2><p>{guide.resourceTip}</p></section>
         <p className="olympus-guide-reassurance">{guide.reassurance}</p>
       </div>
       <div className="olympus-actions olympus-guide-actions">
@@ -108,7 +110,7 @@ export default function OlympusWindow() {
         <button type="button" className="olympus-button" onClick={close}>Back to desktop</button>
       </div>
       <button type="button" className="olympus-guide-link" onClick={() => setShowGuide(true)}>{guide.label}</button>
-      <button type="button" className="olympus-score-link" onClick={() => setShowScores(true)}>High scores</button>
+      <button type="button" className="olympus-score-link" onClick={() => setShowScores(true)}>Top collectors</button>
       <FullscreenHelp />
 
       {touch ? (
@@ -145,7 +147,7 @@ export default function OlympusWindow() {
 
       {best > 0 && (
         <p className="olympus-title-score">
-          HI-SCORE {String(best).padStart(6, "0")}
+          BEST HAUL {String(best).padStart(6, "0")}
         </p>
       )}
       <p className="olympus-title-dim">{copy.warning}</p>

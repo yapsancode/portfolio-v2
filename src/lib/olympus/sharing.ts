@@ -14,5 +14,5 @@ export function shareDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(value));
 }
 export function challengeText(score: SharedScore) {
-  return `${score.name} scored ${score.score.toLocaleString("en")} on level ${score.level} in Olympus. Think you can beat it?`;
+  return `${score.name} collected ${score.score.toLocaleString("en")} marble on level ${score.level} in Olympus. Think you can beat it?`;
 }

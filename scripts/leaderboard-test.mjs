@@ -55,12 +55,15 @@ try {
   await db.exec(readFileSync("db/004-level-progress.sql", "utf8"));
   await db.exec(readFileSync("db/005-score-sharing.sql", "utf8"));
   await db.exec(readFileSync("db/005-score-sharing.sql", "utf8"));
+  await db.exec(readFileSync("db/006-marble-resources.sql", "utf8"));
+  await db.exec(readFileSync("db/006-marble-resources.sql", "utf8"));
   const validation = load("src/lib/olympus/leaderboard.ts");
   const server = load("src/lib/olympus/server.ts");
   const sessions = load("src/app/api/olympus/session/route.ts");
   const scores = load("src/app/api/olympus/scores/route.ts");
   const players = load("src/app/api/olympus/player/route.ts");
   const shares = load("src/app/api/olympus/share/route.ts");
+  const upgrades = load("src/app/api/olympus/upgrade/route.ts");
   const { NextRequest } = require("next/server");
   const origin = "http://localhost:3000";
   function request(endpoint, method = "GET", data, cookie, headers = {}) {
@@ -130,6 +133,8 @@ try {
   await test("finish is idempotent, but a recorded result cannot be changed", async () => {
     for (let i = 0; i < 2; i++) assert.equal((await sessions.PATCH(request("session", "PATCH", { token: ticket.token, ...win }, cookie))).status, 200);
     assert.equal((await sessions.PATCH(request("session", "PATCH", { token: ticket.token, ...win, score: 13000 }, cookie))).status, 409);
+    assert.equal((await server.progress(id)).resources.marble, win.score);
+    assert.equal((await server.progress(id)).resources.lifetimeMarble, win.score);
   });
   await test("finishing automatically publishes the reserved name without exposing identifiers", async () => {
     const data = await (await scores.GET(request("scores", "GET", undefined, cookie))).json();
@@ -151,16 +156,20 @@ try {
     // Reposting an older win cannot overwrite a newer checkpoint.
     await server.finishSession(id, ticket.token, win);
     assert.equal((await server.progress(id)).resumeLevel, 3);
+    assert.equal((await server.progress(id)).resources.marble, 3 * win.score);
   });
   await test("loss, exit and expired attempts keep the saved level", async () => {
+    const before = (await server.progress(id)).resources.marble;
     const lost = await server.startSession(id, 3, progress.epoch);
     await age(lost.token);
     await server.finishSession(id, lost.token, { ...win, outcome: "lost" });
     assert.equal((await server.progress(id)).resumeLevel, 3);
+    assert.equal((await server.progress(id)).resources.marble, before + win.score);
     const expired = await server.startSession(id, 3, progress.epoch);
     await age(expired.token, 3700);
     await assert.rejects(server.finishSession(id, expired.token, win));
     assert.equal((await server.progress(id)).resumeLevel, 3);
+    assert.equal((await server.progress(id)).resources.marble, before + win.score);
   });
   await test("final level stays replayable and never unlocks undefined content", async () => {
     for (let level = 3; level <= 6; level++) {
@@ -175,6 +184,7 @@ try {
     assert.equal((await sessions.POST(request("session", "POST", { level: 7, epoch: progress.epoch }, cookie))).status, 400);
   });
   await test("Start Over resets only campaign and invalidates older tabs and attempts", async () => {
+    const bank = (await server.progress(id)).resources;
     const old = await server.startSession(id, 6, progress.epoch);
     await age(old.token);
     const response = await players.PATCH(request("player", "PATCH", { action: "reset", epoch: progress.epoch }, cookie));
@@ -186,6 +196,8 @@ try {
     await assert.rejects(server.startSession(id, 6, progress.epoch));
     await assert.rejects(server.resetProgress(id, progress.epoch));
     assert.equal((await server.progress(id)).resumeLevel, 1);
+    assert.deepEqual((await server.progress(id)).resources, bank);
+    assert.equal((await db.query("SELECT finished_at FROM olympus_sessions WHERE token_hash = $1", [server.tokenHash(old.token)])).rows[0].finished_at, null);
     assert.equal((await server.scores(id))[0].score, win.score);
     assert.equal(await server.playerName(id), "Isyraf_98");
     progress = reset;
@@ -275,6 +287,68 @@ try {
     assert.equal(share.rank, null);
     assert.equal(share.score, 10000);
     assert.equal(share.outcome, "lost");
+  });
+  await test("concurrent copies of one result bank once and reloading preserves the private wallet", async () => {
+    const saved = await server.progress(id);
+    const attempt = await server.startSession(id, saved.resumeLevel, saved.epoch);
+    await age(attempt.token);
+    await Promise.all([1, 2, 3].map(() => server.finishSession(id, attempt.token, { ...win, outcome: "lost" })));
+    const current = (await (await players.GET(request("player", "GET", undefined, cookie))).json()).progress;
+    assert.equal(current.resources.marble, saved.resources.marble + win.score);
+    assert.equal(current.resources.lifetimeMarble, saved.resources.lifetimeMarble + win.score);
+    assert.equal(current.resumeLevel, saved.resumeLevel);
+    const publicEntry = (await server.scores(id))[0];
+    assert.equal(publicEntry.resources, undefined); assert.equal(publicEntry.marble, undefined);
+  });
+  await test("refit API rejects forged ownership, early milestones, bad input, and insufficient funds", async () => {
+    const saved = await server.progress(id);
+    const data = { epoch: saved.epoch, upgrade: "hull", expectedPurchases: 0 };
+    assert.equal((await upgrades.POST(request("upgrade", "POST", data))).status, 401);
+    assert.equal((await upgrades.POST(request("upgrade", "POST", data, cookie))).status, 409); // only six levels cleared
+    assert.equal((await upgrades.POST(request("upgrade", "POST", data, cookie, { origin: "https://evil.test" }))).status, 403);
+    assert.equal((await upgrades.POST(request("upgrade", "POST", { ...data, upgrade: "__proto__" }, cookie))).status, 400);
+    assert.equal((await upgrades.POST(request("upgrade", "POST", { ...data, expectedPurchases: -1 }, cookie))).status, 400);
+    const visitor = randomUUID();
+    await server.reserveName(visitor, "EmptyBank");
+    const poor = await server.progress(visitor);
+    // Future-milestone fixture, not an unlocked playable level.
+    await db.query("UPDATE olympus_progress SET furthest_level = 10 WHERE player_id = $1", [visitor]);
+    await assert.rejects(server.buyUpgrade(visitor, poor.epoch, "hull", 0));
+    assert.equal((await server.progress(visitor)).resources.marble, 0);
+  });
+  await test("one milestone buys one refit under concurrent clicks; reset preserves purchases and the bank", async () => {
+    const saved = await server.progress(id);
+    const best = (await server.scores(id)).find(row => row.isYou)?.score;
+    await db.query("UPDATE olympus_progress SET furthest_level = 10 WHERE player_id = $1", [id]);
+    const data = { epoch: saved.epoch, upgrade: "hull", expectedPurchases: 0 };
+    const replies = await Promise.all([1, 2].map(() => upgrades.POST(request("upgrade", "POST", data, cookie))));
+    assert.deepEqual(replies.map(reply => reply.status).sort(), [200, 409]);
+    let current = await server.progress(id);
+    assert.equal(current.resources.marble, saved.resources.marble - 10000);
+    assert.equal(current.resources.lifetimeMarble, saved.resources.lifetimeMarble);
+    assert.equal(current.resources.upgrades.hull, 1);
+    await assert.rejects(server.buyUpgrade(id, saved.epoch, "shield", 1));
+    const started = await server.startSession(id, current.resumeLevel, current.epoch);
+    assert.deepEqual(started.upgrades, current.resources.upgrades);
+    await age(started.token);
+    await server.finishSession(id, started.token, win);
+    assert.equal((await server.progress(id)).resources.furthestLevel, 10); // replay cannot re-earn a milestone
+    current = await server.progress(id);
+    const reset = await server.resetProgress(id, current.epoch);
+    assert.deepEqual(reset.resources, current.resources);
+    assert.equal(reset.resumeLevel, 1);
+    assert.equal((await server.scores(id)).find(row => row.isYou)?.score, best);
+    process.env.VERCEL_ENV = "production";
+    try { await assert.rejects(server.buyUpgrade(id, reset.epoch, "blaster", 1)); }
+    finally { delete process.env.VERCEL_ENV; }
+    await db.query("UPDATE olympus_progress SET furthest_level = 20 WHERE player_id = $1", [id]);
+    const next = await server.buyUpgrade(id, reset.epoch, "blaster", 1);
+    assert.equal(next.resources.marble, reset.resources.marble - 20000);
+    assert.equal(next.resources.upgrades.blaster, 1);
+    assert.equal(next.resources.lifetimeMarble, reset.resources.lifetimeMarble);
+    await assert.rejects(server.buyUpgrade(id, saved.epoch, "shield", 2));
+    await db.query("UPDATE olympus_progress SET furthest_level = 100, hull_level = 3 WHERE player_id = $1", [id]);
+    await assert.rejects(server.buyUpgrade(id, reset.epoch, "hull", 4));
   });
   await test("missing configuration returns a safe offline response", async () => {
     delete process.env.DATABASE_URL;

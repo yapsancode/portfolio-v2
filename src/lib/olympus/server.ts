@@ -7,6 +7,7 @@ import { GAME_VERSION, LeaderboardError, SESSION_SECONDS, type LevelResult } fro
 
 import { LAST_LEVEL, progressAt, type Progress } from "./levels";
 import type { SharedScore } from "./sharing";
+import { UPGRADES, UPGRADE_BASE_COST, UPGRADE_INTERVAL, isUpgrade, type Upgrade } from "./resources";
 
 const COOKIE = "olympus-player";
 
@@ -19,13 +20,13 @@ function scoreVersion() { return `${GAME_VERSION}:${environment()}`; }
 
 function secret() {
   const value = process.env.OLYMPUS_SECRET;
-  if (!value || value.length < 32) throw new LeaderboardError("High scores are temporarily offline. You can still play.", 503);
+  if (!value || value.length < 32) throw new LeaderboardError("Olympus saves are temporarily offline. You can still play.", 503);
   return value;
 }
 
 export function database() {
   secret();
-  if (!process.env.DATABASE_URL) throw new LeaderboardError("High scores are temporarily offline. You can still play.", 503);
+  if (!process.env.DATABASE_URL) throw new LeaderboardError("Olympus saves are temporarily offline. You can still play.", 503);
   // Lazy creation lets builds and the rest of the portfolio run without credentials.
   return neon(process.env.DATABASE_URL, { fetchOptions: { signal: AbortSignal.timeout(10_000) } });
 }
@@ -60,7 +61,7 @@ export function failure(error: unknown) {
     return result;
   }
   console.error("Olympus leaderboard request failed.");
-  return response({ error: "High scores are temporarily offline. Please try again." }, 503);
+  return response({ error: "Olympus saves are temporarily offline. Please try again." }, 503);
 }
 
 export async function body(request: NextRequest): Promise<Record<string, unknown>> {
@@ -133,63 +134,105 @@ export async function limit(request: NextRequest, scope: string, id: string | nu
   if (counts.some((row) => row.hits > maximum)) throw new LeaderboardError("Too many attempts. Please try again later.", 429);
 }
 
+function rowProgress(row: Record<string, unknown>): Progress {
+  return progressAt(Number(row.highest_completed), String(row.epoch), {
+    marble: Number(row.marble), lifetimeMarble: Number(row.lifetime_marble), furthestLevel: Number(row.furthest_level),
+    upgrades: { hull: Number(row.hull_level), blaster: Number(row.blaster_level), shield: Number(row.shield_level) },
+  });
+}
+
 export async function progress(id: string): Promise<Progress> {
   const sql = database();
   if (!await playerName(id)) throw new LeaderboardError("Your player name is missing. Choose a name to save progress.", 403);
   const rows = await sql`INSERT INTO olympus_progress (player_id, environment, epoch)
     VALUES (${id}, ${environment()}, ${randomUUID()})
     ON CONFLICT (player_id, environment) DO UPDATE SET player_id = EXCLUDED.player_id
-    RETURNING highest_completed, epoch`;
+    RETURNING *`;
   if (rows[0].highest_completed > LAST_LEVEL) throw new LeaderboardError("Your save needs a newer version of Olympus. Refresh the game.", 409);
-  return progressAt(rows[0].highest_completed, rows[0].epoch);
+  return rowProgress(rows[0]);
 }
 
 export async function resetProgress(id: string, epoch: string): Promise<Progress> {
   const sql = database();
   const rows = await sql`UPDATE olympus_progress SET highest_completed = 0, epoch = ${randomUUID()}, updated_at = now()
     WHERE player_id = ${id} AND environment = ${environment()} AND epoch = ${epoch}
-    RETURNING epoch`;
+    RETURNING *`;
   if (!rows.length) throw new LeaderboardError("Your campaign changed in another tab. Go back and reload your saved level.", 409);
-  return progressAt(0, rows[0].epoch);
+  return rowProgress(rows[0]);
 }
 
 export async function startSession(id: string, level: number, epoch: string) {
   const sql = database();
   const token = randomBytes(32).toString("hex");
-  const rows = await sql`INSERT INTO olympus_sessions (token_hash, id, player_id, game_version, run, campaign_epoch)
+  const rows = await sql`WITH opened AS (
+    INSERT INTO olympus_sessions (token_hash, id, player_id, game_version, run, campaign_epoch)
     SELECT ${tokenHash(token)}, ${randomUUID()}, ${id}, ${scoreVersion()}, ${level}, epoch
     FROM olympus_progress WHERE player_id = ${id} AND environment = ${environment()} AND epoch = ${epoch}
       AND LEAST(highest_completed + 1, ${LAST_LEVEL}) = ${level}
-    RETURNING run`;
+    RETURNING run
+  ) SELECT opened.run, p.hull_level, p.blaster_level, p.shield_level FROM opened, olympus_progress p
+    WHERE p.player_id = ${id} AND p.environment = ${environment()}`;
   if (!rows.length) throw new LeaderboardError("Your saved level changed. Exit and continue from the title screen.", 409);
-  return { token, level };
+  return { token, level, upgrades: { hull: rows[0].hull_level, blaster: rows[0].blaster_level, shield: rows[0].shield_level } };
 }
 
 export async function finishSession(id: string, token: string, result: LevelResult): Promise<Progress> {
   const sql = database();
-  // Recording the result and advancing its checkpoint are one atomic statement.
-  // A duplicate win cannot skip a level; an old tab cannot undo Start Over.
+  // Lock the save before the attempt: finish/reset/refit serialize on this row.
+  // Capture the first finish under lock so retries cannot mint marble twice.
   const rows = await sql`
-    WITH recorded AS (
-      UPDATE olympus_sessions SET score = ${result.score}, duration_ms = ${result.durationMs},
-        outcome = ${result.outcome}, finished_at = COALESCE(finished_at, now()),
-        player_name = (SELECT name FROM olympus_players WHERE id = ${id} AND environment = ${environment()}),
-        published_at = COALESCE(published_at, now())
-      WHERE token_hash = ${tokenHash(token)} AND player_id = ${id} AND game_version = ${scoreVersion()}
-        AND started_at > now() - ${SESSION_SECONDS} * interval '1 second'
-        AND ${result.durationMs} <= EXTRACT(EPOCH FROM (now() - started_at)) * 1000 + 2000
-        AND (finished_at IS NULL OR (score = ${result.score} AND duration_ms = ${result.durationMs} AND outcome = ${result.outcome}))
+    WITH saved AS MATERIALIZED (
+      SELECT * FROM olympus_progress WHERE player_id = ${id} AND environment = ${environment()} FOR UPDATE
+    ), eligible AS MATERIALIZED (
+      SELECT s.token_hash, s.finished_at IS NULL AS first_finish FROM olympus_sessions s
+      JOIN saved p ON p.epoch = s.campaign_epoch
+      WHERE s.token_hash = ${tokenHash(token)} AND s.player_id = ${id} AND s.game_version = ${scoreVersion()}
+        AND s.started_at > now() - ${SESSION_SECONDS} * interval '1 second'
+        AND ${result.durationMs} <= EXTRACT(EPOCH FROM (now() - s.started_at)) * 1000 + 2000
+        AND (s.finished_at IS NULL OR (s.score = ${result.score} AND s.duration_ms = ${result.durationMs} AND s.outcome = ${result.outcome}))
         AND EXISTS (SELECT 1 FROM olympus_players WHERE id = ${id} AND environment = ${environment()})
-      RETURNING run, campaign_epoch
+      FOR UPDATE OF s
+    ), recorded AS (
+      UPDATE olympus_sessions s SET score = ${result.score}, duration_ms = ${result.durationMs},
+        outcome = ${result.outcome}, finished_at = COALESCE(s.finished_at, now()),
+        player_name = (SELECT name FROM olympus_players WHERE id = ${id} AND environment = ${environment()}),
+        published_at = COALESCE(s.published_at, now())
+      FROM eligible e WHERE s.token_hash = e.token_hash
+      RETURNING s.run, s.campaign_epoch, e.first_finish
     ), advanced AS (
       UPDATE olympus_progress p SET highest_completed = CASE
           WHEN ${result.outcome} = 'won' AND p.highest_completed = r.run - 1 THEN r.run ELSE p.highest_completed END,
+        marble = p.marble + CASE WHEN r.first_finish THEN ${result.score} ELSE 0 END,
+        lifetime_marble = p.lifetime_marble + CASE WHEN r.first_finish THEN ${result.score} ELSE 0 END,
+        furthest_level = CASE WHEN ${result.outcome} = 'won' THEN GREATEST(p.furthest_level, r.run) ELSE p.furthest_level END,
         updated_at = now()
       FROM recorded r WHERE p.player_id = ${id} AND p.environment = ${environment()} AND p.epoch = r.campaign_epoch
-      RETURNING p.highest_completed, p.epoch
+      RETURNING p.*
     ) SELECT * FROM advanced`;
   if (!rows.length) throw new LeaderboardError("This attempt could not update your save. It expired, was already submitted differently, or the campaign was reset. Exit and reload your saved level.", 409);
-  return progressAt(rows[0].highest_completed, rows[0].epoch);
+  return rowProgress(rows[0]);
+}
+
+export async function buyUpgrade(id: string, epoch: string, upgrade: Upgrade, expectedPurchases: number): Promise<Progress> {
+  if (!isUpgrade(upgrade) || !Number.isInteger(expectedPurchases) || expectedPurchases < 0 || expectedPurchases >= 10) {
+    throw new LeaderboardError("Invalid refit request.");
+  }
+  const sql = database();
+  const cost = UPGRADE_BASE_COST * (expectedPurchases + 1);
+  // Compare-and-swap the purchase count: concurrent clicks cannot spend twice.
+  const rows = await sql`UPDATE olympus_progress SET
+      marble = marble - ${cost},
+      hull_level = hull_level + ${upgrade === "hull" ? 1 : 0},
+      blaster_level = blaster_level + ${upgrade === "blaster" ? 1 : 0},
+      shield_level = shield_level + ${upgrade === "shield" ? 1 : 0}, updated_at = now()
+    WHERE player_id = ${id} AND environment = ${environment()} AND epoch = ${epoch}
+      AND hull_level + blaster_level + shield_level = ${expectedPurchases}
+      AND furthest_level / ${UPGRADE_INTERVAL} > ${expectedPurchases} AND marble >= ${cost}
+      AND CASE ${upgrade} WHEN 'hull' THEN hull_level < ${UPGRADES.hull.max}
+        WHEN 'blaster' THEN blaster_level < ${UPGRADES.blaster.max} ELSE shield_level < ${UPGRADES.shield.max} END
+    RETURNING *`;
+  if (!rows.length) throw new LeaderboardError("Refit unavailable. You need an unused ten-level milestone, enough marble, and room for that upgrade. Reload your bank if another tab changed it.", 409);
+  return rowProgress(rows[0]);
 }
 
 export async function scores(id: string | null) {
@@ -231,7 +274,7 @@ export async function createShare(id: string, token: string): Promise<SharedScor
     SELECT s.id, s.player_name AS name, s.score, s.run AS level, s.outcome,
       snapshot.rank, snapshot.shared_at AS "sharedAt"
     FROM snapshot JOIN olympus_sessions s ON s.id = snapshot.session_id`;
-  if (!rows.length) throw new LeaderboardError("Only your saved, visible scores can be shared. Try saving this score again.", 409);
+  if (!rows.length) throw new LeaderboardError("Only your saved, visible hauls can be shared. Try saving this haul again.", 409);
   return rows[0] as SharedScore;
 }
 

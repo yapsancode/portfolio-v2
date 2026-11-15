@@ -9,6 +9,7 @@
  */
 
 import { validLevel } from "../../lib/olympus/levels";
+import { emptyResources, type Upgrades } from "../../lib/olympus/resources";
 
 export type Phase = "play" | "awakening" | "boss" | "crumbling" | "won" | "lost";
 
@@ -191,6 +192,7 @@ export type World = {
   /** 0 → 100. At 100 the statue wakes up. */
   anger: number;
   lives: number;
+  upgrades: Upgrades;
   score: number;
   /** Selects an attack profile, never a difficulty multiplier. */
   level: number;
@@ -220,11 +222,9 @@ export const TUNING = {
     radius: 10,
     turn: 5.4, // rad/s (~310°/s)
     thrust: 560, // px/s²
-    drag: 0.8, // per second
     maxSpeed: 520,
     safeTime: 2,
     respawnTime: 1.4,
-    recoil: 4, // px/s per shot
   },
   bullet: { speed: 700, life: 0.8, max: 6, cooldown: 0.2 },
   rock: {
@@ -400,7 +400,9 @@ export function createWorld(opts: {
   shipFloor?: number;
   phoneMode?: boolean;
   level?: number;
+  upgrades?: Upgrades;
 }): World {
+  const upgrades = { ...(opts.upgrades ?? emptyResources().upgrades) };
   const world: World = {
     w: opts.w,
     h: opts.h,
@@ -415,7 +417,7 @@ export function createWorld(opts: {
       vy: 0,
       angle: 0,
       alive: true,
-      safe: TUNING.ship.safeTime,
+      safe: TUNING.ship.safeTime + upgrades.shield * 0.5,
       respawn: 0,
       thrusting: false,
     },
@@ -430,7 +432,8 @@ export function createWorld(opts: {
     scars: [],
     debris: [],
     anger: 0,
-    lives: TUNING.lives,
+    lives: TUNING.lives + upgrades.hull,
+    upgrades,
     score: 0,
     level: validLevel(opts.level) ? opts.level : 1,
     attack: restingPower((opts.shipFloor ?? 0) > 0),
@@ -861,16 +864,13 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
       if (input.right) ship.angle += TUNING.ship.turn * dt;
       ship.thrusting = input.thrust;
       if (input.thrust) {
-        ship.vx += Math.sin(ship.angle) * TUNING.ship.thrust * dt;
-        ship.vy -= Math.cos(ship.angle) * TUNING.ship.thrust * dt;
-      }
-      const drag = Math.exp(-TUNING.ship.drag * dt);
-      ship.vx *= drag;
-      ship.vy *= drag;
-      const speed = Math.hypot(ship.vx, ship.vy);
-      if (speed > TUNING.ship.maxSpeed) {
-        ship.vx *= TUNING.ship.maxSpeed / speed;
-        ship.vy *= TUNING.ship.maxSpeed / speed;
+        // Accelerate along the current heading without sideways momentum.
+        const speed = Math.min(TUNING.ship.maxSpeed, Math.hypot(ship.vx, ship.vy) + TUNING.ship.thrust * dt);
+        ship.vx = Math.sin(ship.angle) * speed;
+        ship.vy = -Math.cos(ship.angle) * speed;
+      } else {
+        ship.vx = 0;
+        ship.vy = 0;
       }
     }
     ship.x += ship.vx * dt;
@@ -880,7 +880,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
 
     world.fireIn -= dt;
     if (input.fire && world.fireIn <= 0 && world.bullets.length < TUNING.bullet.max) {
-      world.fireIn = TUNING.bullet.cooldown;
+      world.fireIn = TUNING.bullet.cooldown - world.upgrades.blaster * 0.02;
       const dx = Math.sin(ship.angle);
       const dy = -Math.cos(ship.angle);
       world.bullets.push({
@@ -890,12 +890,8 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
         vy: dy * TUNING.bullet.speed + ship.vy,
         life: TUNING.bullet.life,
       });
-      // Muzzle flash and a small kick backwards.
+      // Keep the muzzle flash without pushing the ship off course.
       burst(world, ship.x + dx * 18, ship.y + dy * 18, 4, SPARK, 110);
-      if (!input.joystick) {
-        ship.vx -= dx * TUNING.ship.recoil;
-        ship.vy -= dy * TUNING.ship.recoil;
-      }
       events.push({ type: "shot" });
     }
   } else if (world.lives > 0) {
@@ -908,7 +904,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
         vy: 0,
         angle: 0,
         alive: true,
-        safe: TUNING.ship.safeTime,
+        safe: TUNING.ship.safeTime + world.upgrades.shield * 0.5,
       });
     }
   }

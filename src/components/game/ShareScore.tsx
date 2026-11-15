@@ -16,13 +16,13 @@ export default function ShareScore({ submission, onClose }: { submission: ScoreS
   }, [submission, attempt]);
 
   return (
-    <section className="olympus-share-panel" aria-label="Share your score" onKeyDown={event => {
+    <section className="olympus-share-panel" aria-label="Share your haul" onKeyDown={event => {
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); }
       // Keep game-over shortcuts from replaying while a link or copy field is focused.
       if (event.key === "Enter") event.stopPropagation();
     }}>
       <div className="olympus-share-heading"><h2>SEND YOUR CHALLENGE</h2>
-        <button type="button" className="olympus-share-close" onClick={onClose} aria-label="Close score sharing" autoFocus>×</button>
+        <button type="button" className="olympus-share-close" onClick={onClose} aria-label="Close haul sharing" autoFocus>×</button>
       </div>
       {score ? <ShareActions score={score} /> : <div className="olympus-share-loading">
         <p role="status">{error || "Retrieving your saved result..."}</p>

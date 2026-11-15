@@ -14,10 +14,12 @@ import TouchJoystick from "./TouchJoystick";
 import FullscreenHelp from "./FullscreenHelp";
 import { isPhoneTouchDevice, usesTouchControls, type StickVector } from "./touch-controls";
 import { enterGameFullscreen } from "./fullscreen";
-import { LAST_LEVEL, levelInfo, progressAt, type Progress } from "@/lib/olympus/levels";
+import { LAST_LEVEL, levelInfo, type Progress } from "@/lib/olympus/levels";
+import { missionInfo } from "@/lib/olympus/missions";
+import MarbleBank from "./MarbleBank";
 import StartOver from "./StartOver";
 import ScoreStatus from "./ScoreStatus";
-import { beginRankedAttempt, finishRankedAttempt, saveGuest, type RankedAttempt, type ScoreSubmission } from "@/lib/olympus/client";
+import { beginRankedAttempt, finishRankedAttempt, finishGuestAttempt, saveGuest, type RankedAttempt, type ScoreSubmission } from "@/lib/olympus/client";
 import {
   createStatue,
   createWorld,
@@ -247,9 +249,10 @@ function EndScreen({
         {(won ? copy.win.lines : copy.bsod).map((line) => (
           <p key={line}>{line}</p>
         ))}
+        <p className="olympus-mission-brief">{won ? missionInfo(level).victory : missionInfo(level).retry}</p>
         <p>
-          Score: {ending.score.toLocaleString("en")} &nbsp;{" "}
-          {ending.newBest ? "New best!" : `Best: ${ending.best.toLocaleString("en")}`}
+          Marble collected: {ending.score.toLocaleString("en")} &nbsp;{" "}
+          {ending.newBest ? "New best haul!" : `Best haul: ${ending.best.toLocaleString("en")}`}
           <> &nbsp; Level {level}</>
         </p>
         <div className="olympus-actions">
@@ -259,9 +262,11 @@ function EndScreen({
           <button type="button" className="olympus-button" onClick={onExit}>Exit to desktop</button>
         </div>
         {won && <p className="olympus-menu-hint">{level === LAST_LEVEL ? "All available levels complete! More powers are planned." : `Level ${level} complete · Next: ${levelInfo(level + 1).name}`}</p>}
+        {won && level < LAST_LEVEL && <p className="olympus-mission-brief">Next mission: {missionInfo(level + 1).briefing}</p>}
         {ending.notice && <p role="status" className="olympus-menu-hint">{ending.notice}</p>}
         {won && level === LAST_LEVEL && checkpoint && <StartOver progress={checkpoint} onReset={onReplay} />}
         {ending.submission && <ScoreStatus submission={ending.submission} onSaved={setCheckpoint} />}
+        {checkpoint && <MarbleBank progress={checkpoint} onChange={setCheckpoint} />}
       </div>
     </div>
   );
@@ -545,12 +550,12 @@ export default function OlympusGame(props: OlympusGameProps) {
                   score: world.score, durationMs: Math.round(world.time * 1000), outcome: e.type,
                 })
               : null;
-            const guestCheckpoint = e.type === "won" ? progressAt(Math.max(p.progress.highestCompletedLevel, p.progress.resumeLevel)) : p.progress;
-            const checkpoint = p.progress.epoch ? (e.type === "won" ? null : p.progress) : guestCheckpoint;
+            const guestCheckpoint = finishGuestAttempt(p.progress, { score: world.score, durationMs: Math.round(world.time * 1000), outcome: e.type });
+            const checkpoint = p.progress.epoch ? (submission ? null : p.progress) : guestCheckpoint;
             const notice = p.progress.epoch ? "" : saveGuest(guestCheckpoint);
             setEnding({ kind: e.type, score: world.score, best: Math.max(best, world.score), newBest, submission, checkpoint, notice });
             setAnnounce(
-              `${e.type === "won" ? "You won" : "Game over"}. Score ${world.score.toLocaleString("en")}.`
+              `${e.type === "won" ? "You won" : "Game over"}. Marble collected: ${world.score.toLocaleString("en")}.`
             );
             break;
           }
@@ -617,7 +622,7 @@ export default function OlympusGame(props: OlympusGameProps) {
     // The server's elapsed-time check must start before the game's clock.
     // A slow connection may take a few seconds; never count that as play time.
     const box = statueBox();
-    void Promise.all([loadStatueArt(box), rankedAttemptRef.current]).then(([loaded]) => {
+    void Promise.all([loadStatueArt(box), rankedAttemptRef.current]).then(([loaded, attempt]) => {
       if (disposed) return;
       setPreparing(false);
       art = loaded;
@@ -633,6 +638,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         shipFloor: touchRef.current ? TOUCH_STRIP : 0,
         phoneMode: isPhoneTouchDevice(),
         level: propsRef.current.progress.resumeLevel,
+        upgrades: attempt?.ticket?.upgrades ?? propsRef.current.progress.resources.upgrades,
       });
       setTargets(world, readTargets(propsRef.current.windows));
       last = performance.now();
@@ -768,7 +774,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       <div className="olympus-hud bevel-out" aria-hidden="true">
         <div className="player-lcd">
           <div className="flex justify-between gap-4">
-            <span>SCORE {String(hud.score).padStart(6, "0")}</span>
+            <span>MARBLE {String(hud.score).padStart(6, "0")}</span>
             <span>LEVEL {props.progress.resumeLevel}</span>
             <span className="flex items-center gap-1">
               {Array.from({ length: Math.max(0, hud.lives) }, (_, i) => (
@@ -836,9 +842,10 @@ export default function OlympusGame(props: OlympusGameProps) {
       {paused && !rotateRequired && !ending && (
         <div className="olympus-paused" role="dialog" aria-modal="true" aria-label="Game paused" onKeyDown={trapMenuFocus}>
           <div className="olympus-pause-menu">
-            <p className="olympus-menu-hint">LEVEL {props.progress.resumeLevel} · SCORE {String(hud.score).padStart(6, "0")}</p>
+            <p className="olympus-menu-hint">LEVEL {props.progress.resumeLevel} · MARBLE {String(hud.score).padStart(6, "0")}</p>
             <h2>PAUSED</h2>
             <p>{levelInfo(props.progress.resumeLevel).name}</p>
+            <p className="olympus-mission-brief">{missionInfo(props.progress.resumeLevel).briefing}</p>
             <p className="olympus-menu-hint">{levelInfo(props.progress.resumeLevel).hint}</p>
             <p>Your level is on hold.</p>
             <div className="olympus-actions">

@@ -145,13 +145,14 @@ export const site = {
       label: "Story & how to play",
       title: "Welcome to Olympus",
       storyTitle: "The desktop has a guardian",
-      story: "Earth needs resources to rebuild its cities and orbital stations. Inside Isyraf 98, your pointer becomes a tiny salvage battleship, sent to Olympus to gather its precious marble. Shatter drifting fragments to collect resources for home. But the marble belongs to an ancient guardian with an enormous ego. Every piece you take wakes its anger, and each encounter reveals another power. Fill Earth's supply ships, survive the guardian, and bring the marble home.",
+      story: "Earth needs resources to rebuild its cities and orbital stations. Inside Isyraf 98, your pointer becomes a tiny salvage battleship, sent to Olympus to gather its precious marble. Shatter drifting fragments to collect resources for home. But the marble belongs to an ancient guardian with an enormous ego. Every piece you take wakes its anger, and each encounter reveals another power. Fill Earth's supply ships, survive the guardian, and bank your marble. Every ten cleared levels unlocks a chance to spend it on a ship upgrade.",
       missionTitle: "Your mission",
       steps: [
-        { title: "Gather resources for Earth", text: "Shoot marble fragments to collect their resources automatically and earn points. Desktop icons and windows also score points and provoke the guardian. Watch the ANGER meter rise." },
+        { title: "Gather resources for Earth", text: "Shoot marble fragments to collect marble automatically. Desktop icons and windows grant salvage bonuses converted to marble and provoke the guardian. Watch the ANGER meter rise." },
         { title: "Take on the guardian", text: "When the statue wakes, shoot the marble still attached to it to drain its health. Each level brings a different power: watch its warning and use the gaps. Orange marble is too hot to break; pale fragments with blue edges can be shot." },
-        { title: "Bring Olympus down", text: "You have three lives. Destroy the statue before you lose them all. After a win, choose Next level for a different statue power. Your level saves after each win, so you can return and continue." },
+        { title: "Bring Olympus down", text: "Start with three lives and destroy the statue before you lose them all. Finish an attempt to bank your marble, even if you lose. Wins save your next level. Leaving early does not bank that attempt." },
       ],
+      resourceTip: "Bank marble for ship refits after levels 10, 20, 30 and beyond. Each milestone unlocks one upgrade choice: an extra life, faster firing, or longer protection after a hit. Only levels 1–6 are playable today; save up for the level 10 expansion. Start Over keeps your bank and upgrades.",
       controlsTitle: "Your controls",
       touch: [
         { title: "Steer", text: "Drag the left joystick toward the direction you want to go. Push farther to move faster; release to brake." },
@@ -159,7 +160,7 @@ export const site = {
         { title: "Pause or leave", text: "Tap Pause, then Resume or Exit to desktop. Rotate your phone or tablet to landscape to play." },
       ],
       keyboard: [
-        { title: "Steer", text: "Use ← and → to turn. Hold ↑ to thrust. The pointer keeps drifting when you release thrust." },
+        { title: "Steer", text: "Use ← and → to turn. Hold ↑ to move in the direction you face. Release ↑ to stop immediately." },
         { title: "Fire", text: "Hold Space to keep shooting in the direction your pointer faces. You can turn, thrust, and fire together." },
         { title: "Pause or leave", text: "Press P or Esc to open the pause menu, then choose Resume or Exit to desktop." },
       ],
@@ -172,7 +173,7 @@ export const site = {
     crash: "{name} has performed an illegal operation and will be shut down.",
     win: {
       title: "It is now safe to turn off your statue.",
-      lines: ["The guardian crumbled. Marble secured for Earth. Your desktop will be restored."],
+      lines: ["The guardian crumbled. Your desktop will be restored."],
     },
     bsod: [
       "A fatal exception 0E has occurred at 0028:C0DE1998 in VXD STATUE(01).",

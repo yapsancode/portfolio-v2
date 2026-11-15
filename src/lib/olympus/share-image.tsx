@@ -23,14 +23,14 @@ export async function scoreImage(score: SharedScore) {
             <svg width="40" height="40" viewBox="0 0 40 40"><path d="M16 0h8v8h8v8h8v16H24v8h-8v-8H0V16h8V8h8z" fill="#ffd966" /><path d="M16 12h8v16h-8z" fill="#070d18" /></svg>
             <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: 6 }}>OLYMPUS</span>
           </div>
-          <span style={{ fontSize: 16, letterSpacing: 3, color: "#91adbc" }}>ARCADE / SCORE RECORD</span>
+          <span style={{ fontSize: 16, letterSpacing: 3, color: "#91adbc" }}>ARCADE / MARBLE HAUL</span>
         </div>
         <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: 20, letterSpacing: 5, color: "#73dfc7", marginBottom: 12 }}>CHALLENGE ISSUED</span>
             <span style={{ fontSize: 36, fontWeight: 700 }}>{score.name}</span>
             <span style={{ fontSize: 116, lineHeight: 1.15, fontWeight: 700, letterSpacing: -5, color: "#ffd966" }}>{score.score.toLocaleString("en")}</span>
-            <span style={{ fontSize: 17, letterSpacing: 6, color: "#91adbc" }}>POINTS ON THE BOARD</span>
+            <span style={{ fontSize: 17, letterSpacing: 6, color: "#91adbc" }}>MARBLE COLLECTED</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 230, color: medal }}>
             {score.rank ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>

@@ -13,9 +13,9 @@ type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const score = await getScore((await params).id);
-  if (!score) return { title: "Score unavailable", robots: { index: false, follow: false } };
+  if (!score) return { title: "Haul unavailable", robots: { index: false, follow: false } };
   const origin = process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : site.url;
-  const title = `${score.name} scored ${score.score.toLocaleString("en")} · Olympus`;
+  const title = `${score.name} collected ${score.score.toLocaleString("en")} marble · Olympus`;
   const description = challengeText(score);
   const url = new URL(sharePath(score.id), origin).href;
   const image = { url: new URL(shareImagePath(score.id), origin).href, width: 1200, height: 630, alt: description };
@@ -36,13 +36,13 @@ export default async function ScorePage({ params }: Props) {
         <header className="olympus-challenge-heading">
           <p>THE HALL OF OLYMPUS</p>
           <h1>Think you can beat <span>{score.name}</span>?</h1>
-          <p>{score.score.toLocaleString("en")} points. Level {score.level} {score.outcome === "won" ? "cleared" : "reached"}. Your turn at the controls.</p>
+          <p>{score.score.toLocaleString("en")} marble collected. Level {score.level} {score.outcome === "won" ? "cleared" : "reached"}. Your turn at the controls.</p>
         </header>
-        <section className="olympus-challenge-frame" aria-label="Shared score card">
-          <div className="olympus-transmission-bar"><span>OLYMPUS / SCORE TRANSMISSION</span><span aria-hidden="true">■ ■ ■</span></div>
+        <section className="olympus-challenge-frame" aria-label="Shared haul card">
+          <div className="olympus-transmission-bar"><span>OLYMPUS / MARBLE TRANSMISSION</span><span aria-hidden="true">■ ■ ■</span></div>
           <ShareActions score={score} />
         </section>
-        <div className="olympus-challenge-play"><Link className="olympus-button olympus-button-primary" href="/olympus">Beat this score →</Link><p>Six levels. One marble guardian. Make your name.</p></div>
+        <div className="olympus-challenge-play"><Link className="olympus-button olympus-button-primary" href="/olympus">Beat this haul →</Link><p>Six levels. One marble guardian. Make your name.</p></div>
       </div>
     </main>
   );

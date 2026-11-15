@@ -37,7 +37,7 @@ export default function ShareActions({ score }: { score: SharedScore }) {
       if (image && navigator.canShare?.({ files: [image.file] })) {
         await navigator.share({ files: [image.file], title: "Olympus · Challenge accepted", text: challengeText(score), url: url() });
       } else {
-        await navigator.share({ title: "Beat my Olympus score", text: challengeText(score), url: url() });
+        await navigator.share({ title: "Beat my Olympus haul", text: challengeText(score), url: url() });
       }
       setMessage("Handed to your share menu. Finish posting in your chosen app.");
     } catch (error) {
@@ -61,17 +61,17 @@ export default function ShareActions({ score }: { score: SharedScore }) {
     <div className="olympus-share-content">
       <div className="olympus-share-preview" aria-busy={!image && !imageError}>
         {image ? <Image unoptimized src={image.url} width={1200} height={630}
-          alt={`${score.name}: ${score.score.toLocaleString("en")} points, level ${score.level} ${score.outcome === "won" ? "cleared" : "reached"}${score.rank ? `, number ${score.rank} when this card was created on ${shareDate(score.sharedAt)}` : ""}. Think you can beat it?`} />
+          alt={`${score.name}: ${score.score.toLocaleString("en")} marble collected, level ${score.level} ${score.outcome === "won" ? "cleared" : "reached"}${score.rank ? `, number ${score.rank} when this card was created on ${shareDate(score.sharedAt)}` : ""}. Think you can beat it?`} />
           : imageError ? <div><p>The card couldn’t load. You can still copy the challenge.</p>
             <button className="olympus-score-link" type="button" onClick={() => { setImageError(false); setAttempt(value => value + 1); }}>Retry card</button></div>
-            : <p role="status">Preparing your score card<span aria-hidden="true">...</span></p>}
+            : <p role="status">Preparing your haul card<span aria-hidden="true">...</span></p>}
       </div>
       <div className="olympus-share-actions">
         {nativeShare && <button type="button" className="olympus-button olympus-button-primary" disabled={sharing} onClick={share}>{sharing ? "Sharing..." : "Share"}</button>}
         {image && <a className={`olympus-button${nativeShare ? "" : " olympus-button-primary"}`} href={image.url} download={image.file.name}>Save image</a>}
         <button type="button" className="olympus-button" onClick={copy}>Copy challenge</button>
       </div>
-      <p className="olympus-share-feedback" role="status">{message || "Your score. Their next challenge."}</p>
+      <p className="olympus-share-feedback" role="status">{message || "Your haul. Their next challenge."}</p>
       {manualCopy && <textarea className="olympus-share-copy" aria-label="Challenge text to copy" readOnly value={manualCopy} onFocus={event => event.target.select()} />}
       <p className="olympus-share-note">{score.rank ? `#${score.rank} when this card was created · ${shareDate(score.sharedAt)} (UTC). Rankings can change.` : "A saved result from Olympus."} Save the image to post it to Stories.</p>
     </div>

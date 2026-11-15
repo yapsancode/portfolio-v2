@@ -1,8 +1,10 @@
 /** Bump when scoring or difficulty changes; old results stay in the database. */
-export const GAME_VERSION = "olympus-4";
+export const GAME_VERSION = "olympus-5";
 export const SESSION_SECONDS = 60 * 60;
 
-export type LevelTicket = { token: string; level: number };
+import type { Upgrades } from "./resources";
+
+export type LevelTicket = { token: string; level: number; upgrades: Upgrades };
 export type LevelResult = { score: number; durationMs: number; outcome: "won" | "lost" };
 export type ScoreEntry = {
   id: string;
@@ -41,13 +43,13 @@ export function parseResult(value: Record<string, unknown>): LevelResult {
     !Number.isSafeInteger(durationMs) || typeof durationMs !== "number" || durationMs < 1_000 || durationMs > SESSION_SECONDS * 1_000 ||
     (outcome !== "won" && outcome !== "lost")
   ) {
-    throw new LeaderboardError("This score could not be accepted.");
+    throw new LeaderboardError("This marble haul could not be accepted.");
   }
   // Deliberately generous bounds, not a claim that client gameplay is verified.
-  // A bullet can earn up to 550 points (window crash), at roughly 5 shots/sec.
-  const maxScore = 6_000 + Math.ceil(durationMs / 1_000) * 3_000;
+  // A bullet can earn up to 550 points (window crash), at up to 8.34 shots/sec with a fully upgraded blaster.
+  const maxScore = 6_000 + Math.ceil(durationMs / 1_000) * 5_000;
   if (score > maxScore || (outcome === "won" && (score < 8_800 || durationMs < 8_000))) {
-    throw new LeaderboardError("This score does not match the game duration.");
+    throw new LeaderboardError("This marble haul does not match the game duration.");
   }
   return { score, durationMs, outcome };
 }

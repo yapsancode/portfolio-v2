@@ -767,6 +767,13 @@ body {
 .olympus-name-form input:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .olympus-name-form .olympus-actions { width: 100%; }
 .olympus-player-name { color: #ffd800; font-size: 32px; overflow-wrap: anywhere; }
+.olympus-mission-brief { max-width: 560px; line-height: 1.3; color: #f1df9a; }
+.olympus-marble-bank { flex-shrink: 0; width: min(100%, 560px); padding: 16px; border: 1px solid #665d38; background: #13130e; color: #eee7c9; text-align: left; }
+.olympus-marble-bank p + p { margin-top: 8px; }
+.olympus-bank-total { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: #ffd800; font-size: 24px; }
+.olympus-refit-options { display: grid; gap: 12px; margin-top: 14px; }
+.olympus-refit-options .olympus-button { width: 100%; text-align: left; font-size: 20px; letter-spacing: 0; }
+.olympus-refit-options small { display: block; font-size: 16px; margin-top: 4px; }
 
 /* Selection/callouts must never interrupt a held game control. */
 .olympus-playing,

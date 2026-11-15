@@ -5,6 +5,8 @@ import { guestProgress, leaderboardRequest, saveGuest } from "@/lib/olympus/clie
 import { levelInfo, parseProgress, progressAt, type Progress } from "@/lib/olympus/levels";
 import StartOver from "./StartOver";
 import { parseName } from "@/lib/olympus/leaderboard";
+import { missionInfo } from "@/lib/olympus/missions";
+import MarbleBank from "./MarbleBank";
 
 export default function PlayerNamePrompt({ onPlay, onBack }: {
   onPlay: (event: MouseEvent<HTMLButtonElement>, progress: Progress) => void;
@@ -71,13 +73,15 @@ export default function PlayerNamePrompt({ onPlay, onBack }: {
         <>
           <p className="olympus-player-name">{name}</p>
           <p>{progress.completed ? "All available levels complete." : `Level ${progress.resumeLevel} · ${levelInfo(progress.resumeLevel).name}`}</p>
+          <p className="olympus-mission-brief">{missionInfo(progress.resumeLevel).briefing}</p>
           <div className="olympus-actions">
             {/* A fresh click keeps fullscreen and sound inside a user gesture. */}
             <button ref={playButton} type="button" className="olympus-button olympus-button-primary" onClick={play}>{label}</button>
             <button type="button" className="olympus-button" onClick={onBack}>Back</button>
           </div>
           <p className="olympus-scores-note">{levelInfo(progress.resumeLevel).hint}</p>
-          <p className="olympus-scores-note">Continue starts the level with three lives. Your level and score save to this player.</p>
+          <p className="olympus-scores-note">Continue starts the level with {3 + progress.resources.upgrades.hull} lives. Your level and marble bank save to this player.</p>
+          <MarbleBank progress={progress} onChange={setProgress} />
           {progress.highestCompletedLevel > 0 && <StartOver progress={progress} onReset={setProgress} />}
         </>
       ) : (
@@ -95,13 +99,15 @@ export default function PlayerNamePrompt({ onPlay, onBack }: {
           </div>
           <p id="olympus-name-error" role="status">{error}</p>
           {offline && <>
+            <p className="olympus-mission-brief">{missionInfo(progress.resumeLevel).briefing}</p>
             <button type="button" className="olympus-score-link" onClick={play}>{label} · guest</button>
+            <MarbleBank progress={progress} onChange={setProgress} />
             {progress.highestCompletedLevel > 0 && <StartOver progress={progress} onReset={setProgress} />}
           </>}
         </form>
       )}
       {notice && <p role="status" className="olympus-scores-note">{notice}</p>}
-      <p className="olympus-scores-note">Your name and score are public. This browser remembers your name; clearing cookies loses access to it and its level save. Other browsers and Home Screen installs may use separate cookies.</p>
+      <p className="olympus-scores-note">Your name and best haul are public. Your marble bank is private. This browser remembers your name; clearing cookies loses access to it and its level save. Other browsers and Home Screen installs may use separate cookies.</p>
     </div>
   );
 }

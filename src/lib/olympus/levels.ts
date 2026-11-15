@@ -1,3 +1,5 @@
+import { emptyResources, parseResources, type Resources } from "./resources";
+
 /** Level numbers choose powers, never difficulty multipliers. */
 export const LEVELS = [
   { id: 1, name: "Marble Guardian", hint: "Dodge hot marble. Move when the eye beam locks." },
@@ -21,11 +23,12 @@ export type Progress = {
   completed: boolean;
   /** Server campaign generation. Reset invalidates all older attempts. Null is a guest save. */
   epoch: string | null;
+  resources: Resources;
 };
 
-export function progressAt(highestCompletedLevel = 0, epoch: string | null = null): Progress {
+export function progressAt(highestCompletedLevel = 0, epoch: string | null = null, resources = emptyResources(highestCompletedLevel)): Progress {
   return { version: 1, highestCompletedLevel, resumeLevel: Math.min(highestCompletedLevel + 1, LAST_LEVEL),
-    completed: highestCompletedLevel >= LAST_LEVEL, epoch };
+    completed: highestCompletedLevel >= LAST_LEVEL, epoch, resources };
 }
 
 export function parseProgress(value: unknown): Progress {
@@ -37,7 +40,9 @@ export function parseProgress(value: unknown): Progress {
     throw new Error("Saved level is not supported by this version of Olympus.");
   }
   // An older completed catalogue can resume at its first newly shipped level.
-  const expected = progressAt(p.highestCompletedLevel, p.epoch);
+  const resources = p.resources === undefined ? emptyResources(p.highestCompletedLevel) : parseResources(p.resources);
+  if (resources.furthestLevel < p.highestCompletedLevel) throw new Error("Saved marble milestones are inconsistent.");
+  const expected = progressAt(p.highestCompletedLevel, p.epoch, resources);
   if (p.completed ? p.resumeLevel !== p.highestCompletedLevel : (p.resumeLevel !== expected.resumeLevel || expected.completed)) {
     throw new Error("Saved level is inconsistent.");
   }

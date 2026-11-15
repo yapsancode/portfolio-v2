@@ -53,14 +53,39 @@ test("reversing changes direction quickly; firing at rest creates no touch drift
   assert.ok(resting.bullets.length > 0);
 });
 
-test("desktop arrow turning, thrust, and drag retain their original physics", () => {
+test("desktop thrust follows turns without sideways drift and respects the speed limit", () => {
   const world = makeWorld();
-  step(world, { ...neutral, right: true, thrust: true }, 1 / 60);
-  const angle = TUNING.ship.turn / 60;
-  const drag = Math.exp(-TUNING.ship.drag / 60);
-  assert.equal(world.ship.angle, angle);
-  assert.ok(Math.abs(world.ship.vx - Math.sin(angle) * TUNING.ship.thrust / 60 * drag) < 1e-10);
-  assert.ok(Math.abs(world.ship.vy + Math.cos(angle) * TUNING.ship.thrust / 60 * drag) < 1e-10);
+  for (let i = 0; i < 60; i++) step(world, { ...neutral, thrust: true }, 1 / 60);
+  assert.ok(Math.abs(Math.hypot(world.ship.vx, world.ship.vy) - TUNING.ship.maxSpeed) < 1e-10);
+  for (const direction of ["right", "left"]) {
+    const before = world.ship.angle;
+    for (let i = 0; i < 10; i++) {
+      step(world, { ...neutral, [direction]: true, thrust: true, fire: true }, 1 / 60);
+      const speed = Math.hypot(world.ship.vx, world.ship.vy);
+      assert.ok(speed <= TUNING.ship.maxSpeed + 1e-10);
+      assert.ok(Math.abs(world.ship.vx / speed - Math.sin(world.ship.angle)) < 1e-10);
+      assert.ok(Math.abs(world.ship.vy / speed + Math.cos(world.ship.angle)) < 1e-10);
+    }
+    assert.equal(Math.sign(world.ship.angle - before), direction === "right" ? 1 : -1);
+  }
+});
+
+test("desktop release stops immediately; turning and firing at rest cannot move the ship", () => {
+  const world = makeWorld();
+  for (let i = 0; i < 60; i++) step(world, { ...neutral, thrust: true }, 1 / 60);
+  const { x, y } = world.ship;
+  for (let i = 0; i < 30; i++) {
+    step(world, { ...neutral, right: true, fire: true }, 1 / 60);
+    assert.equal(world.ship.vx, 0);
+    assert.equal(world.ship.vy, 0);
+    assert.equal(world.ship.x, x);
+    assert.equal(world.ship.y, y);
+    assert.equal(world.ship.thrusting, false);
+  }
+  assert.ok(world.bullets.length > 0);
+  step(world, { ...neutral, thrust: true }, 1 / 60);
+  assert.ok(Math.hypot(world.ship.x - x, world.ship.y - y) > 0);
+  assert.ok(Math.hypot(world.ship.vx, world.ship.vy) < TUNING.ship.maxSpeed);
 });
 
 test("phones move 25% slower without changing tablet speed", () => {

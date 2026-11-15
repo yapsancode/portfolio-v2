@@ -13,7 +13,7 @@ export default function StartOver({ progress, onReset }: { progress: Progress; o
     if (event.key === "Escape" || event.key === "Enter") event.stopPropagation();
     if (event.key === "Escape" && !busy) setConfirm(false);
   }}>
-    <p>Start again at level 1? Your saved level progress will reset. Your best score will stay.</p>
+    <p>Start again at level 1? Your saved level progress will reset. Your marble bank, upgrades and best haul will stay.</p>
     <div className="olympus-actions">
       <button type="button" className="olympus-button" autoFocus disabled={busy} onClick={() => setConfirm(false)}>Cancel</button>
       <button type="button" className="olympus-button olympus-button-primary" disabled={busy} onClick={async () => {

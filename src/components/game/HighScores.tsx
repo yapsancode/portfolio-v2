@@ -21,9 +21,9 @@ export default function HighScores() {
   }, [attempt]);
 
   return (
-    <section className="olympus-scores" aria-label="Global high scores">
+    <section className="olympus-scores" aria-label="Global top collectors">
       <h2>HALL OF OLYMPUS</h2>
-      <p className="olympus-scores-note">Global top 10 · one best score per player</p>
+      <p className="olympus-scores-note">Global top 10 · one best haul per player</p>
       {error ? (
         <div role="status" className="olympus-scores-message">
           <p>{error}</p>
@@ -34,11 +34,11 @@ export default function HighScores() {
       ) : entries === null ? (
         <p role="status" className="olympus-scores-message">Connecting to Olympus...</p>
       ) : entries.length === 0 ? (
-        <p role="status" className="olympus-scores-message">No legends yet. Play a game and set the first score.</p>
+        <p role="status" className="olympus-scores-message">No collectors yet. Play a game and bring home the first haul.</p>
       ) : (
-        <div className="olympus-scores-scroll" tabIndex={0} aria-label="High score table">
+        <div className="olympus-scores-scroll" tabIndex={0} aria-label="Marble haul table">
           <table>
-            <thead><tr><th scope="col">#</th><th scope="col">NAME</th><th scope="col">SCORE</th><th scope="col">LEVEL</th></tr></thead>
+            <thead><tr><th scope="col">#</th><th scope="col">NAME</th><th scope="col">MARBLE</th><th scope="col">LEVEL</th></tr></thead>
             <tbody>{entries.map((entry, index) => (
               <tr key={entry.id} className={[
                 index < 3 ? `olympus-score-${medals[index].toLowerCase()}` : "",

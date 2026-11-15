@@ -1,8 +1,8 @@
 # Olympus — Level Progression Roadmap
 
-Updated: 15 November 2026.
+Updated: 16 November 2026.
 
-**Status: levels 1–6 and resumable player progress implemented. The current revision adds the Earth-resource story, per-level dialogue, and stronger level 2–6 attack patterns; pending release.** Reviewed against `56aa5df`, including the latest score-card and social-sharing update. Levels 7–10 are documented concepts below, not implemented. Real-device and human balance playtests remain open.
+**Status: levels 1–6, resumable progress, the Earth-resource story, unique dialogue, and stronger attack patterns are implemented. The current revision adds the saved marble bank, ten-level refits, mission wording, and desktop movement without drift.** Based on `6b6b16c`. Levels 7–10 are documented concepts below, not implemented. Real-device and human balance playtests remain open.
 
 This is the active plan. The latest clarification prioritizes creative, distinctive, memorable encounters over difficulty progression. It supersedes both the earlier harder-replay targets and the later requirement for equal difficulty, as well as the pre-launch merge restrictions. The original plan and historical simulation results are preserved in [the 14 November archive](docs/archive/OLYMPUS_ROADMAP_2026-11-14.md). Historical numbers are not acceptance targets for the new levels.
 
@@ -14,6 +14,7 @@ This is the active plan. The latest clarification prioritizes creative, distinct
 - Give every level its own randomized statue dialogue: a theatrical, egotistical guardian with power-specific boasts, reactions such as “ARHHH!”, and occasional topical jokes.
 - Returning players can continue at their saved level.
 - Players can choose Start Over and return to level 1.
+- Collect and save marble as upgrade currency. After every ten cleared levels, allow one upgrade choice: an extra life, faster firing, or longer protection after a hit. Keep unused choices and banked marble for later.
 - Extend the creative plan through level 10. Level 7 uses the user’s idea: three marble duplicates firing lasers simultaneously at different angles.
 - A possible 100-level journey is a later expansion. Design and validate the initial levels first.
 - Documentation was updated first. The subsequent implementation reuses the new scoreboard identity and database, as requested.
@@ -33,7 +34,7 @@ This is the active plan. The latest clarification prioritizes creative, distinct
 
 ## Experience and terminology
 
-Earth needs marble resources to rebuild its cities and orbital stations. Inside Isyraf 98, the pointer becomes a small salvage battleship sent to collect Olympus marble. The egotistical guardian sees the expedition as theft of its own greatness. Each level is another encounter with that guardian, who changes powers to defend the marble. Breaking fragments represents automatic resource collection through the existing score rewards; this story does not introduce a separate inventory, economy, or mining upgrade system. Keep the Windows 98 and marble visual identity, pointer fighter, destruction/anger introduction, awakening, and restored desktop on exit.
+Earth needs marble resources to rebuild its cities and orbital stations. Inside Isyraf 98, the pointer becomes a small salvage battleship sent to collect Olympus marble. The egotistical guardian sees the expedition as theft of its own greatness. Each level is another encounter with that guardian, who changes powers to defend the marble. Breaking fragments collects marble automatically. Completed attempts bank that marble as persistent currency for ship refits after every ten cleared levels; see the resource contract below. Keep the Windows 98 and marble visual identity, pointer fighter, destruction/anger introduction, awakening, and restored desktop on exit.
 
 A **level** is a numbered encounter with its own attack profile. A **phase** is a section of that encounter. An **attempt** is one try at a level. A component remount identifier is only an implementation detail, never player progress.
 
@@ -194,7 +195,7 @@ This table describes the voice direction; the runtime file contains the final le
 
 ### Checkpoint behavior
 
-Continue resumes **at the beginning of the saved level**, with fresh lives, zero attempt score, and a clean world. It does not restore mid-fight coordinates, projectiles, or remaining health. Pause/Resume preserves a live attempt only while that game session remains open.
+Continue resumes **at the beginning of the saved level**, with fresh lives including purchased upgrades, zero attempt marble, and a clean world. It does not restore mid-fight coordinates, projectiles, or remaining health. Pause/Resume preserves a live attempt only while that game session remains open.
 
 | Event | Saved progress | What happens next |
 | --- | --- | --- |
@@ -203,15 +204,15 @@ Continue resumes **at the beginning of the saved level**, with fresh lives, zero
 | Clear level N with a next shipped level | Record N completed and save N + 1 immediately | Next level starts N + 1; leaving on the victory screen still preserves it. |
 | Clear the last shipped level | Record campaign complete and keep the final valid level | Offer Replay final level or Start Over; never load a missing level. |
 | Cancel Start Over | No change | Keep the saved campaign. |
-| Confirm Start Over | Reset campaign completion and resume level to 1 | Start level 1 with fresh lives. Keep the independent best-score record. |
+| Confirm Start Over | Reset campaign completion and resume level to 1 | Start level 1 with upgraded starting lives. Keep the marble bank, purchased upgrades, lifetime milestones, and independent best haul. |
 
-Start Over must explain what it resets before erasing a real save: **“Start again at level 1? Your saved level progress will reset. Your best score will stay.”** Offer Start Over and Cancel. This is an in-game player action, not an implementation approval gate.
+Start Over must explain what it resets before erasing a real save: **“Start again at level 1? Your saved level progress will reset. Your marble bank, upgrades and best haul will stay.”** Offer Start Over and Cancel. This is an in-game player action, not an implementation approval gate.
 
 ### Storage contract
 
 The scoreboard now supplies the identity and Neon connection. Named players use **server checkpoints**, not a local best-score or legacy streak value.
 
-- `olympus_progress` is keyed by signed-cookie player ID and environment (`production`, `preview`, `development`). It stores `highest_completed`, a campaign `epoch`, and `updated_at`.
+- `olympus_progress` is keyed by signed-cookie player ID and environment (`production`, `preview`, `development`). It stores `highest_completed`, a campaign `epoch`, `updated_at`, and the resource bank/upgrade fields described below.
 - The API exposes a version-1 snapshot: `highestCompletedLevel`, `resumeLevel`, `completed`, and `epoch`. Resume is the next uncleared shipped level, clamped to the last available level.
 - Loading a recognized player creates a level-1 checkpoint when none exists. Name reservation alone is not authentication: only the signed HTTP-only ownership cookie can access that player's progress. Names cannot be typed to recover someone else's save.
 - Gameplay waits for the score-session response before starting its clock, so a slow connection cannot make a valid attempt exceed the server elapsed-time check. Starting a score session checks the requested level and campaign epoch against the database. Each attempt has a new opaque token; the legacy database column `run` stores its level, while the API and UI call it `level`.
@@ -222,11 +223,11 @@ The scoreboard now supplies the identity and Neon connection. Named players use 
 - The signed cookie remembers a browser, **not a cross-device account**. Clearing cookies loses access. Safari and a Home Screen install may have separate storage; do not promise transfer or recovery by name. Existing valid cookies are refreshed when the named player is loaded.
 - If the server cannot be reached, an explicitly labeled guest option uses the separate local key `isyraf98:olympus-progress:v1`. It validates the same versioned checkpoint shape with `epoch: null`; invalid saves start safely at level 1 with feedback. Blocked local storage allows in-memory play and reports that the save will not survive closing. Guest progress does not merge into a named player's campaign.
 - Keep `isyraf98:olympus-best` for the independent local best score. Leave legacy `isyraf98:olympus-best-run` untouched, but do not display it or unlock new powers from it. Start Over changes no scores, player names, music settings, or unrelated storage.
-- The revised scoreboard is versioned as `olympus-4`, because attack difficulty, health, and scoring opportunities changed. Historical `olympus-2` and `olympus-3` scores remain in Neon; the current board ranks the new rules separately. Existing player names, level checkpoints, local best scores, and previously shared score-card links remain.
+- The revised scoreboard is versioned as `olympus-5` for marble resources, direct desktop movement, and upgrade-aware rules. Historical results remain in Neon unless explicitly removed; the current board ranks the new rules separately. Existing player names, level checkpoints, local best scores, and previously shared score-card links remain.
 
 ### Database deployment
 
-`db/004-level-progress.sql` adds the checkpoint table and nullable session epoch without deleting historical data. Vercel runs `npm run db:migrate && npm run build`; the existing migration runner records applied files and runs each migration transactionally. A failed migration blocks deployment. Local development may build without database credentials; `npm run db:migrate` needs `DATABASE_URL`. Neither secrets nor generated screenshots are committed.
+`db/004-level-progress.sql` adds the checkpoint table and nullable session epoch without deleting historical data. `db/006-marble-resources.sql` adds the persistent marble bank, lifetime collection, highest-ever milestone, and purchased upgrade ranks. It starts existing wallets at zero without converting historical scores, and retains existing completed milestones. Vercel runs `npm run db:migrate && npm run build`; the existing migration runner records applied files and runs each migration transactionally. A failed migration blocks deployment. Local development may build without database credentials; `npm run db:migrate` needs `DATABASE_URL`. Neither secrets nor generated screenshots are committed.
 
 ## Implementation sequence
 
@@ -238,6 +239,30 @@ The scoreboard now supplies the identity and Neon connection. Named players use 
 6. **Planned next: levels 7–10.** Marble Mirage, Borrowed Time, Gates of Olympus, and The Marble Leviathan, as specified above. Implement and validate one profile at a time.
 7. **Complete for levels 1–6: statue dialogue and Earth mission story.** Per-level event pools, repetition control, dramatic barks, simulation-time cooldowns. Levels 7–10 dialogue and curated topical rotations remain planned.
 8. **Later: levels 11–100.** Expand after the initial ten are stable. The number 100 remains future scope, not shipped content.
+
+## Marble resources and ten-level refits
+
+The user approved marble as a persistent resource that can be spent on ship upgrades at ten-level increments. This replaces generic points in player-facing copy. Keep the internal `score` fields and shared-result URLs compatible; they represent the marble haul for one attempt, not the spendable wallet.
+
+- **MARBLE** is the current attempt's haul; **BEST HAUL** is the highest single-attempt haul; **Top collectors** ranks each player's best haul. The private **MARBLE BANK** accumulates accepted completed attempts, including losses. Exiting or reloading an unfinished attempt does not bank its cargo. Desktop icon/window rewards count as salvage bonuses converted to marble.
+- Named players bank marble on the server in the same atomic operation that saves their result and checkpoint. Duplicate submissions, retries, and concurrent identical requests must not credit twice. Failed or reset-invalidated submissions do not credit marble. An old saved result does not retroactively mint currency.
+- Guest marble stays in the browser with guest progress and never merges into a named account. Missing resource data in an old save starts at zero. Corrupt resource data is rejected, not silently treated as a trustworthy wallet.
+- The bank, lifetime collected total, purchased upgrades, and highest-ever cleared level survive Start Over. The campaign epoch still rotates. Replaying a milestone or resetting a campaign cannot unlock the same upgrade allowance twice.
+- Clearing levels **10, 20, 30, ... 100** earns one refit allowance per milestone. Unused allowances remain available. A refit spends marble on one upgrade choice; a player may save it for later. The choices are an extra life (maximum three purchases), faster firing (maximum four purchases), or longer protection after a hit (maximum four purchases). Cost is 10,000 marble times the next total purchase number. No purchase is possible without an earned allowance and sufficient banked marble.
+- Upgrades apply to the next attempt: each extra-life purchase adds one starting life, each firing purchase reduces the 0.20-second cooldown by 0.02 seconds, and each protection purchase adds 0.5 seconds to the base two-second protection. Starting a named attempt takes its upgrade snapshot from the server. Movement speed is unaffected.
+- **Only levels 1–6 are currently playable.** Display the bank and explain the first refit at level 10; do not unlock missing levels or imply the milestone can already be reached. Levels 7–10 remain the separately planned expansion above. Refit prices and effects are initial tuning to revisit with that expansion.
+- Every shipped level has its own short Earth mission briefing, victory line, and retry line, alongside the existing randomized statue dialogue. Display the briefing on the player screen and in the pause menu, and show the next briefing on victory before continuing. Do not add a timed interruption during combat.
+
+| Level | Mission briefing | Victory line |
+| --- | --- | --- |
+| 1 · Marble Guardian | Earth needs its first shipment. Unfortunately, the marble has an owner. | First shipment secured. The rebuilding begins. |
+| 2 · Marble Swarm | Earth requested a bulk delivery. The guardian took that personally. | Swarm collected. Construction crews send their thanks. |
+| 3 · Shattered Halo | Our orbital station needs repairs. That halo looks suspiciously useful. | Halo recovered. Earth's orbital repairs can begin. |
+| 4 · Meteor Rain | Supply reserves are running low. Today's forecast: falling resources. | Storm survived. Earth's stockpiles are filling up. |
+| 5 · Orbiting Armour | Our supply ships need stronger hulls. His armour might fit. | Armour salvaged. The next fleet will travel safer. |
+| 6 · Sweeping Gaze | Earth needs a new navigation beacon. He seems rather attached to the light. | Shipment secured. A little of his brilliance will guide ships home. |
+
+Verification must cover wallet persistence, win/loss banking, duplicate/concurrent result handling, reset retention and stale-attempt rejection, environment isolation, milestone/replay gates, insufficient funds, concurrent purchases, guest migration, and upgrade effects. Review wording on the HUD, pause/results screens, guide, player screen, leaderboard, and shared cards on desktop and short landscape phones.
 
 ## Future 100-level direction
 
@@ -285,7 +310,7 @@ Prefer the existing canvas/React/Web Audio implementation and avoid new dependen
 ### Regression checks
 
 - Build, type-check, and lint succeed, allowing only documented existing warnings.
-- Preserve joystick braking, simultaneous steering/firing, desktop arrows, and long-press prevention.
+- Preserve joystick braking, simultaneous steering/firing, desktop arrows, and long-press prevention. Desktop movement follows the ship's heading while thrust is held, stops immediately on release, and has no firing recoil.
 - Preserve fullscreen fallback, landscape gating, taskbar restoration, icon/manifest behavior, and access to Story & how to play.
 - Screenshots and browser checks cover desktop plus short landscape phones/tablets. Headless checks do not replace real Safari/Home Screen or human fairness testing.
 
@@ -303,7 +328,15 @@ Prefer the existing canvas/React/Web Audio implementation and avoid new dependen
 - Initial revised-pattern simulations still ended several encounters after roughly one cycle. Level 2–6 health was therefore tuned from 38 to 48; level 1 remains unchanged. This is an explicit tuning choice, not an endlessly increasing level multiplier.
 - Swarm: three waves, 225 base fragment speed; halo: two rings, 190 speed, 72-degree gaps offset from the player; rain: three waves, two threatened lanes out of five, 245 fall speed and locked target positions; armour: 2.4-second orbit, warned aimed launch at 245 speed; gaze: 2.1-radian arc, 2.4 seconds per pass and a full return warning. Existing viewport scaling applies to fragment speed.
 - Active budgets are 9/12 swarm fragments (touch/desktop), 12/16 halo fragments, 12 rain fragments, and three shields. Each wave is warned for 1.0/1.2 seconds (desktop/touch); cycle recovery is 1.0/1.2 seconds. Patterns clear on death, resize, victory, retry, and exit.
-- Resource collection is narrative framing for the existing automatic marble-destruction score rewards. Desktop damage provokes the guardian; it is not described as a separate marble inventory.
+- The earlier story-only resource framing is superseded by the saved marble bank and ten-level refit contract above. Desktop damage grants salvage bonuses converted to marble and provokes the guardian.
 - Automated verification: 22 game/control/dialogue tests and 18 PostgreSQL-backed score/progress/share checks pass. TypeScript and the production build pass; lint has only the existing Open Graph image warning.
 - Browser checks use the built game with mocked API responses. Short landscape phone checks cover each level 2–6 entrance, speech bounds, pause/resume expiry, and attack rendering; the Earth-resource guide is also checked. Screenshots remain local review artifacts.
 - Thirty-seed legacy-bot diagnostics: desktop dodger median boss durations are 18.5s (L2), 15.5s (L3), 17.8s (L4), 12.6s (L5), and 14.8s (L6). The laser is substantially more dangerous. Several auto-aiming bots still perform well against shootable powers; these bots do not understand the new warnings and their phone scenarios still use keyboard steering. These results are diagnostics, not a claim of final human difficulty balance. Physical phone/tablet playtesting remains open.
+
+## Marble implementation verification
+
+- 28 game/control/dialogue/resource tests pass, including guest migration and persistence, milestone eligibility, escalating costs, upgrade caps, bank retention after Start Over, and gameplay effects.
+- 21 PostgreSQL-backed route/server checks pass, including win/loss banking, identical-result concurrency, reset-invalidated attempts, private wallet responses, duplicate-purchase rejection, insufficient funds, environment isolation, and server-selected upgrade snapshots.
+- Future milestone tests use controlled fixtures at levels 10 and 20. They do not add those levels to the playable catalogue. The real current catalogue remains levels 1–6.
+- Production build, TypeScript and lint pass; lint retains the existing Open Graph image warning. Headless Edge checks at 1280×800 and 667×320 cover mission copy, the guide, marble labels, bank layout, a simulated future refit, retained bank after reset, upgraded lives, pause and mobile controls. Browser APIs are mocked; the database behavior is covered separately by the real PostgreSQL tests.
+- Deployment runs the additive resource migration with the normal build before releasing the updated server. A migration failure blocks deployment.
