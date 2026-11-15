@@ -2,17 +2,19 @@
 
 Updated: 15 November 2026.
 
-**Status: levels 1–6 and resumable player progress implemented; automated verification completed for this release.** Based on the latest scoreboard/Neon changes through `2b258aa`. Real-device and human balance playtests remain open.
+**Status: levels 1–6 and resumable player progress implemented; automated verification completed for this release.** Reviewed against `56aa5df`, including the latest score-card and social-sharing update. Levels 7–10 are documented concepts below, not implemented. Real-device and human balance playtests remain open.
 
-This is the active plan. It supersedes the previous harder-replay design, its rising-difficulty targets, and its pre-launch merge restrictions. The original plan and historical simulation results are preserved in [the 14 November archive](docs/archive/OLYMPUS_ROADMAP_2026-11-14.md). Historical numbers are not acceptance targets for the new levels.
+This is the active plan. The latest clarification prioritizes creative, distinctive, memorable encounters over difficulty progression. It supersedes both the earlier harder-replay targets and the later requirement for equal difficulty, as well as the pre-launch merge restrictions. The original plan and historical simulation results are preserved in [the 14 November archive](docs/archive/OLYMPUS_ROADMAP_2026-11-14.md). Historical numbers are not acceptance targets for the new levels.
 
 ## Decisions from the user
 
 - Call progression **levels**, not runs, in the game and its instructions.
 - Level 1 keeps the original statue encounter. Level 2 onward introduces different statue powers.
-- Higher levels must **not become progressively harder**. The level number selects a different power or pattern, not a difficulty multiplier.
+- **Creativity, uniqueness, and player enjoyment are the priority. Difficulty is secondary, not forbidden.** A level may be harder when that serves its concept; making the same fight faster or tougher is not enough to define a new level.
+- Give every level its own randomized statue dialogue: a theatrical, egotistical guardian with power-specific boasts, reactions such as “ARHHH!”, and occasional topical jokes.
 - Returning players can continue at their saved level.
 - Players can choose Start Over and return to level 1.
+- Extend the creative plan through level 10. Level 7 uses the user’s idea: three marble duplicates firing lasers simultaneously at different angles.
 - A possible 100-level journey is a later expansion. Design and validate the initial levels first.
 - Documentation was updated first. The subsequent implementation reuses the new scoreboard identity and database, as requested.
 
@@ -26,6 +28,7 @@ This is the active plan. It supersedes the previous harder-replay design, its ri
 - Olympus Home Screen icons, installation guidance, and edge-to-edge layout with safe areas.
 - A story and device-specific instructions.
 - Reserved player names, signed browser identity cookies, Neon score storage, and the global top ten with retro medals.
+- Shareable saved-score cards and public result pages, with native sharing where supported, image download, and a copyable challenge. Card ranks describe the time the card was created, not a permanently fixed leaderboard position.
 - The original encounter remains level 1. Levels 2–6 use new powers, with no level-based speed or health increase. Loss and exit keep the checkpoint.
 
 ## Experience and terminology
@@ -61,7 +64,57 @@ These six profiles are implemented. Complete level 1 to unlock level 2, and so o
 | 5 | Orbiting Armour | Breakable marble shields orbit the statue with visible openings and recovery windows. | Break a shield or fire through a gap to hit the statue. |
 | 6 | Sweeping Gaze | A warning arc shows the direction of a slow laser sweep before it becomes damaging. | Move around the sweep into the advertised safe space. |
 
-Each profile **replaces** the appropriate part of the previous attack schedule. It does not inherit every earlier power. In particular, level 2 does not add a swarm on top of level 1's simultaneous spreads and laser. The same rule applies to later levels: one major attack at a time, followed by a readable recovery opportunity.
+Each profile **replaces** the appropriate part of the previous attack schedule. It does not inherit every earlier power. In particular, level 2 does not add a swarm on top of level 1's simultaneous spreads and laser. This is the current baseline for levels 2–6. Future levels may use deliberately coordinated combinations, such as the three-clone volley, when they support the creative concept and leave readable counterplay and recovery.
+
+## Planned expansion: levels 7–10
+
+These concepts extend the lineup without changing the six currently playable levels. Level 7 comes from the user's clone idea; levels 8–10 are the suggested follow-ups from the design discussion. Record them as planned content, not completed implementation or verified balance.
+
+| Level | Statue power | Transformation and attack | Player response |
+| --- | --- | --- | --- |
+| 7 | Marble Mirage | Three marble copies emerge from dust and fire lasers simultaneously at different angles. Between attacks they crumble and reappear in new positions. | Read all three beam warnings, move into the opening, and shoot any copy. |
+| 8 | Borrowed Time | The statue raises its hand to freeze its flying marble fragments, then closes its fist to rewind them along their original paths. | Shoot frozen fragments or position between the ghost trails before they return. |
+| 9 | Gates of Olympus | Two broken marble doorways float in space. Attacks enter one gate and emerge from the other after a visible warning. | Watch the exit gate; send your own bullets through the portals to hit the statue from another angle. |
+| 10 | The Marble Leviathan | The statue shatters into a long marble serpent, with its glowing face as the head, then coils back into statue form between passes. | Stay outside its previewed route, shoot the head or segments, and use the reformation window. |
+
+### Level 7: Marble Mirage
+
+- Three copies fire together at different angles, as requested. Treat the coordinated three-beam volley as one major attack; do not add swarm, rain, or other powers on top.
+- Show all three beam paths before firing. Lock their directions after the warning so a safe opening remains predictable and reachable with phone movement speed.
+- All copies share the guardian's normal total health. Shooting any copy damages that shared pool; three copies do not mean three health bars or three times the required hits.
+- Fit the copies to the landscape playfield. Keep the HUD, touch controls, and escape routes readable; do not simply place three full-size statues over the arena.
+- Reposition only during a clear, non-damaging crumble/reformation interval. Never materialize a damaging copy or beam on the player without its warning.
+
+### Level 8: Borrowed Time
+
+- Raise the statue's hand as a readable cue. A sparse volley freezes in midair, with suspended marble dust reinforcing the time-stop illusion.
+- Only this power's marble fragments freeze and rewind. The player's movement, joystick braking, bullets, and controls continue normally.
+- Draw ghost trails before the fragments return along their recorded paths. Destroyed fragments stay destroyed; rewinding does not respawn them or restore statue health.
+- Bound the number of fragments and the recorded history. Finish the return motion, clear the volley, and provide recovery before the next cycle.
+
+### Level 9: Gates of Olympus
+
+- Use two recognizable marble doorways, with matching symbols as well as colour to communicate the pair.
+- Show the entering attack and warn its exit position and direction before it becomes damaging. Keep a reachable safe lane around the exit.
+- Player bullets use the same portals, allowing a planned shot to reach the guardian from another direction, including behind it.
+- Redirect projectiles without multiplying them, increasing damage, or resetting their lifetime. Prevent immediate re-entry loops and unlimited portal crossings.
+- Rearrange the doors between attacks with a clear transition. Keep entrances and exits outside the touch-control area.
+
+### Level 10: The Marble Leviathan
+
+- Animate the familiar statue breaking into linked marble segments, forming a serpent with its glowing face as the head. The transformation is the main attraction. A harder finale is allowed if it improves the experience; extra health alone is not the payoff.
+- Preview the curved travel route with a ghostly ribbon wide enough to communicate the creature's damaging footprint. Leave reachable space outside that route on short landscape phones.
+- Shooting either the head or a segment damages one shared health pool. A single bullet must not count multiple overlapping segment hits.
+- After each pass, coil back into statue form and provide a generous stationary shooting window. No healing or extra health bar during transformation.
+- Keep the serpent's attack separate from earlier powers. Clear segment collisions, paths, and transition effects on death, resize, retry, or exit.
+
+### Expansion acceptance and progression
+
+- Start from the existing tuning and controls, then tune each encounter for its own concept. Difficulty may vary, including harder encounters. Evaluate whether the transformation, mechanics, and personality are fun and readable on keyboard and touch; equal win rates or identical health are not acceptance requirements.
+- Add a level to the runtime catalogue only once its gameplay, warnings, rendering, and cleanup are implemented and tested. These docs alone do not unlock levels 7–10.
+- When level 7 ships, players who completed level 6 continue at level 7. Preserve their completed milestones, player identity, and scores. Apply the same rule to subsequent releases.
+- Keep victory checkpoints, loss/retry, confirmed Start Over, and final-level replay working against the actual shipped catalogue. Once all ten ship, level 10 becomes the final replayable level; level 11 remains unavailable.
+- Verify clone shared damage, coordinated safe gaps, rewind cleanup, bounded portal traversal, and serpent hit deduplication with focused tests. Review all four visually on desktop, tablet, and short landscape phones.
 
 ### Level 2: Marble Swarm specification
 
@@ -75,18 +128,67 @@ Each profile **replaces** the appropriate part of the previous attack schedule. 
 - Apply a shared active-hazard budget, including existing fragments, before scheduling another wave. Despawn expired fragments and clear all attack state on retry, exit, and level transition.
 - The boss remains beatable through both shooting and movement. Reject a pattern that forces unavoidable damage or rewards only standing still and holding Fire.
 
-### Equal difficulty across levels
+### Creative identity first; difficulty second
 
-The target is comparable challenge and encounter duration across levels, evaluated separately for touch and keyboard. Equal numerical settings alone do not prove equal difficulty.
+The desired reaction is “I want to see what the statue does next.” Each level should offer a recognizable transformation, mechanic, rhythm, or personality moment. Difficulty can rise, fall, or vary across the journey; it is a supporting design tool, not the primary progression system.
 
-- Remove the current level-dependent speed multiplier and earlier-laser progression (`runSpeedUp`, `laserAtPerRun`, and their derived calculations). The old formula must not survive under a new variable name.
-- Do not increase projectile speed, statue health, damage, hazard counts, or attack frequency simply because the level number rises.
-- Do not shorten warning times, reduce lives, reduce safe space, or extend fights as a reward for progressing.
-- Start each level with three lives. Keep phone movement/braking and existing platform accommodations.
-- Level 1's fixed health phases may remain. Higher level IDs must not automatically accelerate those phases or activate more attacks together.
-- Give each power its own readable cues and counterplay. Balance shield uptime, gaps, recovery windows, and effective damage opportunities so defensive powers do not turn into longer endurance fights.
-- If human playtests show a later power is consistently harder, adjust its pattern and timing until it matches the baseline; do not accept the difference as intentional progression.
-- Use a shared cap for all damaging hazards. The existing ordinary-rock spawn cap is not sufficient to constrain boss attacks by itself.
+- Prioritize a memorable visual idea, a distinct interaction, entertaining statue dialogue, and satisfying counterplay. A new name plus higher stats does not make a new level.
+- The implemented levels removed the old automatic `runSpeedUp` and `laserAtPerRun` formulas. Keep explicit per-profile tuning so changes serve a specific encounter rather than applying an unexplained multiplier to every later level.
+- Speed, health, hazard count, warning length, timing, and attack combinations may be adjusted when they make a concept work better. Do not increase them merely to fill a higher numbered slot.
+- A harder encounter is acceptable when players find learning it enjoyable. Do not flatten an interesting level just to match level 1's win rate or duration.
+- Preserve readable warnings, reachable responses, responsive controls, and deliberate recovery opportunities. Surprise should come from the idea, not an unavoidable hit or an obscured phone playfield.
+- Three lives and current movement/braking remain the starting defaults. Assess keyboard, phone, and tablet separately when tuning; a fun desktop pattern may need wider gaps or longer cues on touch screens.
+- The planned clone volley is a coordinated multi-beam attack, not a ban on simultaneous attacks. Other combinations can be designed deliberately when they remain readable and fit the level's identity.
+- Use an explicit active-hazard budget and bounded lifetimes for each profile. Raising a budget is a conscious design decision, not an accidental consequence of stacking powers.
+- Playtests should ask: Did this feel different? Was the reveal memorable? Did the player understand what happened? Would they replay it or want to see the next level? Use difficulty and fight duration as supporting evidence.
+
+## Planned statue personality and per-level dialogue
+
+**Status: dialogue expansion is planned, not implemented.** The current game still uses its existing shared lines. Add level-specific pools alongside the power catalogue when this feature is built.
+
+The guardian has an enormous ego and takes a tiny desktop pointer far too personally. It boasts, overreacts, invents excuses, and treats every new power as proof of its own greatness. Humour should make players enjoy provoking it. Mix short emotional barks (“ARHHH!”, “AGAIN?!”, “MY FACE!”) with lines that reference the current transformation.
+
+### Draft voice palette for all ten levels
+
+These are example lines to develop into larger pools, not a fixed script played in order.
+
+| Level | Character angle | Example randomized lines |
+| --- | --- | --- |
+| 1 — Marble Guardian | An offended monument disturbed at work. | “WHO CLICKED ON ME?” / “I am a monument. Show some respect.” / “ARHHH! My good side!” |
+| 2 — Marble Swarm | Turns its own destruction into a boast. | “Every piece of me is a masterpiece.” / “Meet my smaller opinions.” / “I call this crowd support.” |
+| 3 — Shattered Halo | Convinced it deserves divine admiration. | “Even my ego has an orbit.” / “Admire the halo. From a distance.” / “That gap is a design choice!” |
+| 4 — Meteor Rain | Treats the sky as its personal stage. | “Forecast: me.” / “I requested a standing ovation. This will do.” / “ARHHH! Who approved this weather?” |
+| 5 — Orbiting Armour | Obsessed with status and appearance. | “These are designer shields.” / “You scratched the premium finish!” / “My personal space has security.” |
+| 6 — Sweeping Gaze | Believes its attention is a privilege. | “All eyes on me. Especially mine.” / “You cannot dodge my greatness.” / “Hold still. I am making a point.” |
+| 7 — Marble Mirage | Three copies make its ego even louder. | “One of me was clearly not enough.” / “Finally. Intelligent company.” / “WE ARE ALL THE ORIGINAL!” |
+| 8 — Borrowed Time | Refuses to accept a bad moment. | “That hit never happened.” / “Time itself asked for my autograph.” / “Rewind. I looked better earlier.” |
+| 9 — Gates of Olympus | Acts as if space belongs to it. | “I do not take detours. Space does.” / “Your exit is my entrance.” / “WHO LET THAT BULLET THROUGH?” |
+| 10 — The Marble Leviathan | Makes its transformation a grand performance. | “You wanted character development?” / “Behold my final sculpture!” / “This is not defeat. It is an artistic breakup.” |
+
+### Dialogue events and selection
+
+- Provide separate pools per level for awakening/entrance, power reveal, occasional damage reaction, player life lost, and statue defeat. A rare idle boast may fill a quiet recovery window.
+- Make the first power reveal understandable; afterwards vary the line so retries feel lively. Keep essential instructions and attack warnings deterministic even when flavour text is random.
+- Use a shuffled pool or recent-line exclusion to avoid immediate repeats. Exhaust several alternatives before repeating a joke. Short barks supplement each level's voice instead of replacing it.
+- Rate-limit speech and hit reactions. Never produce a bubble for every bullet hit; important reveal/defeat lines take precedence over idle chatter.
+- Level 7 can use occasional brief clone disagreement or a synchronized shout, but show one readable exchange at a time rather than three overlapping bubbles.
+- Keep bubbles short, legible, and clear of warnings, the HUD, and touch controls. Pause dialogue timers with gameplay and clear them on exit, retry, or level transition.
+- Keep accessibility announcements useful: announce significant reveals and warnings; avoid overwhelming screen-reader users with every random taunt. Text works with sound muted; new voice acting is not required by this plan.
+
+### Topical and news-inspired banter
+
+- Occasionally rotate in a small, curated set of topical jokes expressed through the statue's ego. Everyday boasts remain the majority so the character still works after a news cycle ends.
+- Example tone, not claims about current headlines: “Everyone is launching AI. I have been judging humans for centuries.” / “Another product launch? I invented standing here.” / “Apparently everyone is going viral. I prefer monumental.”
+- If a line references an actual news event, verify the event when writing it and give the line an expiry date or review date. Retire stale references while retaining the evergreen fallback pool.
+- Store optional topical lines with an ID, eligible levels/events, active dates, and an evergreen fallback. Review them as authored game copy; automatic live-news ingestion is not part of this plan.
+- Keep the joke centred on the statue's absurd self-importance. Topical jokes must remain understandable without knowing the headline and must not crowd out power-specific personality.
+
+### Dialogue acceptance checks
+
+- Every level has distinct lines that relate to its identity; replaying a level produces variety without immediate repetition.
+- Damage spam, three clones, and repeated event callbacks cannot flood speech or audio.
+- Expired topical lines fall back cleanly, with no network dependency during play.
+- Check readability on a short landscape phone and verify pause/resume, retry, exit, and screen-reader behaviour.
 
 ## Continue and Start Over
 
@@ -132,14 +234,16 @@ The scoreboard now supplies the identity and Neon connection. Named players use 
 2. **Complete: saved progression and menus.** Signed player checkpoints, immediate win saves, retry/continue, final-level behavior, Start Over, guest fallback and explicit save failures.
 3. **Complete: Marble Swarm.** Warned two-wave attack, shootable non-splitting fragments, eight-hazard cap, finite lifetime, recovery, visual and audio cues, touch counts.
 4. **Complete: levels 3–6.** Halo with a safe gap; rain with safe lanes; three breakable orbiting shields whose destruction also damages the statue (no extra required hits); slow, warned sweep. All use separate schedules and finite cleanup.
-5. **Open: human playtest and polish.** Test keyboard, phone/tablet joystick, real iPhone Safari and its Home Screen app. Compare challenge and encounter duration; tune powers that feel harder. Automated checks cannot establish equal perceived difficulty.
-6. **Later: levels 7–100.** Expand only after the initial set is stable. The number 100 is future scope, not shipped content.
+5. **Open: human playtest and polish.** Test keyboard, phone/tablet joystick, real iPhone Safari and its Home Screen app. Prioritize distinctiveness, enjoyment, clarity, and memorable reveals. Use challenge and encounter duration to refine the experience, not to enforce equal difficulty.
+6. **Planned next: levels 7–10.** Marble Mirage, Borrowed Time, Gates of Olympus, and The Marble Leviathan, as specified above. Implement and validate one profile at a time.
+7. **Planned: statue dialogue.** Per-level, per-event randomized pools, repetition control, dramatic barks, and occasional curated topical lines.
+8. **Later: levels 11–100.** Expand after the initial ten are stable. The number 100 remains future scope, not shipped content.
 
 ## Future 100-level direction
 
-A possible structure is ten themed chapters of ten levels. Chapters organize different powers, visual motifs, and pattern variations; they are not difficulty tiers. Reuse validated mechanics through different directions, arrangements, and rhythms while keeping the same challenge target.
+A possible structure is ten themed chapters of ten levels. Chapters organize different powers, visual motifs, personalities, and pattern variations. They may also vary in challenge, but creative identity is the reason to progress. Reuse validated mechanics through new arrangements, rhythms, and combinations that feel distinct.
 
-Level 100 can have a distinctive finale and story payoff without becoming a harder fight. A finale may present familiar powers sequentially with recovery between them; it must not pile them together or inflate enemy health. Save a checkpoint at every level rather than requiring 100 consecutive wins.
+Level 100 should have a distinctive finale and story payoff. It may be harder, combine familiar powers, or introduce a new transformation when that serves the experience. Build readable combinations and satisfying recovery; extra health alone is not a memorable finale. Save a checkpoint at every level rather than requiring 100 consecutive wins.
 
 ## Engineering map
 
@@ -172,7 +276,7 @@ Prefer the existing canvas/React/Web Audio implementation and avoid new dependen
 ### Powers and fairness
 
 - Level 2 has a distinct swarm with a warning, destructible non-splitting fragments, recovery time, and no surprise concurrent laser.
-- Levels 3–6 have distinct powers and counterplay, rather than more speed, more health, or accumulated attacks.
+- Each level has a distinct power, presentation, or interaction. Per-level difficulty tuning supports its identity; higher stats alone do not satisfy the creative requirement.
 - A test verifies that increasing the level ID alone does not scale global enemy stats or shorten warnings.
 - Every pattern leaves a reachable escape route on the smaller landscape playfield, respecting the phone's slower movement and the control area.
 - Retry, death, pause/resume, rotation, exit, and level transitions never leak projectiles, attack timers, audio, input, or save events.
@@ -185,10 +289,10 @@ Prefer the existing canvas/React/Web Audio implementation and avoid new dependen
 - Preserve fullscreen fallback, landscape gating, taskbar restoration, icon/manifest behavior, and access to Story & how to play.
 - Screenshots and browser checks cover desktop plus short landscape phones/tablets. Headless checks do not replace real Safari/Home Screen or human fairness testing.
 
-## Verification for this implementation
+## Verification recorded for the levels 1–6 implementation
 
 - `npm run test:leaderboard`: 16 checks executing the real route/server SQL against PostgreSQL (PGlite), including cookie ownership, environment isolation, immediate checkpoints, loss/exit, duplicate and concurrent wins, reset invalidation, final replay, score retention and rate limits.
 - `npm run test:game`: 16 checks for phone/tablet/keyboard controls, drift and hitbox, all six profiles' fixed stats, warning/recovery/hazard budgets, non-splitting swarm, safe rain lanes, armour damage credit, resize/death/victory cleanup and progress validation/migration.
 - Production build and TypeScript pass. ESLint passes with the pre-existing `opengraph-image.tsx` image warning.
 - Headless Edge browser checks use mocked player/score API responses and the real built game: desktop 1280×800 and phone 667×320 cover returning level 2, reset/cancel, retained best score, reload, pause/resume, mobile-only joystick and exit. They complement the real SQL tests; they are not a live Neon or physical iPhone test.
-- Seeded legacy-bot diagnostics (20 attempts/profile/device) show no rising difficulty formula and no longer require later levels to be harder. New powers often finish faster than the original guardian because the bot can fire more consistently. These keyboard-oriented bots do not establish touch balance or equal difficulty. Human comparisons remain required.
+- Seeded legacy-bot diagnostics (20 attempts/profile/device) show no rising difficulty formula and no longer require later levels to be harder. New powers often finish faster than the original guardian because the bot can fire more consistently. These keyboard-oriented bots do not establish touch balance or equal difficulty. Human comparisons of enjoyment, readability, and distinctiveness remain required.
