@@ -424,7 +424,6 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
               key={game.run}
               spawnAt={game.spawnAt}
               level={game.level}
-              touch={isMobile}
               windows={state.windows.map((w) => ({ id: w.id, zIndex: w.zIndex, minimized: w.minimized }))}
               onIconDestroyed={(id) => setDestroyedIcons((list) => [...list, id])}
               onWindowCrashed={(id) => {

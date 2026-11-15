@@ -15,6 +15,8 @@ export type Input = {
   right: boolean;
   thrust: boolean;
   fire: boolean;
+  /** Present for touch steering, including the neutral position for braking. */
+  joystick?: { x: number; y: number };
 };
 
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -189,6 +191,7 @@ export type World = {
 
 export const TUNING = {
   lives: 3,
+  joystick: { maxSpeed: 360, response: 14, brake: 22 },
   ship: {
     radius: 10,
     turn: 5.4, // rad/s (~310°/s)
@@ -655,20 +658,36 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
 
   /* Ship */
   if (ship.alive) {
-    if (input.left) ship.angle -= TUNING.ship.turn * dt;
-    if (input.right) ship.angle += TUNING.ship.turn * dt;
-    ship.thrusting = input.thrust;
-    if (input.thrust) {
-      ship.vx += Math.sin(ship.angle) * TUNING.ship.thrust * dt;
-      ship.vy -= Math.cos(ship.angle) * TUNING.ship.thrust * dt;
-    }
-    const drag = Math.exp(-TUNING.ship.drag * dt);
-    ship.vx *= drag;
-    ship.vy *= drag;
-    const speed = Math.hypot(ship.vx, ship.vy);
-    if (speed > TUNING.ship.maxSpeed) {
-      ship.vx *= TUNING.ship.maxSpeed / speed;
-      ship.vy *= TUNING.ship.maxSpeed / speed;
+    if (input.joystick) {
+      const { x, y } = input.joystick;
+      const magnitude = Math.hypot(x, y);
+      const scale = magnitude > 1 ? 1 / magnitude : 1;
+      ship.thrusting = magnitude > 0;
+      if (ship.thrusting) ship.angle = Math.atan2(x, -y);
+      const response = ship.thrusting ? TUNING.joystick.response : TUNING.joystick.brake;
+      const blend = 1 - Math.exp(-response * dt);
+      ship.vx += (x * scale * TUNING.joystick.maxSpeed - ship.vx) * blend;
+      ship.vy += (y * scale * TUNING.joystick.maxSpeed - ship.vy) * blend;
+      if (!ship.thrusting && Math.hypot(ship.vx, ship.vy) < 1) {
+        ship.vx = 0;
+        ship.vy = 0;
+      }
+    } else {
+      if (input.left) ship.angle -= TUNING.ship.turn * dt;
+      if (input.right) ship.angle += TUNING.ship.turn * dt;
+      ship.thrusting = input.thrust;
+      if (input.thrust) {
+        ship.vx += Math.sin(ship.angle) * TUNING.ship.thrust * dt;
+        ship.vy -= Math.cos(ship.angle) * TUNING.ship.thrust * dt;
+      }
+      const drag = Math.exp(-TUNING.ship.drag * dt);
+      ship.vx *= drag;
+      ship.vy *= drag;
+      const speed = Math.hypot(ship.vx, ship.vy);
+      if (speed > TUNING.ship.maxSpeed) {
+        ship.vx *= TUNING.ship.maxSpeed / speed;
+        ship.vy *= TUNING.ship.maxSpeed / speed;
+      }
     }
     ship.x += ship.vx * dt;
     ship.y += ship.vy * dt;
@@ -689,8 +708,10 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
       });
       // Muzzle flash and a small kick backwards.
       burst(world, ship.x + dx * 18, ship.y + dy * 18, 4, SPARK, 110);
-      ship.vx -= dx * TUNING.ship.recoil;
-      ship.vy -= dy * TUNING.ship.recoil;
+      if (!input.joystick) {
+        ship.vx -= dx * TUNING.ship.recoil;
+        ship.vy -= dy * TUNING.ship.recoil;
+      }
       events.push({ type: "shot" });
     }
   } else if (world.lives > 0) {

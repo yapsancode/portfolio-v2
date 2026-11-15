@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { MouseEvent } from "react";
 import { site } from "@/config/site";
 import { BEST_RUN_KEY, loadBest, useGame } from "@/components/game/GameContext";
+import { usesTouchControls } from "@/components/game/touch-controls";
 
 const copy = site.olympus.title;
 
@@ -21,9 +22,7 @@ export default function OlympusWindow() {
   const [best] = useState(() => loadBest());
   const [bestRun] = useState(() => loadBest(BEST_RUN_KEY));
   // Same test the game uses to show its on-screen buttons.
-  const [touch] = useState(
-    () => navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches
-  );
+  const [touch] = useState(usesTouchControls);
 
   // A mouse click spawns the ship where the pointer is; Enter starts it in the middle.
   const onStart = (e: MouseEvent<HTMLButtonElement>) =>
@@ -45,10 +44,7 @@ export default function OlympusWindow() {
       {touch ? (
         <p className="olympus-title-keys">
           <span>
-            <Key>◄</Key> <Key>►</Key> turn
-          </span>
-          <span>
-            <Key>▲</Key> thrust
+            <Key>Joystick</Key> steer · release to stop
           </span>
           <span>
             <Key>FIRE</Key> fire
@@ -84,7 +80,7 @@ export default function OlympusWindow() {
         </p>
       )}
       <p className="olympus-title-dim">{copy.warning}</p>
-      {touch && <p className="olympus-title-dim">Play in landscape — turn your phone sideways.</p>}
+      {touch && <p className="olympus-title-dim">Play in landscape — turn your phone or tablet sideways.</p>}
       <a className="olympus-shortcut" href="/olympus">Direct game shortcut · /olympus</a>
     </div>
   );

@@ -772,14 +772,44 @@ body {
 /* On-screen controls for touch screens. */
 .olympus-touch {
   position: fixed;
-  right: 12px;
-  left: 12px;
+  right: max(16px, env(safe-area-inset-right));
+  left: max(16px, env(safe-area-inset-left));
   z-index: 27;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   pointer-events: none;
 }
+
+.olympus-joystick {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 124px;
+  height: 124px;
+  flex-shrink: 0;
+  border: 2px solid #a78e26;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffd80018 0 18%, transparent 19%), #141412b8;
+  box-shadow: inset 0 0 0 12px #ffd8000a;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.olympus-joystick-thumb {
+  width: 46px;
+  height: 46px;
+  border: 2px solid #ffe87c;
+  border-radius: 50%;
+  background: #ffd800;
+  box-shadow: 0 3px #9a6900;
+  pointer-events: none;
+}
+
+.olympus-joystick:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 
 .olympus-touch-btn {
   width: 56px;
@@ -811,6 +841,11 @@ body {
   width: 84px;
   height: 84px;
   font-size: 26px;
+  border: 2px solid #ffe87c;
+  background: #ffd800;
+  color: #1b1600;
+  box-shadow: 0 4px #9a6900;
+  opacity: 0.85;
 }
 
 .olympus-touch-quit {

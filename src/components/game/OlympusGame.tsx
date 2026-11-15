@@ -9,6 +9,8 @@ import { drawWorld, type StatueArt } from "./draw";
 import { useMusic } from "@/components/desktop/music";
 import { BEST_RUN_KEY, loadBest, saveBest } from "./GameContext";
 import { playSound, setSoundVolume, unlockSound } from "./sound";
+import TouchJoystick from "./TouchJoystick";
+import { usesTouchControls, type StickVector } from "./touch-controls";
 import {
   createStatue,
   createWorld,
@@ -30,15 +32,13 @@ const ROWS = 18;
 const DT = 1 / 60;
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 /** Height of the strip the touch buttons use; the ship stays above it. */
-const TOUCH_STRIP = 100;
+const TOUCH_STRIP = 136;
 /** Game time skipped on a kill, so it lands with a small "thud". */
 const KILL_PAUSE_MS = 45;
 
 export type OlympusGameProps = {
   /** Where the pointer was when Start was pressed: the ship appears there. */
   spawnAt: { x: number; y: number } | null;
-  /** Phone layout: start with the on-screen buttons. (Any touch screen gets them too.) */
-  touch: boolean;
   /** Open windows, so the game knows which one is on top. */
   windows: { id: WindowId; zIndex: number; minimized: boolean }[];
   onIconDestroyed: (id: DesktopIconId) => void;
@@ -53,7 +53,7 @@ export type OlympusGameProps = {
 type Hud = { score: number; lives: number; anger: number; statue: number; phase: Phase };
 type Ending = { kind: "won" | "lost"; score: number; best: number; newBest: boolean };
 type Crash = { key: number; name: string; x: number; y: number };
-type Control = keyof Input;
+type Control = "left" | "right" | "thrust" | "fire";
 
 const KEYS: Record<string, Control> = {
   ArrowLeft: "left",
@@ -147,17 +147,8 @@ function readTargets(windows: OlympusGameProps["windows"]): TargetRect[] {
   return targets;
 }
 
-/**
- * Any touch screen, not only the main pointer. Tablets with a stylus or a
- * keyboard cover (and touch laptops) report a "fine" pointer like a mouse,
- * so the phone layout misses them.
- */
-function hasTouchScreen() {
-  return navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches;
-}
-
 function needsLandscape() {
-  return hasTouchScreen() && window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
+  return usesTouchControls() && window.matchMedia("(orientation: portrait)").matches;
 }
 
 function fileName(id: WindowId) {
@@ -267,15 +258,26 @@ function EndScreen({
 
 function TouchPad({
   onPress,
+  onMove,
 }: {
   onPress: (control: Control, down: boolean) => void;
+  onMove: (value: StickVector) => void;
 }) {
+  const firePointer = useRef<number | null>(null);
+  const releaseFire = (pointerId: number) => {
+    if (firePointer.current !== pointerId) return;
+    firePointer.current = null;
+    onPress("fire", false);
+  };
   const button = (control: Control, label: string, name: string, extra = "") => (
     <button
       type="button"
       aria-label={name}
       className={`olympus-touch-btn bevel-out ${extra}`}
       onPointerDown={(e) => {
+        if (firePointer.current !== null) return;
+        e.preventDefault();
+        firePointer.current = e.pointerId;
         try {
           // Keep receiving this finger's "up" even if it slides off the button.
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -284,9 +286,9 @@ function TouchPad({
         }
         onPress(control, true);
       }}
-      onPointerUp={() => onPress(control, false)}
-      onPointerCancel={() => onPress(control, false)}
-      onLostPointerCapture={() => onPress(control, false)}
+      onPointerUp={(e) => releaseFire(e.pointerId)}
+      onPointerCancel={(e) => releaseFire(e.pointerId)}
+      onLostPointerCapture={(e) => releaseFire(e.pointerId)}
       onContextMenu={(e) => e.preventDefault()}
     >
       {label}
@@ -295,11 +297,7 @@ function TouchPad({
   return (
     <>
       <div className="olympus-touch" style={{ bottom: TASKBAR_HEIGHT + 8 }}>
-        <div className="flex gap-2">
-          {button("left", "◄", "Turn left")}
-          {button("right", "►", "Turn right")}
-          {button("thrust", "▲", "Thrust")}
-        </div>
+        <TouchJoystick onMove={onMove} />
         {button("fire", "FIRE", "Fire", "olympus-touch-fire")}
       </div>
     </>
@@ -334,7 +332,7 @@ export default function OlympusGame(props: OlympusGameProps) {
   const rotateRequiredRef = useRef(rotateRequired);
   const endedRef = useRef(false);
   // On-screen buttons follow the last input used: a touch shows them, a game key hides them.
-  const [touch, setTouch] = useState(() => props.touch || hasTouchScreen());
+  const [touch, setTouch] = useState(usesTouchControls);
   const touchRef = useRef(touch);
 
   const [hud, setHud] = useState<Hud>({ score: 0, lives: TUNING.lives, anger: 0, statue: 1, phase: "play" });
@@ -549,7 +547,10 @@ export default function OlympusGame(props: OlympusGameProps) {
         if (now >= freezeUntil) acc += elapsed;
         while (acc >= DT) {
           acc -= DT;
-          handle(step(world, inputRef.current, DT));
+          handle(step(world, {
+            ...inputRef.current,
+            joystick: touchRef.current ? (inputRef.current.joystick ?? { x: 0, y: 0 }) : undefined,
+          }, DT));
         }
       }
       const shaking = now < shakeUntil;
@@ -645,7 +646,8 @@ export default function OlympusGame(props: OlympusGameProps) {
     };
     const onPointerDown = (e: PointerEvent) => {
       unlockSound();
-      if (touchRef.current || (e.pointerType !== "touch" && e.pointerType !== "pen")) return;
+      if (!usesTouchControls() || touchRef.current || (e.pointerType !== "touch" && e.pointerType !== "pen")) return;
+      inputRef.current = { ...NO_INPUT };
       touchRef.current = true;
       setTouch(true);
     };
@@ -684,6 +686,11 @@ export default function OlympusGame(props: OlympusGameProps) {
     pausedRef.current = false;
     setPaused(false);
     canvasRef.current?.focus();
+  };
+
+  const steer = (joystick: StickVector) => {
+    if (pausedRef.current || rotateRequiredRef.current || endedRef.current) return;
+    inputRef.current = { ...inputRef.current, joystick };
   };
 
   const showPause = () => {
@@ -765,7 +772,7 @@ export default function OlympusGame(props: OlympusGameProps) {
           <div role="status">
             <span className="olympus-rotate-icon" aria-hidden="true">↻</span>
             <h2>Rotate to play Olympus</h2>
-            <p>Turn your phone sideways to landscape.</p>
+            <p>Turn your phone or tablet sideways to landscape.</p>
             <p>Your game is paused while you rotate.</p>
           </div>
           <button type="button" className="olympus-button" onClick={() => props.onEnd(false, false)}>
@@ -791,7 +798,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       {!paused && !rotateRequired && !ending && (
         <button type="button" className="olympus-button olympus-pause-trigger" onClick={showPause} aria-label="Pause game">Ⅱ Pause</button>
       )}
-      {touch && !paused && !rotateRequired && !ending && <TouchPad onPress={press} />}
+      {touch && !paused && !rotateRequired && !ending && <TouchPad onPress={press} onMove={steer} />}
 
       {ending && (
         <EndScreen
