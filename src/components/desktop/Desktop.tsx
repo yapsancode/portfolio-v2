@@ -277,6 +277,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
   }, [state.activeId, game]);
 
   const gameControls: GameControls = {
+    close: () => dispatch({ type: "CLOSE", id: "olympus" }),
     start: (spawnAt) => {
       unlockSound(); // browsers only allow sound from inside a click
       // On phones the title screen is full-screen; play on the bare desktop,

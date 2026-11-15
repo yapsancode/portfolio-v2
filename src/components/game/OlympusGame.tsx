@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { site, windowDefaults } from "@/config/site";
 import type { DesktopIconId, WindowId } from "@/config/site";
 import { TASKBAR_HEIGHT } from "@/components/desktop/Taskbar";
@@ -189,18 +190,16 @@ function CursorGlyph() {
 
 /**
  * The end of a game, full screen. Losing is the blue screen; winning is the
- * black "safe to turn off" screen. Enter plays again, any other key leaves.
+ * black "safe to turn off" screen. Enter plays again, Escape leaves.
  */
 function EndScreen({
   ending,
   level,
-  touch,
   onReplay,
   onExit,
 }: {
   ending: Ending;
   level: number;
-  touch: boolean;
   onReplay: () => void;
   onExit: () => void;
 }) {
@@ -218,7 +217,8 @@ function EndScreen({
     const onKeyDown = (e: KeyboardEvent) => {
       // Ignore keys still held from playing.
       if (e.repeat || performance.now() - shownAt < 600) return;
-      if (["Shift", "Control", "Alt", "Meta", "Tab"].includes(e.key)) return;
+      if (e.key !== "Enter" && e.key !== "Escape") return;
+      if (e.key === "Enter" && e.target instanceof HTMLButtonElement) return;
       e.preventDefault();
       if (e.key === "Enter") actions.current.onReplay();
       else actions.current.onExit();
@@ -227,12 +227,13 @@ function EndScreen({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const again = won ? `to play run ${level + 1} (harder)` : "to play again";
   return (
     <div
       ref={ref}
       className={won ? "bsod bsod-win" : "bsod"}
       role="alertdialog"
+      aria-modal="true"
+      onKeyDown={trapMenuFocus}
       aria-label={won ? "You won" : "Game over"}
       tabIndex={-1}
     >
@@ -252,13 +253,13 @@ function EndScreen({
           {ending.newBest ? "New best!" : `Best: ${ending.best.toLocaleString("en")}`}
           {level > 1 && <> &nbsp; Run {level}</>}
         </p>
-        <button type="button" className="bsod-option" onClick={onReplay}>
-          {touch ? `* Tap here ${again}.` : `* Press Enter or click here ${again}.`}
-        </button>
-        <button type="button" className="bsod-option" onClick={onExit}>
-          {touch ? "* Tap here to return to the desktop." : "* Press any other key to return to the desktop."}{" "}
-          <span className="terminal-cursor" />
-        </button>
+        <div className="olympus-actions">
+          <button type="button" className="olympus-button olympus-button-primary" onClick={onReplay}>
+            {won ? "Next run" : "Play again"}
+          </button>
+          <button type="button" className="olympus-button" onClick={onExit}>Exit to desktop</button>
+        </div>
+        {won && <p className="olympus-menu-hint">Run {level + 1} · Harder difficulty</p>}
       </div>
     </div>
   );
@@ -266,10 +267,8 @@ function EndScreen({
 
 function TouchPad({
   onPress,
-  onQuit,
 }: {
   onPress: (control: Control, down: boolean) => void;
-  onQuit: () => void;
 }) {
   const button = (control: Control, label: string, name: string, extra = "") => (
     <button
@@ -295,10 +294,6 @@ function TouchPad({
   );
   return (
     <>
-      {/* A touch screen has no Esc key. */}
-      <button type="button" className="olympus-touch-quit bevel-out" aria-label="Quit the game" onClick={onQuit}>
-        ✕
-      </button>
       <div className="olympus-touch" style={{ bottom: TASKBAR_HEIGHT + 8 }}>
         <div className="flex gap-2">
           {button("left", "◄", "Turn left")}
@@ -314,6 +309,21 @@ function TouchPad({
 /* ------------------------------------------------------------------ */
 /* The game                                                            */
 /* ------------------------------------------------------------------ */
+
+function trapMenuFocus(e: ReactKeyboardEvent<HTMLDivElement>) {
+  if (e.key !== "Tab") return;
+  const buttons = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button"));
+  const first = buttons[0];
+  const last = buttons[buttons.length - 1];
+  if (!first || !last) return;
+  if (e.shiftKey && (document.activeElement === first || document.activeElement === e.currentTarget)) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
 
 export default function OlympusGame(props: OlympusGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -598,23 +608,22 @@ export default function OlympusGame(props: OlympusGameProps) {
       pausedRef.current = value;
       inputRef.current = { ...NO_INPUT };
       setPaused(value);
+      if (!value) canvas.focus();
     };
 
     // Listens in the capture phase and stops game keys there, so a focused
     // desktop icon or button never also reacts to Space or Enter.
     const onKeyDown = (e: KeyboardEvent) => {
       if (endedRef.current) return;
-      if (e.key === "Escape") {
+      if (e.key === "Escape" || e.key === "p" || e.key === "P") {
+        if (e.repeat) return;
         e.preventDefault();
-        e.stopPropagation();
-        propsRef.current.onEnd(false, false);
-        return;
-      }
-      if (e.key === "p" || e.key === "P") {
         e.stopPropagation();
         pause(!pausedRef.current);
         return;
       }
+      // Let focused menu buttons handle Space/Enter normally while paused.
+      if (pausedRef.current || rotateRequiredRef.current) return;
       const control = KEYS[e.key];
       if (!control) return;
       e.preventDefault();
@@ -677,6 +686,12 @@ export default function OlympusGame(props: OlympusGameProps) {
     canvasRef.current?.focus();
   };
 
+  const showPause = () => {
+    inputRef.current = { ...NO_INPUT };
+    pausedRef.current = true;
+    setPaused(true);
+  };
+
   const statueAwake = hud.phase !== "play";
   const meter = statueAwake ? hud.statue : hud.anger / 100;
 
@@ -686,9 +701,9 @@ export default function OlympusGame(props: OlympusGameProps) {
         ref={canvasRef}
         className="olympus-canvas"
         style={{ height: `calc(100% - ${TASKBAR_HEIGHT}px)` }}
-        tabIndex={0}
+        tabIndex={paused || ending ? -1 : 0}
         role="application"
-        aria-label="Olympus. Left and right arrows turn, up arrow thrusts, Space fires, P pauses, Escape quits."
+        aria-label="Olympus. Left and right arrows turn, up arrow thrusts, Space fires, P or Escape opens the pause menu."
       />
 
       {statueAwake && <div className="olympus-dark" aria-hidden="true" />}
@@ -753,27 +768,35 @@ export default function OlympusGame(props: OlympusGameProps) {
             <p>Turn your phone sideways to landscape.</p>
             <p>Your game is paused while you rotate.</p>
           </div>
-          <button type="button" className="bevel-out px-4 py-2" onClick={() => props.onEnd(false, false)}>
+          <button type="button" className="olympus-button" onClick={() => props.onEnd(false, false)}>
             Back to desktop
           </button>
         </div>
       )}
 
       {paused && !rotateRequired && !ending && (
-        <button type="button" className="olympus-paused" onClick={resume}>
-          <span className="win-window bevel-out px-6 py-3 font-pixel text-2xl leading-none">
-            {touch ? "Paused — tap to continue" : "Paused — press P or click to continue"}
-          </span>
-        </button>
+        <div className="olympus-paused" role="dialog" aria-modal="true" aria-label="Game paused" onKeyDown={trapMenuFocus}>
+          <div className="olympus-pause-menu">
+            <p className="olympus-menu-hint">RUN {props.level} · SCORE {String(hud.score).padStart(6, "0")}</p>
+            <h2>PAUSED</h2>
+            <p>Your run is on hold.</p>
+            <div className="olympus-actions">
+              <button type="button" className="olympus-button olympus-button-primary" autoFocus onClick={resume}>Resume</button>
+              <button type="button" className="olympus-button" onClick={() => props.onEnd(false, false)}>Exit to desktop</button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {touch && !rotateRequired && !ending && <TouchPad onPress={press} onQuit={() => props.onEnd(false, false)} />}
+      {!paused && !rotateRequired && !ending && (
+        <button type="button" className="olympus-button olympus-pause-trigger" onClick={showPause} aria-label="Pause game">Ⅱ Pause</button>
+      )}
+      {touch && !paused && !rotateRequired && !ending && <TouchPad onPress={press} />}
 
       {ending && (
         <EndScreen
           ending={ending}
           level={props.level}
-          touch={touch}
           onReplay={() => props.onEnd(true, ending.kind === "won")}
           onExit={() => props.onEnd(false, ending.kind === "won")}
         />

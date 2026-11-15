@@ -17,7 +17,7 @@ function Key({ children }: { children: string }) {
  * Enter (or a tap) starts the game; the window's close button leaves.
  */
 export default function OlympusWindow() {
-  const { start } = useGame();
+  const { start, close } = useGame();
   const [best] = useState(() => loadBest());
   const [bestRun] = useState(() => loadBest(BEST_RUN_KEY));
   // Same test the game uses to show its on-screen buttons.
@@ -35,9 +35,12 @@ export default function OlympusWindow() {
       <h1 className="olympus-logo">OLYMPUS</h1>
       <p>{copy.tagline}</p>
 
-      <button type="button" className="olympus-title-start" onClick={onStart} autoFocus>
-        {touch ? copy.startTouch : copy.start}
-      </button>
+      <div className="olympus-actions">
+        <button type="button" className="olympus-button olympus-button-primary" onClick={onStart} autoFocus>
+          Play
+        </button>
+        <button type="button" className="olympus-button" onClick={close}>Back to desktop</button>
+      </div>
 
       {touch ? (
         <p className="olympus-title-keys">
@@ -51,7 +54,7 @@ export default function OlympusWindow() {
             <Key>FIRE</Key> fire
           </span>
           <span>
-            <Key>✕</Key> quit
+            <Key>Ⅱ</Key> pause / exit
           </span>
         </p>
       ) : (
@@ -69,7 +72,7 @@ export default function OlympusWindow() {
             <Key>P</Key> pause
           </span>
           <span>
-            <Key>Esc</Key> quit
+            <Key>Esc</Key> menu
           </span>
         </p>
       )}

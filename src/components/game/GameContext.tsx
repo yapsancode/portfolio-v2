@@ -7,6 +7,7 @@ import { createContext, useContext } from "react";
  * desktop level (over every window), not inside its own window.
  */
 export type GameControls = {
+  close: () => void;
   /** `spawnAt` is where the pointer was, so the ship appears there. */
   start: (spawnAt: { x: number; y: number } | null) => void;
 };
