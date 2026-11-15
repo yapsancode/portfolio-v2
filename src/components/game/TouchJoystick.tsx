@@ -2,21 +2,16 @@
 
 import { useRef, useState } from "react";
 import type { PointerEvent } from "react";
-import { joystickVector, type StickVector } from "./touch-controls";
+import { stickFromBox, type StickVector } from "./touch-controls";
 
 export default function TouchJoystick({ onMove }: { onMove: (value: StickVector) => void }) {
   const pointer = useRef<number | null>(null);
   const [thumb, setThumb] = useState({ x: 0, y: 0 });
 
   const move = (e: PointerEvent<HTMLButtonElement>) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    const radius = box.width * 0.3;
-    const x = e.clientX - box.left - box.width / 2;
-    const y = e.clientY - box.top - box.height / 2;
-    const distance = Math.hypot(x, y);
-    const scale = distance > radius ? radius / distance : 1;
-    setThumb({ x: x * scale, y: y * scale });
-    onMove(joystickVector(x, y, radius));
+    const stick = stickFromBox(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect());
+    setThumb(stick.thumb);
+    onMove(stick.vector);
   };
 
   const release = (e: PointerEvent<HTMLButtonElement>) => {
@@ -35,7 +30,11 @@ export default function TouchJoystick({ onMove }: { onMove: (value: StickVector)
         if (pointer.current !== null) return;
         e.preventDefault();
         pointer.current = e.pointerId;
-        e.currentTarget.setPointerCapture(e.pointerId);
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {
+          // No live pointer (synthetic event): steering still works.
+        }
         move(e);
       }}
       onPointerMove={(e) => { if (pointer.current === e.pointerId) move(e); }}

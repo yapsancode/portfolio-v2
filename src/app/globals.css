@@ -775,15 +775,44 @@ body {
 .olympus-refit-options .olympus-button { width: 100%; text-align: left; font-size: 20px; letter-spacing: 0; }
 .olympus-refit-options small { display: block; font-size: 16px; margin-top: 4px; }
 
-/* Selection/callouts must never interrupt a held game control. */
+/* Selection/callouts must never interrupt a held game control.
+   Text boxes (player name, share copy box) stay selectable and pasteable. */
 .olympus-playing,
-.olympus-playing *,
+.olympus-playing *:not(input, textarea),
 .olympus-title,
-.olympus-title * {
+.olympus-title *:not(input, textarea) {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* No pull-to-refresh or scroll bounce while playing. */
+html:has(.olympus-playing),
+html:has(.olympus-playing) body { overscroll-behavior: none; }
+
+/* Touch-control strip at the bottom: the ship, the statue and the controls keep
+   inside/above it. Shrinks on very short screens; grows by the home-bar area.
+   OlympusGame measures .olympus-strip, so the ship floor always matches. */
+:root {
+  --olympus-strip-content: min(136px, 30dvh);
+  --olympus-strip: calc(var(--olympus-strip-content) + env(safe-area-inset-bottom));
+}
+.olympus-strip {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: var(--olympus-strip);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Touch play: the statue stands on the strip and fits the height left
+   (dvh, not vh: iPhone always shows its browser bar). */
+.olympus-touch-playing .wallpaper-statue { height: min(44dvh, calc(100% - 16px)); }
+@media (min-width: 640px) {
+  .olympus-touch-playing .wallpaper-statue { height: min(58dvh, calc(100% - 16px)); }
 }
 
 /* Canvas and joystick block gestures; menus must still scroll on short phones. */
@@ -820,11 +849,27 @@ body {
   }
 }
 
-.olympus-hud {
+/* HUD, level name and Pause, stacked in the top-right corner. */
+.olympus-corner {
   position: fixed;
   top: max(8px, env(safe-area-inset-top));
   right: max(8px, env(safe-area-inset-right));
-  z-index: 26;
+  z-index: 27;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.olympus-corner-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.olympus-hud {
   min-width: 220px;
   padding: 2px;
   background: var(--color-win-face);
@@ -855,10 +900,6 @@ body {
 }
 
 .olympus-power-label {
-  position: fixed;
-  top: max(66px, calc(env(safe-area-inset-top) + 58px));
-  right: max(8px, env(safe-area-inset-right));
-  z-index: 26;
   padding: 2px 6px;
   color: #ffdf64;
   background: #080808;
@@ -968,13 +1009,21 @@ body {
 .olympus-button:focus-visible { outline: 2px solid #fff; outline-offset: 5px; }
 
 .olympus-pause-trigger {
-  position: fixed;
-  top: max(88px, env(safe-area-inset-top));
-  right: max(8px, env(safe-area-inset-right));
-  z-index: 27;
   min-height: 44px;
   padding: 8px 14px;
   font-size: 20px;
+  pointer-events: auto;
+}
+
+/* Short touch screens (phones in landscape): a one-row HUD, level name beside Pause. */
+@media (pointer: coarse) and (max-height: 500px) {
+  .olympus-corner { gap: 4px; }
+  .olympus-corner-row { flex-direction: row; align-items: center; }
+  .olympus-hud { min-width: 0; }
+  .olympus-hud .player-lcd { display: flex; align-items: center; gap: 12px; padding: 2px 6px; font-size: 16px; }
+  .olympus-hud-meter { width: 96px; margin-top: 0; }
+  .olympus-hud-meter > :first-child { width: auto; }
+  .olympus-pause-trigger { padding: 4px 12px; font-size: 18px; }
 }
 
 .olympus-pause-menu {
@@ -1025,12 +1074,15 @@ body {
   pointer-events: none;
 }
 
+/* Touch laptop (desktop rules, taskbar shown): controls sit above the 36px taskbar. */
+.olympus-playing:not(.olympus-touch-playing) .olympus-touch { bottom: 48px; }
+
 .olympus-joystick {
   position: relative;
   display: grid;
   place-items: center;
-  width: 124px;
-  height: 124px;
+  width: calc(var(--olympus-strip-content) - 12px);
+  height: calc(var(--olympus-strip-content) - 12px);
   flex-shrink: 0;
   border: 2px solid #a78e26;
   border-radius: 50%;
@@ -1044,8 +1096,8 @@ body {
 }
 
 .olympus-joystick-thumb {
-  width: 46px;
-  height: 46px;
+  width: 37%;
+  height: 37%;
   border: 2px solid #ffe87c;
   border-radius: 50%;
   background: #ffd800;
@@ -1082,8 +1134,8 @@ body {
 }
 
 .olympus-touch-fire {
-  width: 84px;
-  height: 84px;
+  width: min(84px, calc(var(--olympus-strip-content) - 12px));
+  height: min(84px, calc(var(--olympus-strip-content) - 12px));
   font-size: 26px;
   border: 2px solid #ffe87c;
   background: #ffd800;

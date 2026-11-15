@@ -246,6 +246,8 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
   const [statueHidden, setStatueHidden] = useState(false);
   const [statueReturning, setStatueReturning] = useState(false);
   const touchGame = Boolean(game?.touchDevice);
+  // While Olympus runs, the desktop under it must not be clickable or focusable.
+  const playing = Boolean(game);
 
   useEffect(() => () => leaveGameFullscreen(), []);
 
@@ -374,10 +376,10 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
         <ShootingStar />
 
         {/* Wallpaper sculpture (decorative, behind everything else): centred,
-            standing on the taskbar. */}
+            standing on the taskbar, or on the touch-control strip in touch play. */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 z-0 flex items-end justify-center"
-          style={{ bottom: touchGame ? 0 : TASKBAR_HEIGHT }}
+          style={{ bottom: touchGame ? "var(--olympus-strip)" : TASKBAR_HEIGHT }}
           aria-hidden="true"
         >
           <div
@@ -401,6 +403,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
         {/* Icon column. On short screens it wraps into a second column, like
             real Windows, instead of running under the taskbar. */}
         <nav
+          inert={playing}
           aria-label="Desktop icons"
           className="absolute left-2 top-2 z-10 flex flex-col flex-wrap content-start items-start gap-1"
           style={{
@@ -424,9 +427,10 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
 
         {/* Windows layer (drag bounds = desktop area above the taskbar) */}
         {isMobile ? (
-          state.windows.map(renderWindow)
+          <div className="contents" inert={playing}>{state.windows.map(renderWindow)}</div>
         ) : (
           <div
+            inert={playing}
             className="pointer-events-none absolute inset-x-0 top-0 z-20"
             style={{ bottom: TASKBAR_HEIGHT }}
           >
@@ -439,6 +443,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
             <OlympusGame
               key={game.attemptId}
               spawnAt={game.spawnAt}
+              touchDevice={game.touchDevice}
               progress={game.progress}
               windows={state.windows.map((w) => ({ id: w.id, zIndex: w.zIndex, minimized: w.minimized }))}
               onIconDestroyed={(id) => setDestroyedIcons((list) => [...list, id])}
@@ -452,7 +457,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
           </Suspense>
         )}
 
-        <div className="desktop-taskbar">
+        <div className="desktop-taskbar" inert={playing}>
           <Taskbar
             windows={state.windows.map((w) => ({
               id: w.id,

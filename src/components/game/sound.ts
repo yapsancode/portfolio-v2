@@ -35,10 +35,16 @@ export function unlockSound() {
       const data = noiseBuffer.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     }
-    if (ctx.state === "suspended") void ctx.resume();
+    // iOS also uses "interrupted" (a call, Siri): anything but running needs a resume.
+    if (ctx.state !== "running") void ctx.resume().catch(() => {});
   } catch {
     // No Web Audio: the game is just silent.
   }
+}
+
+/** Paused game: stop the audio clock so queued sounds do not play over the menu. */
+export function suspendSound() {
+  if (ctx?.state === "running") void ctx.suspend().catch(() => {});
 }
 
 /** 0 → 1. Follows the Music player's volume slider. */

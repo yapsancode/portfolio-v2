@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadTs } from "./load-ts.mjs";
 const { createWorld, createStatue, seededRandom, step, TUNING } = loadTs("src/components/game/olympus.ts");
-const { joystickVector } = loadTs("src/components/game/touch-controls.ts");
+const { joystickVector, stickFromBox } = loadTs("src/components/game/touch-controls.ts");
 const neutral = { left: false, right: false, thrust: false, fire: false };
 const makeWorld = () => createWorld({ w: 4000, h: 3000, statue: createStatue({ x: 3000, y: 2500, w: 100, h: 200 }, 1, 1, [1]), random: seededRandom(42) });
 const advance = (world, joystick, frames = 60, fire = false) => {
@@ -16,6 +16,16 @@ test("joystick dead zone, diagonal limit and proportional travel", () => {
   assert.ok(Math.abs(Math.hypot(diagonal.x, diagonal.y) - 1) < 1e-10);
   assert.ok(diagonal.x > 0 && diagonal.y < 0);
   assert.ok(joystickVector(20, 0, 40).x < joystickVector(30, 0, 40).x);
+});
+
+test("joystick reaches full speed only at the ring edge, and an unmeasured box never steers", () => {
+  const box = { left: 0, top: 0, width: 124, height: 124 };
+  const at = (dx) => stickFromBox(62 + dx, 62, box).vector.x;
+  assert.ok(at(124 * 0.35) < 0.9);
+  assert.ok(Math.abs(at(124 * 0.45) - 1) < 1e-10);
+  assert.equal(stickFromBox(80, 80, box).thumb.x <= 124 * 0.45, true);
+  for (const radius of [0, -5, NaN]) assert.deepEqual(joystickVector(10, 4, radius), { x: 0, y: 0 });
+  assert.deepEqual(stickFromBox(5, 5, { left: 0, top: 0, width: 0, height: 0 }).vector, { x: 0, y: 0 });
 });
 
 test("steers in all four directions and scales speed with joystick travel", () => {

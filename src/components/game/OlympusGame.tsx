@@ -8,11 +8,11 @@ import { TASKBAR_HEIGHT } from "@/components/desktop/Taskbar";
 import { drawWorld, type StatueArt } from "./draw";
 import { useMusic } from "@/components/desktop/music";
 import { loadBest, saveBest } from "./GameContext";
-import { playSound, setSoundVolume, unlockSound } from "./sound";
+import { playSound, setSoundVolume, suspendSound, unlockSound } from "./sound";
 import { createDialogue, type DialogueEvent } from "./dialogue";
 import TouchJoystick from "./TouchJoystick";
 import FullscreenHelp from "./FullscreenHelp";
-import { isPhoneTouchDevice, usesTouchControls, type StickVector } from "./touch-controls";
+import { isPhoneTouchDevice, type StickVector } from "./touch-controls";
 import { enterGameFullscreen } from "./fullscreen";
 import { LAST_LEVEL, levelInfo, type Progress } from "@/lib/olympus/levels";
 import { missionInfo } from "@/lib/olympus/missions";
@@ -40,14 +40,14 @@ const COLS = 16;
 const ROWS = 18;
 const DT = 1 / 60;
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
-/** Height of the strip the touch buttons use; the ship stays above it. */
-const TOUCH_STRIP = 136;
 /** Game time skipped on a kill, so it lands with a small "thud". */
 const KILL_PAUSE_MS = 45;
 
 export type OlympusGameProps = {
   /** Where the pointer was when Start was pressed: the ship appears there. */
   spawnAt: { x: number; y: number } | null;
+  /** Touch rules for this fight, decided once when it starts. */
+  touchDevice: boolean;
   /** Open windows, so the game knows which one is on top. */
   windows: { id: WindowId; zIndex: number; minimized: boolean }[];
   onIconDestroyed: (id: DesktopIconId) => void;
@@ -82,15 +82,15 @@ const NO_INPUT: Input = { left: false, right: false, thrust: false, fire: false 
 /* Reading the desktop                                                 */
 /* ------------------------------------------------------------------ */
 
-function worldSize() {
-  return { w: window.innerWidth, h: Math.max(100, window.innerHeight - (usesTouchControls() ? 0 : TASKBAR_HEIGHT)) };
+function worldSize(touch: boolean) {
+  return { w: window.innerWidth, h: Math.max(100, window.innerHeight - (touch ? 0 : TASKBAR_HEIGHT)) };
 }
 
-function statueBox(): Rect {
+function statueBox(touch: boolean): Rect {
   const el = document.querySelector<HTMLElement>("[data-statue]");
   const r = el?.getBoundingClientRect();
   if (r && r.width > 0) return { x: r.left, y: r.top, w: r.width, h: r.height };
-  const { w, h } = worldSize();
+  const { w, h } = worldSize(touch);
   return { x: w * 0.35, y: h * 0.45, w: w * 0.3, h: h * 0.55 };
 }
 
@@ -155,8 +155,9 @@ function readTargets(windows: OlympusGameProps["windows"]): TargetRect[] {
   return targets;
 }
 
-function needsLandscape() {
-  return usesTouchControls() && window.matchMedia("(orientation: portrait)").matches;
+/** Only phones need landscape. Uses the screen, not the window: an iPad in Split View is a tall window. */
+function needsLandscape(touch: boolean) {
+  return touch && Math.min(screen.width, screen.height) <= 600 && window.matchMedia("(orientation: portrait)").matches;
 }
 
 function fileName(id: WindowId) {
@@ -344,14 +345,16 @@ export default function OlympusGame(props: OlympusGameProps) {
   const propsRef = useRef(props);
   const inputRef = useRef<Input>({ ...NO_INPUT });
   const pausedRef = useRef(false);
-  const [rotateRequired, setRotateRequired] = useState(needsLandscape);
+  const [rotateRequired, setRotateRequired] = useState(() => needsLandscape(props.touchDevice));
   const rotateRequiredRef = useRef(rotateRequired);
   const endedRef = useRef(false);
   const rankedAttemptRef = useRef<Promise<RankedAttempt> | null>(null);
-  const [touchDevice] = useState(usesTouchControls);
-  // On-screen buttons follow the last input used: a touch shows them, a game key hides them.
-  const [touch, setTouch] = useState(usesTouchControls);
+  const touchDevice = props.touchDevice;
+  // Touch devices start with on-screen controls; a touch tap shows them mid-fight.
+  // Keys never hide them, so the touch rules cannot flip mid-fight (the ship would jump).
+  const [touch, setTouch] = useState(touchDevice);
   const touchRef = useRef(touch);
+  const stripRef = useRef<HTMLDivElement>(null);
 
   const [hud, setHud] = useState<Hud>({ score: 0, lives: TUNING.lives, anger: 0, statue: 1, phase: "play" });
   const [paused, setPaused] = useState(false);
@@ -376,6 +379,7 @@ export default function OlympusGame(props: OlympusGameProps) {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     canvas.focus();
+    const touchDevice = propsRef.current.touchDevice;
     rankedAttemptRef.current ??= beginRankedAttempt(propsRef.current.progress.resumeLevel, propsRef.current.progress.epoch);
 
     const reducedMotion = window.matchMedia(REDUCED_MOTION).matches;
@@ -401,8 +405,17 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (!reducedMotion) freezeUntil = performance.now() + KILL_PAUSE_MS;
     };
 
+    // Height of the touch-control strip (CSS --olympus-strip); the ship stays above it.
+    let strip = 0;
+    const floor = () => (touchRef.current ? strip : 0);
+    const applyFloor = () => {
+      if (!world) return;
+      world.shipFloor = floor();
+      if (world.shipFloor) world.ship.y = Math.min(world.ship.y, world.h - world.shipFloor - 20);
+    };
+
     const fit = () => {
-      const portrait = needsLandscape();
+      const portrait = needsLandscape(touchDevice);
       rotateRequiredRef.current = portrait;
       setRotateRequired(portrait);
       if (portrait) {
@@ -410,13 +423,18 @@ export default function OlympusGame(props: OlympusGameProps) {
         pausedRef.current = true;
         inputRef.current = { ...NO_INPUT };
         setPaused(true);
+        suspendSound();
       }
-      const { w, h } = worldSize();
+      const { w, h } = worldSize(touchDevice);
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (world) resize(world, w, h, statueBox());
+      strip = stripRef.current?.getBoundingClientRect().height ?? 0;
+      if (world) {
+        resize(world, w, h, statueBox(touchDevice));
+        applyFloor();
+      }
     };
     fit();
 
@@ -430,8 +448,16 @@ export default function OlympusGame(props: OlympusGameProps) {
       const text = dialogue.line(event, world?.time ?? 0);
       if (!text) return;
       speechShown = text;
-      const box = statueBox();
+      const box = statueBox(touchDevice);
       setSpeech({ text, x: Math.max(132, Math.min(window.innerWidth - 132, box.x + box.w * 0.42)), y: Math.max(8, box.y + box.h * 0.06 - 48) });
+    };
+
+    let hintAnnounced = false;
+    const announceHint = () => {
+      if (hintAnnounced) return;
+      hintAnnounced = true;
+      const info = levelInfo(propsRef.current.progress.resumeLevel);
+      setAnnounce(`${info.name}. ${info.hint}`);
     };
 
     const handle = (events: GameEvent[]) => {
@@ -494,7 +520,7 @@ export default function OlympusGame(props: OlympusGameProps) {
             playSound("rumble");
             shake(9, 2200);
             say("entrance");
-            setAnnounce(`${levelInfo(p.progress.resumeLevel).name}. ${levelInfo(p.progress.resumeLevel).hint}`);
+            announceHint();
             break;
           case "statueHit":
             if (Math.random() < 0.12) say("hurt");
@@ -509,7 +535,7 @@ export default function OlympusGame(props: OlympusGameProps) {
           case "powerWarn":
             say("attack");
             playSound("rumble");
-            setAnnounce(levelInfo(p.progress.resumeLevel).hint);
+            announceHint();
             break;
           case "throwWarn":
             playSound("throwWarn");
@@ -568,7 +594,8 @@ export default function OlympusGame(props: OlympusGameProps) {
     let nextSync = 0;
     let nextHud = 0;
     const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
+      // The end screen covers the canvas: one last frame, then stop drawing.
+      if (!endedRef.current) raf = requestAnimationFrame(frame);
       if (!world) return;
       const elapsed = Math.min(0.1, (now - last) / 1000);
       last = now;
@@ -576,14 +603,16 @@ export default function OlympusGame(props: OlympusGameProps) {
         if (now >= nextSync) {
           nextSync = now + 250;
           setTargets(world, readTargets(propsRef.current.windows));
-          world.shipFloor = touchRef.current ? TOUCH_STRIP : 0;
         }
         if (now >= freezeUntil) acc += elapsed;
+        const input = inputRef.current;
+        // A held arrow key steers even while the touch controls are shown.
+        const keySteer = input.left || input.right || input.thrust;
         while (acc >= DT) {
           acc -= DT;
           handle(step(world, {
-            ...inputRef.current,
-            joystick: touchRef.current ? (inputRef.current.joystick ?? { x: 0, y: 0 }) : undefined,
+            ...input,
+            joystick: touchRef.current && !keySteer ? (input.joystick ?? { x: 0, y: 0 }) : undefined,
           }, DT));
         }
       }
@@ -621,22 +650,22 @@ export default function OlympusGame(props: OlympusGameProps) {
 
     // The server's elapsed-time check must start before the game's clock.
     // A slow connection may take a few seconds; never count that as play time.
-    const box = statueBox();
+    const box = statueBox(touchDevice);
     void Promise.all([loadStatueArt(box), rankedAttemptRef.current]).then(([loaded, attempt]) => {
       if (disposed) return;
       setPreparing(false);
       art = loaded;
-      const { w, h } = worldSize();
+      const { w, h } = worldSize(touchDevice);
       const spawn = propsRef.current.spawnAt;
       world = createWorld({
         w,
         h,
-        shipAt: spawn ? { x: Math.min(w - 20, spawn.x), y: Math.min(h - 20, spawn.y) } : undefined,
-        statue: createStatue(statueBox(), COLS, ROWS, tileCover(loaded)),
+        shipAt: { x: Math.min(w - 20, spawn?.x ?? w / 2), y: Math.min(h - floor() - 20, spawn?.y ?? h / 2) },
+        statue: createStatue(statueBox(touchDevice), COLS, ROWS, tileCover(loaded)),
         random: Math.random,
         particleScale: reducedMotion ? 0.35 : 1,
-        shipFloor: touchRef.current ? TOUCH_STRIP : 0,
-        phoneMode: isPhoneTouchDevice(),
+        shipFloor: floor(),
+        phoneMode: isPhoneTouchDevice(touchDevice),
         level: propsRef.current.progress.resumeLevel,
         upgrades: attempt?.ticket?.upgrades ?? propsRef.current.progress.resources.upgrades,
       });
@@ -651,7 +680,11 @@ export default function OlympusGame(props: OlympusGameProps) {
       pausedRef.current = value;
       inputRef.current = { ...NO_INPUT };
       setPaused(value);
-      if (!value) canvas.focus();
+      if (value) suspendSound();
+      else {
+        unlockSound();
+        canvas.focus();
+      }
     };
 
     // Listens in the capture phase and stops game keys there, so a focused
@@ -667,19 +700,18 @@ export default function OlympusGame(props: OlympusGameProps) {
       }
       // Let focused menu buttons handle Space/Enter normally while paused.
       if (pausedRef.current || rotateRequiredRef.current) return;
+      if (e.key === "Tab" || e.key === "Enter") {
+        // Playing: focus stays on the canvas, nothing behind it can be pressed.
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       const control = KEYS[e.key];
       if (!control) return;
       e.preventDefault();
       e.stopPropagation();
       unlockSound();
       setHint(false);
-      if (touchRef.current) {
-        // Hiding the buttons drops any press they still hold.
-        touchRef.current = false;
-        setTouch(false);
-        inputRef.current = { ...NO_INPUT };
-      }
-      if (pausedRef.current || rotateRequiredRef.current) return;
       inputRef.current = { ...inputRef.current, [control]: true };
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -688,10 +720,12 @@ export default function OlympusGame(props: OlympusGameProps) {
     };
     const onPointerDown = (e: PointerEvent) => {
       unlockSound();
-      if (!usesTouchControls() || touchRef.current || (e.pointerType !== "touch" && e.pointerType !== "pen")) return;
+      // pointerType, not (pointer: coarse): touch laptops and monitors have a fine primary pointer.
+      if (touchRef.current || e.pointerType !== "touch") return;
       inputRef.current = { ...NO_INPUT };
       touchRef.current = true;
       setTouch(true);
+      applyFloor();
     };
     const onBlur = () => pause(true);
     const onVisibility = () => {
@@ -699,9 +733,15 @@ export default function OlympusGame(props: OlympusGameProps) {
     };
     const onFullscreenChange = () => {
       fit();
-      if (usesTouchControls() && !document.fullscreenElement) pause(true);
+      if (touchDevice && !document.fullscreenElement) pause(true);
     };
-    const preventSelection = (e: Event) => e.preventDefault();
+    const preventSelection = (e: Event) => {
+      // The name box and the share copy box must stay selectable.
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+    };
+    // iOS pinch-zoom while playing would move the whole game.
+    const preventGesture = (e: Event) => e.preventDefault();
     window.getSelection()?.removeAllRanges();
 
     window.addEventListener("keydown", onKeyDown, true);
@@ -712,6 +752,7 @@ export default function OlympusGame(props: OlympusGameProps) {
     document.addEventListener("visibilitychange", onVisibility);
     document.addEventListener("fullscreenchange", onFullscreenChange);
     document.addEventListener("selectstart", preventSelection);
+    document.addEventListener("gesturestart", preventGesture);
 
     return () => {
       disposed = true;
@@ -725,6 +766,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       document.removeEventListener("visibilitychange", onVisibility);
       document.removeEventListener("fullscreenchange", onFullscreenChange);
       document.removeEventListener("selectstart", preventSelection);
+      document.removeEventListener("gesturestart", preventGesture);
     };
   }, []);
 
@@ -736,6 +778,7 @@ export default function OlympusGame(props: OlympusGameProps) {
   const resume = () => {
     if (rotateRequiredRef.current) return;
     enterGameFullscreen();
+    unlockSound();
     pausedRef.current = false;
     setPaused(false);
     canvasRef.current?.focus();
@@ -750,6 +793,7 @@ export default function OlympusGame(props: OlympusGameProps) {
     inputRef.current = { ...NO_INPUT };
     pausedRef.current = true;
     setPaused(true);
+    suspendSound();
   };
 
   const statueAwake = hud.phase !== "play";
@@ -771,30 +815,39 @@ export default function OlympusGame(props: OlympusGameProps) {
 
       {statueAwake && <div className="olympus-dark" aria-hidden="true" />}
 
-      <div className="olympus-hud bevel-out" aria-hidden="true">
-        <div className="player-lcd">
-          <div className="flex justify-between gap-4">
-            <span>MARBLE {String(hud.score).padStart(6, "0")}</span>
-            <span>LEVEL {props.progress.resumeLevel}</span>
-            <span className="flex items-center gap-1">
-              {Array.from({ length: Math.max(0, hud.lives) }, (_, i) => (
-                <CursorGlyph key={i} />
-              ))}
-            </span>
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="w-16 shrink-0">{statueAwake ? "STATUE" : "ANGER"}</span>
-            <span className="olympus-meter">
-              <span
-                className={statueAwake ? "olympus-meter-hp" : "olympus-meter-anger"}
-                style={{ width: `${Math.round(meter * 100)}%` }}
-              />
-            </span>
+      {/* HUD, level name and Pause share one column, so they can never overlap. */}
+      <div className="olympus-corner">
+        <div className="olympus-hud bevel-out" aria-hidden="true">
+          <div className="player-lcd">
+            <div className="flex justify-between gap-4">
+              <span>MARBLE {String(hud.score).padStart(6, "0")}</span>
+              <span>LEVEL {props.progress.resumeLevel}</span>
+              <span className="flex items-center gap-1">
+                {Array.from({ length: Math.max(0, hud.lives) }, (_, i) => (
+                  <CursorGlyph key={i} />
+                ))}
+              </span>
+            </div>
+            <div className="olympus-hud-meter mt-1 flex items-center gap-2">
+              <span className="w-16 shrink-0">{statueAwake ? "STATUE" : "ANGER"}</span>
+              <span className="olympus-meter">
+                <span
+                  className={statueAwake ? "olympus-meter-hp" : "olympus-meter-anger"}
+                  style={{ width: `${Math.round(meter * 100)}%` }}
+                />
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="olympus-power-label" aria-hidden="true">{levelInfo(props.progress.resumeLevel).name}</div>
+        <div className="olympus-corner-row">
+          <div className="olympus-power-label" aria-hidden="true">{levelInfo(props.progress.resumeLevel).name}</div>
+          {!paused && !rotateRequired && !ending && (
+            <button type="button" className="olympus-button olympus-pause-trigger" onClick={showPause} aria-label="Pause game">Ⅱ Pause</button>
+          )}
+        </div>
+      </div>
+      <div ref={stripRef} className="olympus-strip" aria-hidden="true" />
 
       {crashes.map((c) => (
         <div
@@ -857,9 +910,6 @@ export default function OlympusGame(props: OlympusGameProps) {
         </div>
       )}
 
-      {!paused && !rotateRequired && !ending && (
-        <button type="button" className="olympus-button olympus-pause-trigger" onClick={showPause} aria-label="Pause game">Ⅱ Pause</button>
-      )}
       {touch && !paused && !rotateRequired && !ending && <TouchPad onPress={press} onMove={steer} />}
 
       {ending && (
