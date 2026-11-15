@@ -169,9 +169,9 @@ export default function WorkWindow() {
           </article>
         ) : (
           <div className="p-2">
-            <h1 className="px-2 pt-1 text-lg font-bold">Things I&apos;ve shipped</h1>
+            <h1 className="px-2 pt-1 text-lg font-bold">Things I&apos;ve built &amp; explored</h1>
             <p className="mb-2 px-2 text-sm text-neutral-600">
-              Open a project to see more.
+              Products, client work, concepts, and experiments. Open a project to see more.
             </p>
             <ul>
               {projects.map((project) => (
