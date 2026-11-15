@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GAME_VERSION, LeaderboardError, SESSION_SECONDS, type LevelResult } from "./leaderboard";
 
 import { LAST_LEVEL, progressAt, type Progress } from "./levels";
+import type { SharedScore } from "./sharing";
 
 const COOKIE = "olympus-player";
 
@@ -204,6 +205,46 @@ export async function scores(id: string | null) {
       COALESCE(player_id = ${id}::uuid, false) AS "isYou"
     FROM best ORDER BY score DESC, run DESC, published_at ASC, id ASC LIMIT 10
   `;
+}
+
+export async function createShare(id: string, token: string): Promise<SharedScore> {
+  const sql = database();
+  // Rank this exact result, not a player's better result. Freeze the first snapshot.
+  const rows = await sql`
+    WITH best AS (
+      SELECT DISTINCT ON (player_id) id, player_id, score, run, published_at
+      FROM olympus_sessions
+      WHERE game_version = ${scoreVersion()} AND published_at IS NOT NULL AND hidden = false
+      ORDER BY player_id, score DESC, run DESC, published_at ASC, id ASC
+    ), podium AS (
+      SELECT id, row_number() OVER (ORDER BY score DESC, run DESC, published_at ASC, id ASC)::integer AS rank
+      FROM best ORDER BY score DESC, run DESC, published_at ASC, id ASC LIMIT 3
+    ), snapshot AS (
+      INSERT INTO olympus_shares (session_id, rank)
+      SELECT s.id, p.rank FROM olympus_sessions s LEFT JOIN podium p ON p.id = s.id
+      WHERE s.token_hash = ${tokenHash(token)} AND s.player_id = ${id}
+        AND s.game_version = ${scoreVersion()} AND s.published_at IS NOT NULL
+        AND s.player_name IS NOT NULL AND s.hidden = false
+      ON CONFLICT (session_id) DO UPDATE SET session_id = EXCLUDED.session_id
+      RETURNING session_id, rank, shared_at
+    )
+    SELECT s.id, s.player_name AS name, s.score, s.run AS level, s.outcome,
+      snapshot.rank, snapshot.shared_at AS "sharedAt"
+    FROM snapshot JOIN olympus_sessions s ON s.id = snapshot.session_id`;
+  if (!rows.length) throw new LeaderboardError("Only your saved, visible scores can be shared. Try saving this score again.", 409);
+  return rows[0] as SharedScore;
+}
+
+export async function sharedScore(id: string): Promise<SharedScore | null> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return null;
+  const sql = database();
+  // Historical shares survive game updates, but never cross environments or moderation.
+  const rows = await sql`SELECT s.id, s.player_name AS name, s.score, s.run AS level, s.outcome,
+      sh.rank, sh.shared_at AS "sharedAt"
+    FROM olympus_shares sh JOIN olympus_sessions s ON s.id = sh.session_id
+    WHERE s.id = ${id} AND s.game_version LIKE ${`%:${environment()}`}
+      AND s.published_at IS NOT NULL AND s.player_name IS NOT NULL AND s.hidden = false`;
+  return (rows[0] as SharedScore | undefined) ?? null;
 }
 
 export { randomUUID };

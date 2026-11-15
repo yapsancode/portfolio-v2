@@ -53,11 +53,14 @@ try {
   await db.exec(readFileSync("db/003-scoreboard-environments.sql", "utf8"));
   await db.exec(readFileSync("db/004-level-progress.sql", "utf8"));
   await db.exec(readFileSync("db/004-level-progress.sql", "utf8"));
+  await db.exec(readFileSync("db/005-score-sharing.sql", "utf8"));
+  await db.exec(readFileSync("db/005-score-sharing.sql", "utf8"));
   const validation = load("src/lib/olympus/leaderboard.ts");
   const server = load("src/lib/olympus/server.ts");
   const sessions = load("src/app/api/olympus/session/route.ts");
   const scores = load("src/app/api/olympus/scores/route.ts");
   const players = load("src/app/api/olympus/player/route.ts");
+  const shares = load("src/app/api/olympus/share/route.ts");
   const { NextRequest } = require("next/server");
   const origin = "http://localhost:3000";
   function request(endpoint, method = "GET", data, cookie, headers = {}) {
@@ -219,6 +222,59 @@ try {
       await assert.rejects(server.startSession(id, 1, progress.epoch));
     } finally { delete process.env.VERCEL_ENV; }
     assert.equal(await server.playerName(id), "Isyraf_98");
+  });
+  await test("only an owner can share a saved result; public reads never expose credentials", async () => {
+    const visitor = randomUUID();
+    await server.reserveName(visitor, "ShareHero");
+    const saved = await server.progress(visitor);
+    const attempt = await server.startSession(visitor, 1, saved.epoch);
+    await assert.rejects(server.createShare(visitor, attempt.token));
+    await age(attempt.token);
+    await server.finishSession(visitor, attempt.token, { ...win, score: 90000 });
+    assert.equal((await shares.POST(request("share", "POST", { token: attempt.token }))).status, 401);
+    assert.equal((await shares.POST(request("share", "POST", { token: attempt.token }, cookie))).status, 409);
+    assert.equal((await shares.POST(request("share", "POST", { token: attempt.token }, cookie, { origin: "https://evil.test" }))).status, 403);
+    const [first, concurrent] = await Promise.all([server.createShare(visitor, attempt.token), server.createShare(visitor, attempt.token)]);
+    assert.deepEqual(first, concurrent);
+    assert.equal(first.rank, 1);
+    assert.equal(first.level, 1);
+    assert.equal(first.score, 90000);
+    assert.deepEqual(Object.keys(first).sort(), ["id", "level", "name", "outcome", "rank", "score", "sharedAt"]);
+    assert.deepEqual(await server.sharedScore(first.id), first);
+    assert.equal(await server.sharedScore("bad-id"), null);
+    assert.equal(await server.sharedScore(randomUUID()), null);
+    process.env.VERCEL_ENV = "production";
+    try { assert.equal(await server.sharedScore(first.id), null); }
+    finally { delete process.env.VERCEL_ENV; }
+    // An old link and medal stay stable after leaderboard movement and game updates.
+    const rival = randomUUID();
+    await server.reserveName(rival, "ShareRival");
+    const rivalSave = await server.progress(rival);
+    const rivalAttempt = await server.startSession(rival, 1, rivalSave.epoch);
+    await age(rivalAttempt.token);
+    await server.finishSession(rival, rivalAttempt.token, { ...win, score: 95000 });
+    assert.equal((await server.scores(visitor))[0].name, "ShareRival");
+    assert.deepEqual(await server.createShare(visitor, attempt.token), first);
+    await db.query("UPDATE olympus_sessions SET game_version = 'older:development' WHERE id = $1", [first.id]);
+    assert.deepEqual(await server.sharedScore(first.id), first);
+    await db.query("UPDATE olympus_sessions SET hidden = true WHERE id = $1", [first.id]);
+    assert.equal(await server.sharedScore(first.id), null);
+  });
+  await test("a lesser score does not borrow the player's medal; successful share API is idempotent", async () => {
+    const current = await server.progress(id);
+    const best = await server.startSession(id, current.resumeLevel, current.epoch);
+    await age(best.token);
+    await server.finishSession(id, best.token, { ...win, score: 99000, outcome: "lost" });
+    const ownerShare = await shares.POST(request("share", "POST", { token: best.token }, cookie));
+    assert.equal(ownerShare.status, 200);
+    assert.equal((await ownerShare.json()).share.rank, 1);
+    const lesser = await server.startSession(id, current.resumeLevel, current.epoch);
+    await age(lesser.token);
+    await server.finishSession(id, lesser.token, { ...win, score: 10000, outcome: "lost" });
+    const share = await server.createShare(id, lesser.token);
+    assert.equal(share.rank, null);
+    assert.equal(share.score, 10000);
+    assert.equal(share.outcome, "lost");
   });
   await test("missing configuration returns a safe offline response", async () => {
     delete process.env.DATABASE_URL;

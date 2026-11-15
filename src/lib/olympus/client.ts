@@ -3,9 +3,10 @@
 import type { LevelResult, LevelTicket } from "./leaderboard";
 
 import { parseProgress, progressAt, type Progress } from "./levels";
+import type { SharedScore } from "./sharing";
 
 export type RankedAttempt = { ticket: LevelTicket | null; error: string | null };
-export type ScoreSubmission = { record: () => Promise<Progress> };
+export type ScoreSubmission = { record: () => Promise<Progress>; share: () => Promise<SharedScore> };
 
 export async function leaderboardRequest<T>(path: string, method = "GET", data?: unknown): Promise<T> {
   try {
@@ -50,7 +51,13 @@ export function finishRankedAttempt(session: Promise<RankedAttempt>, result: Lev
   };
   // Start saving at victory, even if the player immediately exits the screen.
   void record().catch(() => {});
-  return { record };
+  return { record, share: async () => {
+    await record();
+    const { ticket } = await session;
+    if (!ticket) throw new Error("Save your score before sharing it.");
+    const data = await leaderboardRequest<{ share: SharedScore }>("share", "POST", { token: ticket.token });
+    return data.share;
+  } };
 }
 
 const GUEST_KEY = "isyraf98:olympus-progress:v1";

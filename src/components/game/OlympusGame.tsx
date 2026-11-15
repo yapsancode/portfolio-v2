@@ -320,7 +320,7 @@ function TouchPad({
 
 function trapMenuFocus(e: ReactKeyboardEvent<HTMLDivElement>) {
   if (e.key !== "Tab") return;
-  const controls = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), summary, a[href], [tabindex="0"]'));
+  const controls = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), textarea:not(:disabled), summary, a[href], [tabindex="0"]'));
   const first = controls[0];
   const last = controls[controls.length - 1];
   if (!first || !last) return;

@@ -722,6 +722,44 @@ body {
 .olympus-score-entry { border-top: 1px solid currentColor; padding-top: 12px; font-size: 20px; }
 .olympus-score-entry > .olympus-scores { margin-top: 8px; }
 .olympus-score-entry .olympus-scores-scroll { max-height: 200px; }
+.olympus-score-tools { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; margin-top: 12px; }
+.olympus-share-panel { margin-top: 18px; border: 1px solid #736334; background: #0b1320; color: #eee9dc; text-align: left; }
+.olympus-share-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-bottom: 1px solid #736334; color: #ffd966; }
+.olympus-share-heading h2 { font-size: 20px; letter-spacing: 0.06em; }
+.olympus-share-close { width: 40px; min-height: 40px; font-size: 28px; cursor: pointer; }
+.olympus-share-content { padding: 16px; }
+.olympus-share-preview { aspect-ratio: 1200 / 630; display: flex; align-items: center; justify-content: center; background: #070d18; border: 1px solid #253449; text-align: center; }
+.olympus-share-preview > img { width: 100%; height: auto; }
+.olympus-share-preview > p, .olympus-share-preview > div { padding: 16px; font-size: 18px; color: #a8bdcc; }
+.olympus-share-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.olympus-share-actions .olympus-button { flex: 1; padding: 10px 14px; text-align: center; text-decoration: none; font-size: 19px; white-space: nowrap; }
+.olympus-share-feedback { margin-top: 12px; min-height: 1.3em; font-size: 18px; line-height: 1.3; color: #9be0cf; }
+.olympus-share-note { margin-top: 8px; color: #a8bdcc; font-size: 16px; line-height: 1.4; }
+.olympus-share-copy { display: block; width: 100%; min-height: 120px; margin-top: 12px; padding: 10px; background: #030912; border: 1px solid #91adbc; color: #fff; font: inherit; font-size: 17px; user-select: text; }
+.olympus-share-loading { padding: 24px; font-size: 18px; }
+.olympus-share-panel :focus-visible, .olympus-challenge-page :focus-visible { outline: 2px solid #73dfc7; outline-offset: 4px; }
+.olympus-challenge-page { height: 100dvh; overflow: auto; padding: 32px 20px 48px; color: #eee9dc; background: radial-gradient(ellipse at 50% 20%, #17283b 0%, #070d18 65%); font-family: var(--font-pixel); touch-action: pan-y; }
+.olympus-challenge-wrap { width: min(100%, 880px); margin: 0 auto; }
+.olympus-challenge-wrap nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #91adbc; font-size: 17px; letter-spacing: 0.06em; }
+.olympus-challenge-wrap nav a { color: #ffd966; padding-block: 10px; }
+.olympus-challenge-heading { margin-block: 32px; text-align: center; }
+.olympus-challenge-heading > p:first-child { color: #73dfc7; font-size: 18px; letter-spacing: 0.16em; }
+.olympus-challenge-heading h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.05; margin: 14px 0; }
+.olympus-challenge-heading h1 span { color: #ffd966; overflow-wrap: anywhere; }
+.olympus-challenge-heading > p { color: #a8bdcc; font-size: 20px; line-height: 1.3; }
+.olympus-challenge-frame { background: #0b1320; border: 1px solid #736334; box-shadow: 0 12px 60px #0008; }
+.olympus-transmission-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #736334; color: #bda86b; font-size: 16px; letter-spacing: 0.05em; }
+.olympus-challenge-play { margin-top: 28px; text-align: center; }
+.olympus-challenge-play .olympus-button { display: inline-block; text-decoration: none; padding: 14px 34px; font-size: 26px; }
+.olympus-challenge-play p { color: #a8bdcc; font-size: 18px; margin-top: 14px; }
+@media (max-width: 480px) {
+  .olympus-challenge-page { padding: 12px 12px 32px; }
+  .olympus-challenge-wrap nav { font-size: 14px; }
+  .olympus-challenge-heading { margin-block: 24px; }
+  .olympus-share-content { padding: 10px; }
+  .olympus-share-actions { gap: 8px; }
+  .olympus-transmission-bar { font-size: 13px; padding-inline: 10px; }
+}
 .olympus-name-prompt { gap: 16px; }
 .olympus-name-prompt > p { max-width: 380px; }
 .olympus-name-form { display: flex; flex-direction: column; gap: 12px; width: min(100%, 380px); }
