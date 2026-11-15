@@ -794,6 +794,21 @@ body {
   border: 1px solid #00a800;
 }
 
+.olympus-loading {
+  position: fixed;
+  top: 35%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  padding: 12px 20px;
+  background: #080808;
+  color: #ffdf64;
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  text-align: center;
+  pointer-events: none;
+}
+
 .olympus-power-label {
   position: fixed;
   top: max(66px, calc(env(safe-area-inset-top) + 58px));

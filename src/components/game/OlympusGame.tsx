@@ -349,6 +349,7 @@ export default function OlympusGame(props: OlympusGameProps) {
 
   const [hud, setHud] = useState<Hud>({ score: 0, lives: TUNING.lives, anger: 0, statue: 1, phase: "play" });
   const [paused, setPaused] = useState(false);
+  const [preparing, setPreparing] = useState(true);
   const [ending, setEnding] = useState<Ending | null>(null);
   const [crashes, setCrashes] = useState<Crash[]>([]);
   const [speech, setSpeech] = useState<{ text: string; x: number; y: number } | null>(null);
@@ -606,10 +607,12 @@ export default function OlympusGame(props: OlympusGameProps) {
       }
     };
 
-    // Load the statue picture, then start.
+    // The server's elapsed-time check must start before the game's clock.
+    // A slow connection may take a few seconds; never count that as play time.
     const box = statueBox();
-    void loadStatueArt(box).then((loaded) => {
+    void Promise.all([loadStatueArt(box), rankedAttemptRef.current]).then(([loaded]) => {
       if (disposed) return;
+      setPreparing(false);
       art = loaded;
       const { w, h } = worldSize();
       const spawn = propsRef.current.spawnAt;
@@ -750,6 +753,8 @@ export default function OlympusGame(props: OlympusGameProps) {
         role="application"
         aria-label="Olympus. Left and right arrows turn, up arrow thrusts, Space fires, P or Escape opens the pause menu."
       />
+
+      {preparing && <p className="olympus-loading" role="status">Preparing your level...</p>}
 
       {statueAwake && <div className="olympus-dark" aria-hidden="true" />}
 
