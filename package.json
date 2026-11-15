@@ -6,10 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "typecheck": "next typegen && tsc --noEmit",
-    "test:rules": "node scripts/olympus-sim.mjs",
-    "test:e2e": "playwright test"
+    "lint": "eslint"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -19,7 +16,6 @@
     "react-rnd": "^10.5.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

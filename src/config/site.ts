@@ -131,18 +131,35 @@ export const site = {
     cta: "Roles, projects, collaborations: email me. The résumé is here if you need it.",
   },
 
-  /** Copy for Olympus Swipe & Smash. */
+  /** Copy for Olympus, the desktop asteroids game (olympus.exe). Drafts: rewrite freely. */
   olympus: {
-    title: { tagline: "Swipe. Smash the desktop. Annoy a god." },
-    swipe: {
-      asleep: "Peaceful desktop. Keep it that way.",
-      awake: "Who gave you write permissions?",
-      angry: "Fine. Look me in the eye.",
-      chain: "That was a very important folder.",
-      hit: "Pointer not responding.",
-      won: "I was only a wallpaper…",
-      lost: "Have you tried turning yourself off?",
+    /** The title screen inside the olympus.exe window. */
+    title: {
+      presents: "Isyraf 98 presents",
+      tagline: "Shoot everything on this desktop.",
+      start: "Press Enter to start",
+      startTouch: "Tap to start",
+      warning: "Windows may crash. Icons may not survive. Everything comes back when you quit.",
     },
+    hint: "← → turn · ↑ thrust · Space fire · P pause · Esc quit",
+    crash: "{name} has performed an illegal operation and will be shut down.",
+    statue: {
+      wakes: "Who keeps shooting my desktop?",
+      /** Said when the fight gets harder: faster throws, then the laser eye. */
+      stage2: "I am marble. You are a mouse pointer.",
+      stage3: "Fine. Look me in the eye.",
+      /** Said when it takes one of your lives. */
+      taunts: ["Pointer not responding.", "Have you tried turning it off and on again?", "Click harder."],
+      falls: "I was only a wallpaper...",
+    },
+    win: {
+      title: "It is now safe to turn off your statue.",
+      lines: ["The statue crumbled. Your desktop will be restored."],
+    },
+    bsod: [
+      "A fatal exception 0E has occurred at 0028:C0DE1998 in VXD STATUE(01).",
+      "The statue won. Your mouse pointer has been terminated.",
+    ],
   },
 
   /** Tooltip shown when a visitor clicks the shooting star. `{n}` = how many they've caught. */
