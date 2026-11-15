@@ -6,6 +6,8 @@ import { site } from "@/config/site";
 import { BEST_RUN_KEY, loadBest, useGame } from "@/components/game/GameContext";
 import { usesTouchControls } from "@/components/game/touch-controls";
 import FullscreenHelp from "@/components/game/FullscreenHelp";
+import HighScores from "@/components/game/HighScores";
+import PlayerNamePrompt from "@/components/game/PlayerNamePrompt";
 
 const copy = site.olympus.title;
 const guide = site.olympus.guide;
@@ -26,6 +28,8 @@ export default function OlympusWindow() {
   // Same test the game uses to show its on-screen buttons.
   const [touch] = useState(usesTouchControls);
   const [showGuide, setShowGuide] = useState(false);
+  const [showScores, setShowScores] = useState(false);
+  const [showName, setShowName] = useState(false);
   const guideHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -33,8 +37,19 @@ export default function OlympusWindow() {
   }, [showGuide]);
 
   // A mouse click spawns the ship where the pointer is; Enter starts it in the middle.
-  const onStart = (e: MouseEvent<HTMLButtonElement>) =>
+  const play = (e: MouseEvent<HTMLButtonElement>) =>
     start(e.detail === 0 ? null : { x: e.clientX, y: e.clientY });
+  const onStart = () => setShowName(true);
+
+  if (showName) return <PlayerNamePrompt onPlay={play} onBack={() => setShowName(false)} />;
+  if (showScores) return (
+    <div className="olympus-title olympus-scores-screen" onKeyDown={(event) => {
+      if (event.key === "Escape") { event.stopPropagation(); setShowScores(false); }
+    }}>
+      <HighScores />
+      <button type="button" className="olympus-button" autoFocus onClick={() => setShowScores(false)}>Back to game</button>
+    </div>
+  );
 
   if (showGuide) return (
     <div className="olympus-title olympus-guide" onKeyDown={(e) => {
@@ -88,6 +103,7 @@ export default function OlympusWindow() {
         <button type="button" className="olympus-button" onClick={close}>Back to desktop</button>
       </div>
       <button type="button" className="olympus-guide-link" onClick={() => setShowGuide(true)}>{guide.label}</button>
+      <button type="button" className="olympus-score-link" onClick={() => setShowScores(true)}>High scores</button>
       <FullscreenHelp />
 
       {touch ? (

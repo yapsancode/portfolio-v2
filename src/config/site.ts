@@ -785,8 +785,8 @@ export const windowDefaults: Record<
   olympus: {
     title: "C:\\isyraf\\games\\olympus.exe",
     icon: "olympus",
-    width: 400,
-    height: 460,
+    width: 480,
+    height: 600,
     x: 300,
     y: 140,
   },

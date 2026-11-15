@@ -13,6 +13,8 @@ import TouchJoystick from "./TouchJoystick";
 import FullscreenHelp from "./FullscreenHelp";
 import { isPhoneTouchDevice, usesTouchControls, type StickVector } from "./touch-controls";
 import { enterGameFullscreen } from "./fullscreen";
+import ScoreStatus from "./ScoreStatus";
+import { beginRankedRun, finishRankedRun, type RankedRun, type ScoreSubmission } from "@/lib/olympus/client";
 import {
   createStatue,
   createWorld,
@@ -53,7 +55,7 @@ export type OlympusGameProps = {
 };
 
 type Hud = { score: number; lives: number; anger: number; statue: number; phase: Phase };
-type Ending = { kind: "won" | "lost"; score: number; best: number; newBest: boolean };
+type Ending = { kind: "won" | "lost"; score: number; best: number; newBest: boolean; submission: ScoreSubmission | null };
 type Crash = { key: number; name: string; x: number; y: number };
 type Control = "left" | "right" | "thrust" | "fire";
 
@@ -253,6 +255,7 @@ function EndScreen({
           <button type="button" className="olympus-button" onClick={onExit}>Exit to desktop</button>
         </div>
         {won && <p className="olympus-menu-hint">Run {level + 1} · Harder difficulty</p>}
+        {ending.submission && <ScoreStatus submission={ending.submission} />}
       </div>
     </div>
   );
@@ -312,7 +315,7 @@ function TouchPad({
 
 function trapMenuFocus(e: ReactKeyboardEvent<HTMLDivElement>) {
   if (e.key !== "Tab") return;
-  const controls = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("button, summary, a[href]"));
+  const controls = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), summary, a[href], [tabindex="0"]'));
   const first = controls[0];
   const last = controls[controls.length - 1];
   if (!first || !last) return;
@@ -333,6 +336,7 @@ export default function OlympusGame(props: OlympusGameProps) {
   const [rotateRequired, setRotateRequired] = useState(needsLandscape);
   const rotateRequiredRef = useRef(rotateRequired);
   const endedRef = useRef(false);
+  const rankedRunRef = useRef<Promise<RankedRun> | null>(null);
   const [touchDevice] = useState(usesTouchControls);
   // On-screen buttons follow the last input used: a touch shows them, a game key hides them.
   const [touch, setTouch] = useState(usesTouchControls);
@@ -360,6 +364,7 @@ export default function OlympusGame(props: OlympusGameProps) {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     canvas.focus();
+    rankedRunRef.current ??= beginRankedRun(propsRef.current.level);
 
     const reducedMotion = window.matchMedia(REDUCED_MOTION).matches;
     const timers = new Set<ReturnType<typeof setTimeout>>();
@@ -522,7 +527,12 @@ export default function OlympusGame(props: OlympusGameProps) {
               playSound("win");
               if (propsRef.current.level > loadBest(BEST_RUN_KEY)) saveBest(propsRef.current.level, BEST_RUN_KEY);
             }
-            setEnding({ kind: e.type, score: world.score, best: Math.max(best, world.score), newBest });
+            const submission = world.score > 0 && rankedRunRef.current
+              ? finishRankedRun(rankedRunRef.current, {
+                  score: world.score, durationMs: Math.round(world.time * 1000), outcome: e.type,
+                })
+              : null;
+            setEnding({ kind: e.type, score: world.score, best: Math.max(best, world.score), newBest, submission });
             setAnnounce(
               `${e.type === "won" ? "You won" : "Game over"}. Score ${world.score.toLocaleString("en")}.`
             );

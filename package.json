@@ -6,16 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:leaderboard": "node scripts/leaderboard-test.mjs",
+    "db:migrate": "node scripts/leaderboard-migrate.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.1",
     "@vercel/analytics": "^2.0.1",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-rnd": "^10.5.3"
+    "react-rnd": "^10.5.3",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
