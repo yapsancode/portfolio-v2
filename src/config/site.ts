@@ -123,8 +123,8 @@ export const site = {
       "I find the real problem, build the thing properly, and see it through to real users. If that's what you need, let's talk.",
     wins: [
       "Helped build a production Flutter Web logistics platform for a major carmaker, replacing its legacy SAP screens.",
-      "Built KerjaKit end to end: an open-source CLI with 35+ GitHub stars, now a paid AI product in English and Malay with 90 registered users.",
-      "Co-founded IIDev Studio. We build websites, SEO and AI automation for Malaysian businesses, including a 24-hour clinic live since 2025.",
+      "Built KerjaKit end to end: from an open-source résumé CLI to a paid AI product in English and Malay, with job matching and FPX payments.",
+      "Co-founded IIDev Studio. Delivered websites and SEO for Malaysian businesses, including a completed engagement for a 24-hour clinic. Now also building interactive 3D product sites and automation tools.",
       "1st place, Gamuda AI Academy × Google Cloud demo day, with Baymax: an AI Chrome extension that guides people through Google Cloud. I owned the architecture and the Git workflow.",
     ],
     note: "Working toward the Google Cloud Associate Cloud Engineer cert, and going deeper into Linux, Docker and CI/CD.",
@@ -188,7 +188,7 @@ export const projects: Project[] = [
     summary:
       "AI resume tailor that never invents. A live product with real users.",
     impact:
-      "AI resume tailor that never invents: paste a job posting, get an honest match report and an ATS-safe one-page PDF, with in-production checks that block any fabricated skill or number. It also sends daily job matches (Job Radar) and takes FPX payments. 90 registered users, 36 GitHub stars.",
+      "Paste a job posting, compare it with your experience, and generate a tailored résumé and cover letter. KerjaKit checks AI output against your profile to catch unsupported claims. Job Radar finds and scores openings, an application tracker keeps the search organised, and FPX payments support the paid product. Available in English and Bahasa Melayu.",
     story:
       "Started as an open-source CLI that tailored résumés — great, but it needed git, Claude Code, and LaTeX, so only technical people could use it. A Threads post hit 3,000 likes and people kept asking for a web version, so I built one.",
     stack: [
@@ -263,20 +263,36 @@ export const projects: Project[] = [
     codeUrl: "https://github.com/yapsancode/baymax",
   },
   {
+    slug: "rahsia",
+    name: "Rahsia",
+    year: "2026",
+    summary: "Private startup–investor matching with local AI. Hack-day prototype.",
+    impact:
+      "A prototype that checks whether a startup and investor fit before they share their full profiles. Local AI helps turn notes into structured profiles, and private set intersection compares their criteria. Both sides must agree before the shared overlap is revealed.",
+    story:
+      "Built for Hacktoberfest Hack Day Kuala Lumpur. The match engine works between two app copies on one laptop; testing between separate laptops and parts of the profile and receipt flow are still unfinished.",
+    stack: ["Python", "Ollama", "Gemma", "OpenMined PSI"],
+    console: [
+      "notes -> reviewed profile",
+      "private match -> mutual consent",
+      "share the overlap",
+      "status: hack-day prototype",
+    ],
+  },
+  {
     slug: "klinik-mekar",
     name: "Klinik Mekar",
-    year: "2025 – now",
-    summary: "Clinic website with online booking, for a paying client.",
+    year: "2025 – 2026",
+    summary: "Clinic website with online booking. Completed client engagement.",
     impact:
-      "Live website for a 24-hour clinic, built and maintained for a paying client. Patients can book an appointment online, read articles, see the clinic's Google Reviews, and reach it on WhatsApp.",
+      "Built a website for a 24-hour clinic with online appointment booking, articles, Google Reviews, and WhatsApp contact. Delivered for a paying client; the engagement has ended.",
     story:
-      "Work began in October 2025 and I still maintain it. That includes the SEO work: sitemap, structured data, and page titles.",
+      "Work began in October 2025 and included booking flows and SEO: the sitemap, structured data, and page titles. Kept here as a completed example of client work.",
     stack: ["Next.js 15", "React 19", "Tailwind v4", "Framer Motion", "Vercel"],
     image: {
       src: "/work/klinik-mekar.webp",
       alt: "Klinik Mekar home page, with Book Appointment, Find Doctors, and Emergency buttons.",
     },
-    liveUrl: "https://klinikmekar.com",
   },
   {
     slug: "risk-checker",
@@ -290,19 +306,19 @@ export const projects: Project[] = [
       "Built in two days as a working demo of MCP for trading. It also checks what one bad day would do, falls back to saved sample data when offline, and ends every risk reply with a \"not financial advice\" line.",
     stack: ["Python 3.11", "MCP SDK", "httpx", "Yahoo Finance", "pytest"],
     console: [
-      "3 read-only tools for Claude",
+      "4 read-only tools for Claude",
       "forex, gold, oil, indices, crypto",
       "correlation >= 0.5 over ~90 days",
-      "20 tests, works offline",
+      "sample-data fallback when offline",
     ],
   },
   {
     slug: "devops-coach",
     name: "DevOps Coach",
     year: "2026",
-    summary: "A 12-week DevOps program run by an AI coach. 19 GitHub stars.",
+    summary: "An open-source DevOps coach that asks for proof of what you learned.",
     impact:
-      "A 12-week, self-paced DevOps program run by an AI coach, open-sourced as a GitHub template. Each morning it sets 3–4 hands-on tasks with a clear \"done when\" check. Each evening it reads your terminal output as proof and rejects weak evidence. 19 GitHub stars.",
+      "A 12-week, self-paced DevOps program run by an AI coach, open-sourced as a GitHub template. Each morning it sets 3–4 hands-on tasks with a clear \"done when\" check. Each evening it reads your terminal output as proof and asks you to explain what you learned.",
     story:
       "It is built against passive learning: review questions from earlier days, a Friday rebuild from scratch, and honest tracking where a skipped day moves the end date. It covers Linux, networking, Docker, Kubernetes, Terraform, monitoring and CI/CD, then cloud cert prep. One skill file works in Claude Code, Codex and OpenCode.",
     stack: ["Claude Code skills", "Codex", "OpenCode", "Markdown"],
@@ -310,7 +326,7 @@ export const projects: Project[] = [
       "/coach -> today's tasks",
       "/coach done -> proof check",
       "weeks 1-12: Linux to cloud cert",
-      "19 GitHub stars",
+      "spaced review + weekly rebuilds",
     ],
     codeUrl: "https://github.com/yapsancode/devops-coach",
   },
@@ -318,11 +334,11 @@ export const projects: Project[] = [
     slug: "wedding-invitation",
     name: "Wedding Invitation",
     year: "2026",
-    summary: "A digital wedding invitation with a 3D envelope you open.",
+    summary: "A 3D envelope, a stationery invitation, and a shared wall of wishes.",
     impact:
-      "A custom digital wedding invitation, built under IIDev Studio. It opens with a 3D envelope, and guests can leave wishes and add photos to a shared gallery.",
+      "A custom digital wedding invitation, built under IIDev Studio. A 3D envelope opens into a stationery collage with the event details and directions. Guests can leave wishes, with a shared photo gallery scheduled to open on the wedding day.",
     story:
-      "The 3D intro loads only when it is needed, so the page stays fast, and there is a plain HTML version as a fallback. Wishes are also copied to a Google Sheet.",
+      "Designed for guests opening a WhatsApp link on their phones. The 3D cover loads only when needed, with an HTML fallback. Wishes sync to a Google Sheet so the family can manage them without a separate admin app.",
     stack: [
       "Astro",
       "TypeScript",
@@ -337,6 +353,69 @@ export const projects: Project[] = [
       alt: "Wedding invitation card for Hana and Afzan, Saturday 26.12.2026, beside a green envelope and a \"Buka Jemputan\" (open the invitation) button.",
     },
     liveUrl: "https://hanaafzan.iidevstudio.com",
+  },
+  {
+    slug: "halus",
+    name: "Halus",
+    year: "2026",
+    summary: "A 3D knife showroom for an invented brand. Studio concept.",
+    impact:
+      "A product website for an invented kitchen knife brand. Visitors can turn the knife in 3D, preview a name etched on the blade, and prepare a WhatsApp order or bulk enquiry. A studio concept, not a client commission.",
+    story:
+      "The knives and product renders were made in Blender. The web pipeline compresses and validates the models, with poster images for the viewer's first frame.",
+    stack: ["Vite", "JavaScript", "Blender", "model-viewer", "Three.js", "glTF Transform"],
+    console: ["Blender models -> web-ready GLB", "rotate + preview engraving", "WhatsApp order / bulk enquiry", "status: studio concept"],
+    liveUrl: "https://www.iidevstudio.com/concept/halus",
+  },
+  {
+    slug: "senja-dental",
+    name: "Senja Dental",
+    year: "2026",
+    summary: "A bilingual dental website built around WhatsApp booking. Concept.",
+    impact:
+      "A website concept for an invented Malaysian dental clinic, in English and Bahasa Melayu. Opening hours, treatment prices, and WhatsApp booking are easy to find. The clinic is fictional; this demonstrates the kind of site IIDev Studio builds.",
+    story:
+      "Built with plain HTML and small JavaScript enhancements, including an open-now indicator and a booking message builder.",
+    stack: ["HTML", "Tailwind CSS", "JavaScript"],
+    console: ["English + Bahasa Melayu", "hours, prices, booking", "WhatsApp message builder", "status: studio concept"],
+    liveUrl: "https://www.iidevstudio.com/concept/senjadental",
+  },
+  {
+    slug: "tarik-lagi",
+    name: "Tarik Lagi",
+    year: "2026",
+    summary: "An animated teh tarik website with WhatsApp ordering. Concept.",
+    impact:
+      "A one-page website for an invented teh tarik stall. Illustrated drinks, prices, and a WhatsApp order builder turn the menu into something visitors can act on. A studio concept, not a real stall or client.",
+    story:
+      "The tea-pulling illustration moves as you scroll. Built with HTML, CSS, GSAP, and Lenis, without a framework or build step.",
+    stack: ["HTML", "CSS", "JavaScript", "GSAP", "Lenis"],
+    console: ["illustrated drinks menu", "scroll-driven tea-pulling motion", "menu -> WhatsApp order", "status: studio concept"],
+    liveUrl: "https://www.iidevstudio.com/concept/tariklagi",
+  },
+  {
+    slug: "iidev-3d-pipeline",
+    name: "IIDev 3D Pipeline",
+    year: "2026",
+    summary: "Turns 3D source files into web-ready models and preview renders.",
+    impact:
+      "A command-line pipeline for preparing 3D assets for product websites. It imports a source model, cleans it up, prepares materials, exports a GLB, renders preview images, and checks the result with a glTF validator.",
+    story:
+      "Built for IIDev Studio's 3D web work. Blender runs in the background; an optional FreeCAD step converts STEP files before they enter the pipeline.",
+    stack: ["Python", "Blender", "Node.js", "glTF Validator", "FreeCAD"],
+    console: ["source model -> clean up", "materials -> GLB", "preview renders -> validation", "status: internal studio tool"],
+  },
+  {
+    slug: "the-sifu-path",
+    name: "The Sifu Path",
+    year: "2026",
+    summary: "A hands-on software engineering course with quizzes and progress.",
+    impact:
+      "A shareable learning app with five levels and fourteen modules. Each module combines a lesson, practical tasks, a quiz, and a challenge. XP, streaks, and badges make progress visible, with an optional leaderboard for friends.",
+    story:
+      "Progress stays in the browser and can be exported or imported. The course works without an account; Supabase is used only for the optional leaderboard.",
+    stack: ["React", "TypeScript", "Vite", "Tailwind CSS", "Supabase"],
+    console: ["learn -> do -> quiz -> challenge", "5 levels / 14 modules", "local progress + backup", "optional shared leaderboard"],
   },
   {
     slug: "mirror-bot",
@@ -438,7 +517,7 @@ export const projects: Project[] = [
     year: "2026",
     summary: "Ran Claude Code on open models via OpenCode Go. Not in use now.",
     impact:
-      "A small API bridge so Claude Code could run open models (GLM, DeepSeek, Kimi and others) through OpenCode Go's $10-a-month plan, without PostgreSQL or Docker. 2 GitHub stars.",
+      "A small API bridge so Claude Code could run open models through OpenCode Go. It translates the Anthropic message format to the OpenAI format and back, including streaming and tool calls.",
     story:
       "A FastAPI proxy translates Claude's message format to the OpenAI format and back, including streaming and tool calls, and LiteLLM routes the calls. I don't use it now, but I may come back to it.",
     stack: ["Python", "FastAPI", "LiteLLM"],
@@ -450,6 +529,42 @@ export const projects: Project[] = [
     ],
     codeUrl: "https://github.com/yapsancode/claudecode-X-opencode",
   },
+  {
+    slug: "socialos",
+    name: "SocialOS",
+    year: "2026 – now",
+    summary: "A social content workspace for multiple brands. In development.",
+    impact:
+      "Building a workspace for managing several brands' social content. The current foundation handles authenticated workspaces, brands, and brand facts. Research, drafting, approval, and publishing integrations are still ahead.",
+    story:
+      "The intended workflow keeps a person in charge of every public post. Built on Cloudflare Workers and D1, with a React interface. This is an early build, not a finished publishing platform.",
+    stack: ["React", "TypeScript", "Vite", "Hono", "Cloudflare Workers", "Cloudflare D1", "Vitest"],
+    console: ["workspaces + brands + brand facts", "research and publishing: planned", "human approval before posting", "status: in development"],
+  },
+  {
+    slug: "radar-distill",
+    name: "radar-distill",
+    year: "2026 – now",
+    summary: "Exploring a smaller model for job-fit scoring. Research in progress.",
+    impact:
+      "A research project asking whether a small specialist model can judge job requirements like the larger model used in KerjaKit's Radar. The aim is to reduce inference cost without hiding good matches.",
+    story:
+      "The current work documents the problem and evaluation plan. Training and measured results are still ahead. The planned dataset pairs synthetic résumés with real job ads and teacher-model labels.",
+    stack: ["Python", "LLM evaluation", "Model distillation research"],
+    console: ["job ad + synthetic resume", "teacher labels -> student model", "measure missed matches + cost", "status: research; training ahead"],
+  },
+  {
+    slug: "qalam",
+    name: "Qalam",
+    year: "2026 – now",
+    summary: "Jawi handwriting research, starting with an OCR diagnostic.",
+    impact:
+      "An early research project toward a Jawi handwriting dataset and tutor. The proposed tutor checks writing against a known letter or word, collecting labelled strokes that could later support handwriting recognition.",
+    story:
+      "The repository contains planning materials and a diagnostic notebook for comparing OCR models against human-checked Jawi text. The dataset and tutor are not built yet; reliable ground truth comes first.",
+    stack: ["Python", "Jupyter", "OCR evaluation", "Google Colab"],
+    console: ["Jawi samples + human transcription", "compare OCR character error rates", "dataset + tutor: planned", "status: early research"],
+  },
 ];
 
 /** Current-focus items for the "What I'm doing" window. */
@@ -460,6 +575,11 @@ export const now: { label: string; detail: string }[] = [
       "Going deeper on Linux, networking, Docker, cloud infrastructure, and CI/CD so I understand more of the path from development to production.",
   },
   {
+    label: "SocialOS",
+    detail:
+      "Building the foundations of a workspace for multiple brands: accounts, brand facts, and a future content workflow with human approval before publishing.",
+  },
+  {
     label: "AI agents",
     detail:
       "Deepening LLM-systems engineering: agent evaluation, retrieval, and tool use.",
@@ -467,7 +587,12 @@ export const now: { label: string; detail: string }[] = [
   {
     label: "Qalam — Jawi handwriting ML",
     detail:
-      "Planning a Jawi handwriting dataset and a tutor app that checks your writing. Phase 0 is done; the build hasn't started yet. Looking for a Jawi-literate collaborator.",
+      "Preparing a diagnostic to compare OCR models against human-checked Jawi text. The dataset and tutor are still planned; getting reliable labels comes first.",
+  },
+  {
+    label: "radar-distill",
+    detail:
+      "Exploring whether a smaller model can learn KerjaKit's job-fit judgements. Documenting the problem and evaluation plan before training.",
   },
   {
     label: "KerjaKit",
