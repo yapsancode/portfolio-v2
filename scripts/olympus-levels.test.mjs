@@ -146,11 +146,12 @@ test("laser reverses only after a full warning, then alternates its next startin
   assert.equal(w.attack.direction, -firstDirection);
 });
 
-test("resize, death and victory clear active hazards before another attempt", () => {
+test("death and victory clear active hazards before another attempt (resize keeps them)", () => {
   for (const { id } of LEVELS.slice(1)) {
     const w = world(id); advance(w, 2.8);
+    const state = w.attack.state;
     g.resize(w, 844, 390, { x: 350, y: 190, w: 140, h: 200 });
-    assert.equal(w.attack.state, "rest"); assert.equal(w.rocks.length, 0);
+    assert.equal(w.attack.state, state);
     w.ship.safe = 0;
     w.rocks = [{ x: w.ship.x, y: w.ship.y, vx: 0, vy: 0, r: 20, size: 2, angle: 0, spin: 0, shape: [1,1,1] }];
     g.step(w, input, dt);
