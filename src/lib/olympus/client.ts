@@ -1,16 +1,16 @@
 "use client";
 
-import type { RunResult, RunTicket } from "./leaderboard";
+import type { LevelResult, LevelTicket } from "./leaderboard";
 
-export type RankedRun = { ticket: RunTicket | null; error: string | null };
-export type ScoreSubmission = { record: () => Promise<RunTicket> };
+import { parseProgress, progressAt, type Progress } from "./levels";
 
-let continuation: Promise<RunTicket | null> | null = null;
+export type RankedAttempt = { ticket: LevelTicket | null; error: string | null };
+export type ScoreSubmission = { record: () => Promise<Progress> };
 
 export async function leaderboardRequest<T>(path: string, method = "GET", data?: unknown): Promise<T> {
   try {
     const response = await fetch(`/api/olympus/${path}`, {
-      method, credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(15_000),
+      method, keepalive: method === "PATCH", credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(15_000),
       ...(data === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }),
     });
     const result = await response.json();
@@ -22,35 +22,62 @@ export async function leaderboardRequest<T>(path: string, method = "GET", data?:
   }
 }
 
-export async function beginRankedRun(level: number): Promise<RankedRun> {
+export async function beginRankedAttempt(level: number, epoch: string | null): Promise<RankedAttempt> {
   try {
-    const previous = level > 1 ? await continuation : null;
-    if (level > 1 && !previous) throw new Error("This streak could not connect. Start a fresh game to post scores.");
-    if (level === 1) continuation = null;
-    const ticket = await leaderboardRequest<RunTicket>("session", "POST", { previous: previous?.token ?? null });
-    if (ticket.run !== level) throw new Error("This streak could not be recorded. Start a fresh game to post scores.");
+    if (!epoch) throw new Error("Guest play: scores are not posted online.");
+    const ticket = await leaderboardRequest<LevelTicket>("session", "POST", { level, epoch });
+    if (ticket.level !== level) throw new Error("Your saved level changed. Exit and reload the game.");
     return { ticket, error: null };
   } catch (error) {
-    return { ticket: null, error: error instanceof Error ? error.message : "High scores are offline." };
+    return { ticket: null, error: error instanceof Error ? error.message : "Saving is offline." };
   }
 }
 
-export function finishRankedRun(session: Promise<RankedRun>, result: RunResult): ScoreSubmission {
-  let pending: Promise<RunTicket> | null = null;
-  const record = (): Promise<RunTicket> => {
+export function finishRankedAttempt(session: Promise<RankedAttempt>, result: LevelResult): ScoreSubmission {
+  let pending: Promise<Progress> | null = null;
+  const record = (): Promise<Progress> => {
     if (!pending) {
       pending = session.then(async ({ ticket, error }) => {
-        if (!ticket) throw new Error(error ?? "This game could not connect to high scores.");
-        await leaderboardRequest("session", "PATCH", { token: ticket.token, ...result });
-        return ticket;
+        if (!ticket) throw new Error(error ?? "This attempt could not connect to your save.");
+        const data = await leaderboardRequest<{ progress: Progress }>("session", "PATCH", { token: ticket.token, ...result });
+        return parseProgress(data.progress);
       }).catch((error) => {
-        pending = null; // A failed network request can be retried with the same result.
+        pending = null;
         throw error;
       });
     }
     return pending;
   };
-  // Replay can start while the result is still saving; wait for the recorded win.
-  continuation = record().then((ticket) => result.outcome === "won" ? ticket : null).catch(() => null);
+  // Start saving at victory, even if the player immediately exits the screen.
+  void record().catch(() => {});
   return { record };
+}
+
+const GUEST_KEY = "isyraf98:olympus-progress:v1";
+export function guestProgress(): { progress: Progress; notice: string } {
+  try {
+    const raw = localStorage.getItem(GUEST_KEY);
+    const progress = raw ? parseProgress(JSON.parse(raw)) : progressAt();
+    if (progress.epoch !== null) throw new Error();
+    return { progress, notice: "Guest progress stays in this browser. It is separate from a named player’s save." };
+  } catch {
+    return { progress: progressAt(), notice: "Guest save could not be read. Starting at level 1; progress may not survive closing the game." };
+  }
+}
+export function saveGuest(progress: Progress): string {
+  try {
+    localStorage.setItem(GUEST_KEY, JSON.stringify(progress));
+    return "Guest level saved in this browser.";
+  } catch { return "Progress is only kept while this game is open. Browser storage is unavailable."; }
+}
+
+export async function startOver(progress: Progress): Promise<Progress> {
+  if (progress.epoch === null) {
+    const reset = progressAt();
+    try { localStorage.setItem(GUEST_KEY, JSON.stringify(reset)); }
+    catch { throw new Error("Could not reset your guest save because browser storage is unavailable. Your saved level was not changed."); }
+    return reset;
+  }
+  const data = await leaderboardRequest<{ progress: Progress }>("player", "PATCH", { action: "reset", epoch: progress.epoch });
+  return parseProgress(data.progress);
 }

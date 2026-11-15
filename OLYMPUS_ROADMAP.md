@@ -1,253 +1,194 @@
-# Olympus — Development Roadmap
+# Olympus — Level Progression Roadmap
 
-Status: **option A built: steps 0–5 are done (2026-11-14). Step 6 (three real people play it) is open, and nothing is merged to `main` yet.** See "What was built" at the very bottom for the changes from the plan.
-Written 2026-11-14, after a code review and three browser playtests.
+Updated: 15 November 2026.
 
-## Goal
+**Status: levels 1–6 and resumable player progress implemented; automated verification completed for this release.** Based on the latest scoreboard/Neon changes through `2b258aa`. Real-device and human balance playtests remain open.
 
-A short, funny surprise for portfolio visitors (about 60 seconds) that is:
+This is the active plan. It supersedes the previous harder-replay design, its rising-difficulty targets, and its pre-launch merge restrictions. The original plan and historical simulation results are preserved in [the 14 November archive](docs/archive/OLYMPUS_ROADMAP_2026-11-14.md). Historical numbers are not acceptance targets for the new levels.
 
-**Fun to play → Hard to master → Epic final boss.**
+## Decisions from the user
 
-Rule: make the existing experience exceptional. Do not turn it into a bigger game.
+- Call progression **levels**, not runs, in the game and its instructions.
+- Level 1 keeps the original statue encounter. Level 2 onward introduces different statue powers.
+- Higher levels must **not become progressively harder**. The level number selects a different power or pattern, not a difficulty multiplier.
+- Returning players can continue at their saved level.
+- Players can choose Start Over and return to level 1.
+- A possible 100-level journey is a later expansion. Design and validate the initial levels first.
+- Documentation was updated first. The subsequent implementation reuses the new scoreboard identity and database, as requested.
 
-## Decision: option A (decided 2026-11-14)
+## Existing features retained
 
-Option B is only reopened if the game gets real engagement after launch.
+- `/olympus` opens the game's start screen directly.
+- Arcade Gold start/end buttons, pause/resume, and exit controls.
+- Fixed joystick and separate Fire control on phones/tablets; arrows and Space on computers.
+- Phone movement is slower, the pointer and its collision radius are smaller, and releasing the joystick brakes quickly.
+- Landscape play on touch devices; fullscreen requests where supported, full-viewport fallback, and protection against long-press selection.
+- Olympus Home Screen icons, installation guidance, and edge-to-edge layout with safe areas.
+- A story and device-specific instructions.
+- Reserved player names, signed browser identity cookies, Neon score storage, and the global top ten with retro medals.
+- The original encounter remains level 1. Levels 2–6 use new powers, with no level-based speed or health increase. Loss and exit keep the checkpoint.
 
-| Option | What it means |
-|---|---|
-| **A. One fight, three boss phases** (recommended) | No level system. The statue gets harder as its health drops. Laser eyes are the last phase. "Play again" after a win starts a harder run. |
-| **B. Full level system** | Multiple levels, each with new attacks, and a separate final boss level. Several times more work, and most visitors only play once. |
+## Experience and terminology
 
-The steps below are written for option A. Option B's extra items are listed at the end.
+Each level is another encounter with the same marble guardian, who changes powers to protect the desktop. Keep the Windows 98 and marble visual identity, pointer fighter, destruction/anger introduction, awakening, and restored desktop on exit.
 
-## What the playtest showed (why this order)
+A **level** is a numbered encounter with its own attack profile. A **phase** is a section of that encounter. An **attempt** is one try at a level. A component remount identifier is only an implementation detail, never player progress.
 
-- Statue woke at about 20.5 s in both desktop runs. The ANGER bar filled before that and waited, so it does not react to the player.
-- The About window died 1.2 s after the first shot. By the boss fight the desktop was empty.
-- A player who never moved won the boss fight. The fight lasted 46 s; the desktop part only 20 s.
-- The last 5% of the statue took 10 s, because shots flew through its hollow centre.
-- There is no sound at all. Bullets are 3-pixel dots.
-- On a phone (412 px wide) the same scripted player lost all lives around the moment the statue woke. Rocks are too big, the ship hides under the buttons, and the text talks about keyboard keys.
-- The controls hint was cut off on screen ("Esc qu").
+Use these labels throughout the HUD, title screen, pause screen, endings, guide, and accessibility announcements:
 
-## Design rules
+| Situation | Player-facing wording |
+| --- | --- |
+| First visit | Play — Level 1 |
+| Saved unfinished campaign | Continue — Level N |
+| HUD / pause | LEVEL N · Power name |
+| Victory with another shipped level available | Level N complete / Next level |
+| Loss | Retry level N / Exit to desktop |
+| Restart campaign | Start Over |
+| Last shipped level cleared | All available levels complete / Replay level N / Start Over |
 
-1. Everything on screen is either Windows 98 or marble. Nothing should look like a generic space game.
-2. Every hit is seen and heard.
-3. Playtest after every step, on desktop and phone, not only at the end.
+Remove active copy such as `RUN`, `Next run`, `Best run`, and `harder difficulty`. Rewrite the guide's ending to explain that the next level brings a different power. Keep historical language only in the archived plan or explicitly documented legacy storage references.
 
-## Steps
+## Initial level catalogue
 
-### 1. Game feel (and phone basics)
+These six profiles are implemented. Complete level 1 to unlock level 2, and so on. The catalogue is the source of available content; there is no level 7 yet.
 
-- Sound effects: shot, hit, window crash, icon break, ship lost, statue rumble, crumble. Own retro-style sounds, not Microsoft's files.
-- Bigger bullets, muzzle flash, small recoil, very short pause on each kill.
-- Ship easier to see: bigger, a clear "pointer becomes ship" moment at the start, no invisible first second.
-- Fix the cut-off hint. Keep it until the first key press.
-- Phone: scale rocks to the screen, move touch buttons off the ship and the statue, use touch wording in the start dialog and the blue screen.
+| Level | Statue power | Warning and attack | Player response |
+| --- | --- | --- | --- |
+| 1 | Marble Guardian | Existing throws, spread, and aimed laser with fixed baseline timing and health-based phases. | Dodge hot marble; move away when the eye beam locks. |
+| 2 | Marble Swarm | A marked marble formation point and swirling rings announce two waves of small destructible marble asteroids. | Shoot an opening or steer between fragments. |
+| 3 | Shattered Halo | A visible ring marks an expanding circle of fragments with a clear safe gap. | Move through the gap; keep an escape route available. |
+| 4 | Meteor Rain | Mark selected lanes before marble falls through them. | Move into an unmarked lane; always leave a reachable safe lane. |
+| 5 | Orbiting Armour | Breakable marble shields orbit the statue with visible openings and recovery windows. | Break a shield or fire through a gap to hit the statue. |
+| 6 | Sweeping Gaze | A warning arc shows the direction of a slow laser sweep before it becomes damaging. | Move around the sweep into the advertised safe space. |
 
-### 2. Gameplay: destruction and anger
+Each profile **replaces** the appropriate part of the previous attack schedule. It does not inherit every earlier power. In particular, level 2 does not add a swarm on top of level 1's simultaneous spreads and laser. The same rule applies to later levels: one major attack at a time, followed by a readable recovery opportunity.
 
-- Windows take more hits and show damage before they crash.
-- Broken windows and icons leave wreckage behind (damage stays visible).
-- ANGER rises mainly from destruction, with a time limit as a safety net.
-- Give the drifting rocks a reason in the story (for example chips of the statue), and draw them in the pixel style.
+### Level 2: Marble Swarm specification
 
-### 3. Statue awakening
+- Use marble fragments, not unrelated space assets. Destructible swarm fragments must look distinct from hot, indestructible thrown marble.
+- Use a 1.2-second visual warning and matching rumble. Audio is supplementary; the warning must work with sound muted.
+- Two waves, 0.55 seconds apart: up to six total fragments on phones/tablets and eight on desktop. Spawns too close to the player are omitted.
+- Spawn from visibly marked positions near the statue. Never materialize damaging fragments on the player or inside the joystick/Fire area.
+- Swarm fragments can be destroyed and do not split into extra fragments.
+- No concurrent laser or spread during the swarm. Leave a navigable escape route and enough warning for the slower phone pointer.
+- Give the player 1.5 seconds of recovery/attack opportunity afterward; tune against the baseline encounter.
+- Apply a shared active-hazard budget, including existing fragments, before scheduling another wave. Despawn expired fragments and clear all attack state on retry, exit, and level transition.
+- The boss remains beatable through both shooting and movement. Reject a pattern that forces unavoidable damage or rewards only standing still and holding Fire.
 
-- A real "moment": the game freezes briefly, the desktop darkens, the change is big.
-- More reactions and personality while it wakes and while it is hurt.
-- Remove the spoiler from the warning dialog ("the statue may wake up").
-- Fix the jagged outline that appears when the statue wakes.
+### Equal difficulty across levels
 
-### 4. Boss fight: three phases in one fight
+The target is comparable challenge and encounter duration across levels, evaluated separately for touch and keyboard. Equal numerical settings alone do not prove equal difficulty.
 
-Target length: 20–25 seconds. The player must move to win.
+- Remove the current level-dependent speed multiplier and earlier-laser progression (`runSpeedUp`, `laserAtPerRun`, and their derived calculations). The old formula must not survive under a new variable name.
+- Do not increase projectile speed, statue health, damage, hazard counts, or attack frequency simply because the level number rises.
+- Do not shorten warning times, reduce lives, reduce safe space, or extend fights as a reward for progressing.
+- Start each level with three lives. Keep phone movement/braking and existing platform accommodations.
+- Level 1's fixed health phases may remain. Higher level IDs must not automatically accelerate those phases or activate more attacks together.
+- Give each power its own readable cues and counterplay. Balance shield uptime, gaps, recovery windows, and effective damage opportunities so defensive powers do not turn into longer endurance fights.
+- If human playtests show a later power is consistently harder, adjust its pattern and timing until it matches the baseline; do not accept the difference as intentional progression.
+- Use a shared cap for all damaging hazards. The existing ordinary-rock spawn cap is not sufficient to constrain boss attacks by itself.
 
-| Phase | Statue health | Attack |
-|---|---|---|
-| 1 | 100–60% | Throws marble, with a warning before each throw. |
-| 2 | 60–25% | Faster throws and spreads. Thrown marble looks different from drifting rocks. |
-| 3 | below 25% | **Laser eyes.** The statue charges, a line shows where the beam will go, then it fires. Dodgeable. |
+## Continue and Start Over
 
-- Fix the hollow-centre ending (health bar and visible statue must agree).
-- Very difficult at the end, but still beatable.
+### Checkpoint behavior
 
-### 5. Win / lose experience
+Continue resumes **at the beginning of the saved level**, with fresh lives, zero attempt score, and a clean world. It does not restore mid-fight coordinates, projectiles, or remaining health. Pause/Resume preserves a live attempt only while that game session remains open.
 
-- A win ending as strong as the blue screen.
-- Remove the repeated "only a wallpaper" joke.
-- "Play again" after a win starts a harder run (faster throws, laser earlier). This is the "hard to master" part.
-- Keep the best score.
-
-### 6. Final playtest and polish
-
-- Three real people play once while being watched (desktop and phone).
-- Fix what confused or frustrated them.
-
-## Only if option B is chosen
-
-- Level system with increasing difficulty and new attack patterns per level.
-- More enemy variety: different marble projectiles, hazards, attack combinations.
-- A separate final boss level where laser eyes are the ultimate attack.
-- Playtest and balance every level.
-
-## Not decided / not checked
-
-- Keys (Asteroids style) or mouse aiming for the pointer. Current plan: keep keys.
-- How long laser eyes take to build, and whether they are fair on a phone screen.
-- Real hands-on feel, tablets, iPhone Safari.
-
----
-
-# Build plan (option A)
-
-## How the work is run
-
-- **One agent, one step at a time.** Every step edits the same three files (`olympus.ts`, `draw.ts`, `OlympusGame.tsx`), so parallel agents would only create merge conflicts.
-- **One commit per step** on `yapsancode/olympusgame-improvement`. Merge to `main` only after step 6.
-- **No new dependencies.** Sound is made with the browser's Web Audio API (the browser makes the beeps itself, no sound files).
-- Before touching any Next.js-specific code, read the matching guide in `node_modules/next/dist/docs/` (rule from `AGENTS.md`). Almost all of this work is plain canvas code inside client components.
-
-## Files
-
-| File | Job |
-|---|---|
-| `src/components/game/olympus.ts` | Game rules and all tuning numbers (no React, no DOM). |
-| `src/components/game/draw.ts` | Canvas drawing. |
-| `src/components/game/OlympusGame.tsx` | Loop, input, HUD, dialogs, reacts to game events. |
-| `src/components/game/sound.ts` | **New.** Web Audio sound effects. |
-| `scripts/olympus-sim.mjs` | **New.** Robot players that play the rules hundreds of times and check the numbers. |
-| `src/config/site.ts` | All game text (`site.olympus`). |
-| `src/app/globals.css` | `.olympus-*` styles. |
-| `src/components/window/OlympusWindow.tsx` | Start dialog. |
-| `src/components/desktop/Desktop.tsx` | Starts and ends the game, keeps the "run" number. |
-
-## Baseline (measured 2026-11-14, 200 simulated games each)
-
-A robot that turns and fires but **never moves**:
-
-| Screen | Wins | Statue wakes | Boss fight length |
-|---|---|---|---|
-| Desktop 1280 px | 195 / 200 | always 20.0 s | 56 s (median) |
-| Phone 412 px | 163 / 200 | always 20.0 s | 104 s (median) |
-
-This agrees with the playtest (a player who never moves wins). The simulation used a simple stand-in statue shape and one fake window, so treat the numbers as a starting point, not as exact.
-
-## Checks used after every step
-
-1. `npm run lint` and `npm run build` pass.
-2. `node scripts/olympus-sim.mjs` passes (from step 0 on).
-3. Browser playtest in headless Edge at 1280 px and 412 px, with screenshots (vault note "Browser pane testing": the hidden pane pauses animation, so use headless Edge).
-
-## Step 0. Simulation harness (small)
-
-- Add `scripts/olympus-sim.mjs`: compiles `olympus.ts` with the installed `typescript` package, then runs two robots with `seededRandom`: **Idle** (turns and fires, never thrusts) and **Dodger** (also moves away from rocks and beams).
-- It prints wake time, boss length and win rate, and fails when a target below is missed. Targets are switched on step by step.
-- Done when: it reproduces the baseline table above.
-
-## Step 1. Game feel and phone basics
-
-| Item | Change |
-|---|---|
-| Sound | `sound.ts`: one `play(name)` function with oscillator and noise sounds for shot, hit, window crash, icon break, ship lost, rumble, crumble. The audio starts on the Start click (browsers only allow sound after a click). Add `shot` and `rockBroken` to `GameEvent` so the overlay knows when to play. If the Music player has a mute, the game follows it. |
-| Bullets | Draw a short bright streak along the flight direction instead of a 3 px dot. Spark burst at the nose when firing. Small push backwards on the ship. |
-| Kill pause | The loop skips about 40 ms of game time on a window crash, icon break or big rock kill. Off with reduced motion. |
-| Ship | `CURSOR_SCALE` 1.4 → about 2. The blink starts on a visible frame. A ring of sparks at spawn ("pointer becomes ship"). |
-| Hint | Allow wrapping and cap the width to the screen. Hide on the first game key, not after 4.5 s. |
-| Phone | One `scale` number in the world (from screen width) for rock size and speed. The ship wraps above the touch-button strip. Buttons become see-through over the statue. Start dialog and blue screen show touch wording on touch screens. |
-
-Done when: sim on phone shows the Idle robot reaching the boss with at least 2 lives in most games; screenshots at 412 px show ship and statue not covered; hint fully readable; every event has a sound.
-
-## Step 2. Destruction and anger
-
-- **Windows:** `TUNING.window.hp` 3 → about 8. Each hit leaves a bullet hole and cracks, drawn on the canvas at the hit point. At low health the title bar flickers.
-- **Wreckage:** a crashed window or broken icon leaves a small pile of pixel debris where it was, until the game ends.
-- **Anger:** destruction is worth much more, the time trickle much less. Remove the fixed 20 s gate; keep a hard safety net (statue wakes at 45 s no matter what).
-- **Rocks:** they are chips falling off the statue, so they spawn at the statue, not at screen edges. Drawn with flat colours and hard edges (no smooth gradient), to match the Windows 98 look.
-
-Done when (sim): an active shooter wakes the statue between 15 and 30 s; a player who shoots nothing gets 45 s; the first window survives at least 4 s of fire.
-
-## Step 3. Statue awakening
-
-- **The moment:** 0.6 s freeze, the desktop darkens (a dark layer under the canvas), then a strong shake, rumble sound, eyes flare, statue rises.
-- **Personality:** new lines in `site.olympus.statue` for each boss phase and for when the player loses a life.
-- **Spoiler:** remove "The statue on the wallpaper may wake up" from `warningMore`.
-- **Jagged outline:** likely cause: edge tiles that are mostly transparent are dropped today, which makes stair steps. Keep those tiles for drawing but not for hitting. Confirm with before/after screenshots.
-
-Done when: screenshots of the wake-up at both sizes show a smooth outline and a clear dark moment; lint and build pass.
-
-## Step 4. Boss fight (three phases)
-
-- **Phase** comes from statue health: above 60% → 1, 60–25% → 2, below 25% → 3. One helper function in `olympus.ts`.
-- **Phase 1:** a 0.5 s wind-up (glow on the throwing side + sound) before every throw.
-- **Phase 2:** faster throws, spreads of 3. Thrown marble gets a `thrown` flag and a hot outline, so it looks different from drifting chips.
-- **Phase 3, laser eyes:** charge 1.0 s with a thin line that follows the player → lock 0.4 s (line stops and turns solid) → fire 0.5 s (wide beam from the eye). The beam takes a life if the ship is inside it. All timings live in `TUNING`.
-- **Hollow centre:** a hit still counts anywhere on the statue, but the tiles that break off are the ones **furthest from the eye**. The statue shrinks toward the head and never becomes hollow. Health = attached tiles, so the bar and the picture always agree. The head with the laser eyes is the last thing standing.
-
-Done when (sim, 200 games): Idle robot wins under 10%; Dodger robot wins 40–70%; Dodger's median boss fight is 20–25 s on desktop and under 35 s on phone; no fight where the last 5% takes more than 3 s.
-
-## Step 5. Win and lose
-
-- **Win ending:** a full-screen Windows 98 "It is now safe to turn off your statue" screen (black, orange text), with score and best. Replaces the small dialog.
-- **Joke:** "only a wallpaper" stays once (the statue's last words). The win text gets a new line.
-- **Harder run:** `Desktop.tsx` keeps a `run` number, +1 after each win, back to 1 after a loss or exit. Each run: faster throws, laser starts earlier (25% → 40% → 55%). HUD shows `RUN 2`.
-- **Best score:** already saved (`loadBest` / `saveBest`). Only add the best run next to it.
-
-Done when: sim shows the Dodger's win rate falling on run 2 and run 3; win, replay, lose and exit all work by keyboard and by touch.
-
-## Step 6. Final playtest and polish
-
-- You: three real people play once (desktop and phone) while you watch. Write down where they got confused.
-- Agent: fix that list, run `/code-review`, then merge to `main`.
-
-## Still open (does not block steps 0–3)
-
-- Laser fairness on a phone screen: decided by the step 4 phone playtest.
-- Keys stay. Mouse aiming is not planned.
-- iPhone Safari and tablets cannot be tested from this PC. They are part of step 6.
-
----
-
-# What was built (2026-11-14)
-
-Steps 0–5 are committed on `yapsancode/olympusgame-improvement`, one commit per step.
-
-## Measured result (200 simulated games each, `node scripts/olympus-sim.mjs`)
-
-| Check | Desktop | Phone |
-|---|---|---|
-| Robot that never moves wins | 6% | 9% |
-| Robot that dodges wins | 57% | 94% |
-| Boss fight length (dodging robot, median) | 25 s | 18.5 s |
-| Statue wakes (active player) | 24–28 s | 19–20 s |
-| Statue wakes when nobody shoots | 45 s | 45 s |
-| Dodging robot wins on run 1 / 2 / 3 | 57% / 57% / 45% | not measured |
-
-Also checked: lint, type-check and `npm run build` pass. Headless Edge playtests at 1280 px and 412 px, with no console errors: start dialog, hint, wreckage, wake-up, hot marble, laser aiming line, shrinking statue, win screen, RUN 2 after replay, best run in the start dialog, blue screen with touch wording, quit button.
-
-## Changes from the build plan
-
-- **Thrown marble cannot be shot down.** It is orange ("hot") and must be dodged. With marble that could be shot, a player who stood still and aimed well kept winning.
-- **When the statue wakes, the drifting chips fly back into it.** The boss fight is only thrown marble and the laser.
-- **The laser stage also throws spreads of three.** Without this, later runs were easier, because the laser stage replaced the harder spread stage.
-- **The ship turns and thrusts a little faster** (turn 4.6 → 5.4, thrust 480 → 560).
-- **Statue health is 38 hits** (was 55), and tiles break from the outside toward the eye.
-- **Windows take 14 hits** (plan said about 8), so the first window lasts 4+ seconds.
-- **The phone is easier on purpose.** Touch buttons are much harder for a person than for a robot.
-- **Touch screens get a quit button** (top-left). Before, a phone player could only leave by losing.
-- **Two checks are softer than planned:** "last 5% of the statue" uses the median of won games (a death during the last 5% adds respawn time), and run 2 only has to be no easier than run 1.
-- Not built from step 2: the title bar "flicker" is a short fade on hits when the window is nearly dead, nothing more.
-
-## Not checked
-
-- How the sounds actually sound (headless Edge has no speakers).
-- Real hands: laser fairness on a phone, tablets, iPhone Safari.
-- The simulation uses a stand-in statue shape and one fake window, so its numbers are a guide, not exact.
-- Run 2 and run 3 difficulty on a phone.
-
-## Tuning without editing code
-
-`OLYMPUS_TUNING='{"statue.hp":45,"boss.spread":0.15}' node scripts/olympus-sim.mjs` tries other numbers. All numbers live in `TUNING` in `src/components/game/olympus.ts`.
+| Event | Saved progress | What happens next |
+| --- | --- | --- |
+| First play | Resume level 1; no completed levels | Start level 1. |
+| Exit, reload, close the browser, or lose during level N | Keep level N | Continue or Retry starts level N again. |
+| Clear level N with a next shipped level | Record N completed and save N + 1 immediately | Next level starts N + 1; leaving on the victory screen still preserves it. |
+| Clear the last shipped level | Record campaign complete and keep the final valid level | Offer Replay final level or Start Over; never load a missing level. |
+| Cancel Start Over | No change | Keep the saved campaign. |
+| Confirm Start Over | Reset campaign completion and resume level to 1 | Start level 1 with fresh lives. Keep the independent best-score record. |
+
+Start Over must explain what it resets before erasing a real save: **“Start again at level 1? Your saved level progress will reset. Your best score will stay.”** Offer Start Over and Cancel. This is an in-game player action, not an implementation approval gate.
+
+### Storage contract
+
+The scoreboard now supplies the identity and Neon connection. Named players use **server checkpoints**, not a local best-score or legacy streak value.
+
+- `olympus_progress` is keyed by signed-cookie player ID and environment (`production`, `preview`, `development`). It stores `highest_completed`, a campaign `epoch`, and `updated_at`.
+- The API exposes a version-1 snapshot: `highestCompletedLevel`, `resumeLevel`, `completed`, and `epoch`. Resume is the next uncleared shipped level, clamped to the last available level.
+- Loading a recognized player creates a level-1 checkpoint when none exists. Name reservation alone is not authentication: only the signed HTTP-only ownership cookie can access that player's progress. Names cannot be typed to recover someone else's save.
+- Starting a score session checks the requested level and campaign epoch against the database. Each attempt has a new opaque token; the legacy database column `run` stores its level, while the API and UI call it `level`.
+- A successful victory submission records the score and advances progress in one SQL statement, immediately on victory, before Next level. The request uses keepalive so navigating away does not intentionally cancel it. Network/server failure is still possible: show failure and Retry saving, never a false saved message. Next level waits for the checkpoint response.
+- A loss, exit, or unfinished session does not advance or reset the checkpoint. Duplicate submissions and concurrent wins for the same level cannot skip levels. Old wins cannot overwrite newer progress.
+- Start Over rotates the campaign epoch and sets completion to zero. Older tabs/attempts cannot restore the old campaign. The reset uses the expected epoch, so stale reset requests fail visibly.
+- Replaying the final level stays at level 6 with campaign completion recorded. Adding future catalogue entries automatically resumes at the first newly available level. Progress ahead of the installed catalogue is rejected with a refresh message.
+- The signed cookie remembers a browser, **not a cross-device account**. Clearing cookies loses access. Safari and a Home Screen install may have separate storage; do not promise transfer or recovery by name. Existing valid cookies are refreshed when the named player is loaded.
+- If the server cannot be reached, an explicitly labeled guest option uses the separate local key `isyraf98:olympus-progress:v1`. It validates the same versioned checkpoint shape with `epoch: null`; invalid saves start safely at level 1 with feedback. Blocked local storage allows in-memory play and reports that the save will not survive closing. Guest progress does not merge into a named player's campaign.
+- Keep `isyraf98:olympus-best` for the independent local best score. Leave legacy `isyraf98:olympus-best-run` untouched, but do not display it or unlock new powers from it. Start Over changes no scores, player names, music settings, or unrelated storage.
+- The scoreboard is versioned as `olympus-3`, because new shootable powers change scoring opportunities. Historical `olympus-2` scores remain in Neon; the current board ranks the new rules separately. Existing player names and local best scores remain.
+
+### Database deployment
+
+`db/004-level-progress.sql` adds the checkpoint table and nullable session epoch without deleting historical data. Vercel runs `npm run db:migrate && npm run build`; the existing migration runner records applied files and runs each migration transactionally. A failed migration blocks deployment. Local development may build without database credentials; `npm run db:migrate` needs `DATABASE_URL`. Neither secrets nor generated screenshots are committed.
+
+## Implementation sequence
+
+1. **Complete: level model and wording.** Catalogue, level/power names, distinct attempt IDs, fixed baseline tuning, HUD/pause/endings/guide and scoreboard wording.
+2. **Complete: saved progression and menus.** Signed player checkpoints, immediate win saves, retry/continue, final-level behavior, Start Over, guest fallback and explicit save failures.
+3. **Complete: Marble Swarm.** Warned two-wave attack, shootable non-splitting fragments, eight-hazard cap, finite lifetime, recovery, visual and audio cues, touch counts.
+4. **Complete: levels 3–6.** Halo with a safe gap; rain with safe lanes; three breakable orbiting shields whose destruction also damages the statue (no extra required hits); slow, warned sweep. All use separate schedules and finite cleanup.
+5. **Open: human playtest and polish.** Test keyboard, phone/tablet joystick, real iPhone Safari and its Home Screen app. Compare challenge and encounter duration; tune powers that feel harder. Automated checks cannot establish equal perceived difficulty.
+6. **Later: levels 7–100.** Expand only after the initial set is stable. The number 100 is future scope, not shipped content.
+
+## Future 100-level direction
+
+A possible structure is ten themed chapters of ten levels. Chapters organize different powers, visual motifs, and pattern variations; they are not difficulty tiers. Reuse validated mechanics through different directions, arrangements, and rhythms while keeping the same challenge target.
+
+Level 100 can have a distinctive finale and story payoff without becoming a harder fight. A finale may present familiar powers sequentially with recovery between them; it must not pile them together or inflate enemy health. Save a checkpoint at every level rather than requiring 100 consecutive wins.
+
+## Engineering map
+
+| Area | Expected work |
+| --- | --- |
+| `src/components/game/olympus.ts` | Level/power selection, attack state, consistent tuning, shared hazard limits. Remove old progression multipliers. |
+| `src/components/game/draw.ts` | Distinct warnings, destructible swarm visuals, safe gaps, per-power effects. |
+| `src/components/game/OlympusGame.tsx` | HUD/announcements, level endings, checkpoint event timing, retries, cleanup. |
+| `src/components/desktop/Desktop.tsx` | Start a selected/saved level; separate attempt/remount ID from progression; preserve desktop and fullscreen cleanup. |
+| `src/components/game/GameContext.tsx` and a focused progress helper | Storage schema, validation, migration, save-result handling, start/continue controls. |
+| `src/components/window/OlympusWindow.tsx` | Continue / Play / Start Over choices and saved-level information. |
+| `src/config/site.ts` | Level story, power instructions, UI labels, save/reset feedback. |
+| `src/app/globals.css`, joystick, fullscreen and Home Screen helpers | Preserve current mobile layout, safe areas, no-selection behavior, readable/scrollable menus, and installation experience. |
+| `scripts/olympus-sim.mjs` and focused tests | Per-profile scenarios, save transitions, difficulty comparisons; retire historical “later runs must be harder” expectations. |
+
+Prefer the existing canvas/React/Web Audio implementation and avoid new dependencies unless a concrete need emerges. Read relevant installed Next.js documentation before editing framework-specific code. Keep code changes in small, reviewable steps.
+
+## Acceptance checks before release
+
+### Progress and wording
+
+- New visitors start at level 1; all current game text says level rather than run.
+- Clear level 1, leave on the victory screen, return: Continue offers level 2.
+- Lose, exit, reload, or close during level 2: level 2 remains available with fresh lives on return.
+- Canceling Start Over preserves progress; confirming it returns to level 1 and keeps best score.
+- Final-level completion never points to nonexistent content; later catalogue additions advance a previously completed save correctly.
+- Corrupt, out-of-range, unsupported-version, and blocked-storage cases are handled without breaking play or promising nonexistent saves.
+- Normal browser and installed-app relaunches are tested independently, including storage behavior on a real iPhone.
+
+### Powers and fairness
+
+- Level 2 has a distinct swarm with a warning, destructible non-splitting fragments, recovery time, and no surprise concurrent laser.
+- Levels 3–6 have distinct powers and counterplay, rather than more speed, more health, or accumulated attacks.
+- A test verifies that increasing the level ID alone does not scale global enemy stats or shorten warnings.
+- Every pattern leaves a reachable escape route on the smaller landscape playfield, respecting the phone's slower movement and the control area.
+- Retry, death, pause/resume, rotation, exit, and level transitions never leak projectiles, attack timers, audio, input, or save events.
+- Compare fight duration, win rate, and player feedback across profiles and devices. Existing simulation bots need adaptation for new powers; historical percentages alone are not evidence of fairness.
+
+### Regression checks
+
+- Build, type-check, and lint succeed, allowing only documented existing warnings.
+- Preserve joystick braking, simultaneous steering/firing, desktop arrows, and long-press prevention.
+- Preserve fullscreen fallback, landscape gating, taskbar restoration, icon/manifest behavior, and access to Story & how to play.
+- Screenshots and browser checks cover desktop plus short landscape phones/tablets. Headless checks do not replace real Safari/Home Screen or human fairness testing.
+
+## Verification for this implementation
+
+- `npm run test:leaderboard`: 16 checks executing the real route/server SQL against PostgreSQL (PGlite), including cookie ownership, environment isolation, immediate checkpoints, loss/exit, duplicate and concurrent wins, reset invalidation, final replay, score retention and rate limits.
+- `npm run test:game`: 16 checks for phone/tablet/keyboard controls, drift and hitbox, all six profiles' fixed stats, warning/recovery/hazard budgets, non-splitting swarm, safe rain lanes, armour damage credit, resize/death/victory cleanup and progress validation/migration.
+- Production build and TypeScript pass. ESLint passes with the pre-existing `opengraph-image.tsx` image warning.
+- Headless Edge browser checks use mocked player/score API responses and the real built game: desktop 1280×800 and phone 667×320 cover returning level 2, reset/cancel, retained best score, reload, pause/resume, mobile-only joystick and exit. They complement the real SQL tests; they are not a live Neon or physical iPhone test.
+- Seeded legacy-bot diagnostics (20 attempts/profile/device) show no rising difficulty formula and no longer require later levels to be harder. New powers often finish faster than the original guardian because the bot can fire more consistently. These keyboard-oriented bots do not establish touch balance or equal difficulty. Human comparisons remain required.

@@ -1,6 +1,7 @@
 "use client";
 
 import { lazy, Suspense, useEffect, useReducer, useState, useSyncExternalStore } from "react";
+import type { Progress } from "@/lib/olympus/levels";
 import Image from "next/image";
 import { site, desktopIcons, windowDefaults } from "@/config/site";
 import type { DesktopIconId, WindowId } from "@/config/site";
@@ -233,11 +234,10 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
   // Olympus runs over the whole desktop. While it does, shot-down icons are
   // hidden, crashed windows are minimized and the statue may be "awake".
   // Ending the game puts all of it back.
-  // `run` only makes each game a fresh component; `level` is how many wins
-  // in a row the player is on (1 = first game), and makes the fight harder.
+  // `attemptId` remounts the game; progress selects the saved level and power.
   const [game, setGame] = useState<{
-    run: number;
-    level: number;
+    attemptId: number;
+    progress: Progress;
     touchDevice: boolean;
     spawnAt: { x: number; y: number } | null;
   } | null>(null);
@@ -284,18 +284,18 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
 
   const gameControls: GameControls = {
     close: () => dispatch({ type: "CLOSE", id: "olympus" }),
-    start: (spawnAt) => {
+    start: (spawnAt, progress) => {
       unlockSound(); // browsers only allow sound from inside a click
       enterGameFullscreen();
       // On phones the title screen is full-screen; play on the bare desktop,
       // with the ship in the middle rather than under the touch buttons.
       dispatch(isMobile ? { type: "CLOSE_ALL" } : { type: "CLOSE", id: "olympus" });
       setStatueReturning(false);
-      setGame({ run: (game?.run ?? 0) + 1, level: 1, touchDevice: usesTouchControls(), spawnAt: isMobile ? null : spawnAt });
+      setGame({ attemptId: (game?.attemptId ?? 0) + 1, progress, touchDevice: usesTouchControls(), spawnAt: isMobile ? null : spawnAt });
     },
   };
 
-  const endGame = (replay: boolean, won: boolean) => {
+  const endGame = (replay: boolean, progress?: Progress) => {
     for (const id of crashedWindows) {
       if (state.windows.find((w) => w.id === id)?.minimized) dispatch({ type: "FOCUS", id });
     }
@@ -304,7 +304,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
     if (statueHidden) setStatueReturning(true);
     setStatueHidden(false);
     setGame(
-      replay ? { run: (game?.run ?? 0) + 1, level: won ? (game?.level ?? 1) + 1 : 1, touchDevice: game?.touchDevice ?? usesTouchControls(), spawnAt: null } : null
+      replay && game ? { attemptId: game.attemptId + 1, progress: progress ?? game.progress, touchDevice: game.touchDevice, spawnAt: null } : null
     );
     if (!replay) {
       leaveGameFullscreen();
@@ -437,9 +437,9 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
         {game && (
           <Suspense fallback={null}>
             <OlympusGame
-              key={game.run}
+              key={game.attemptId}
               spawnAt={game.spawnAt}
-              level={game.level}
+              progress={game.progress}
               windows={state.windows.map((w) => ({ id: w.id, zIndex: w.zIndex, minimized: w.minimized }))}
               onIconDestroyed={(id) => setDestroyedIcons((list) => [...list, id])}
               onWindowCrashed={(id) => {

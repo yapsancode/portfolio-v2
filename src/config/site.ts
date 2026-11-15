@@ -149,8 +149,8 @@ export const site = {
       missionTitle: "Your mission",
       steps: [
         { title: "Cause a little chaos", text: "Shoot drifting rocks, desktop icons, and open windows to score points. Watch the ANGER meter rise." },
-        { title: "Take on the guardian", text: "When the statue wakes, shoot the marble still attached to it to drain its health. Dodge its thrown rocks and charged eye laser. Thrown rocks cannot be shot down." },
-        { title: "Bring Olympus down", text: "You have three lives. Destroy the statue before you lose them all. After a win, choose Next run for a harder fight." },
+        { title: "Take on the guardian", text: "When the statue wakes, shoot the marble still attached to it to drain its health. Each level brings a different power: watch its warning and use the gaps. Orange marble is too hot to break; pale fragments with blue edges can be shot." },
+        { title: "Bring Olympus down", text: "You have three lives. Destroy the statue before you lose them all. After a win, choose Next level for a different statue power. Your level saves after each win, so you can return and continue." },
       ],
       controlsTitle: "Your controls",
       touch: [

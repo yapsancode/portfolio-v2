@@ -8,6 +8,8 @@
  * crumbling → won. Losing every life at any point → lost.
  */
 
+import { validLevel } from "../../lib/olympus/levels";
+
 export type Phase = "play" | "awakening" | "boss" | "crumbling" | "won" | "lost";
 
 export type Input = {
@@ -53,6 +55,10 @@ export type Rock = {
   shape: number[];
   /** Thrown by the statue: flies straight off the screen, and cannot be shot down. */
   thrown?: boolean;
+  /** New powers use pale, shootable fragments with a finite lifetime. */
+  power?: boolean;
+  life?: number;
+  orbit?: number;
 };
 
 /** The statue's laser eye: it charges (following you), locks, fires, rests. */
@@ -62,6 +68,17 @@ export type Laser = {
   t: number;
   /** Direction of the beam, radians (0 = right, clockwise on screen). */
   angle: number;
+};
+
+export type PowerAttack = {
+  state: "rest" | "warn" | "active";
+  t: number;
+  elapsed: number;
+  x: number;
+  y: number;
+  angle: number;
+  lanes: number[];
+  wave: number;
 };
 
 export type Bullet = { x: number; y: number; vx: number; vy: number; life: number };
@@ -139,6 +156,7 @@ export type GameEvent =
   | { type: "statueAwake" }
   | { type: "statueHit" }
   | { type: "bossStage"; stage: 2 | 3 }
+  | { type: "powerWarn" }
   | { type: "throwWarn" }
   | { type: "laserCharge" }
   | { type: "laserFire" }
@@ -171,8 +189,9 @@ export type World = {
   anger: number;
   lives: number;
   score: number;
-  /** 1 on the first game; each win in a row makes the next run harder. */
-  run: number;
+  /** Selects an attack profile, never a difficulty multiplier. */
+  level: number;
+  attack: PowerAttack;
   fireIn: number;
   spawnIn: number;
   /** Below 1 on small screens: rocks are smaller and slower there. */
@@ -239,12 +258,8 @@ export const TUNING = {
   boss: {
     /** Stage 2 starts at this share of health. */
     stage2At: 0.6,
-    /** Stage 3 (laser eye) starts here on run 1, and earlier on every later run. */
+    /** Fixed threshold for the original guardian. */
     laserAt: 0.25,
-    laserAtPerRun: 0.15,
-    laserAtMax: 0.7,
-    /** Every run after the first is this much faster. */
-    runSpeedUp: 0.12,
     /** Warning before each throw. */
     windup: 0.5,
     throwEvery: [1.5, 1.2, 1.7] as const, // per stage
@@ -253,6 +268,8 @@ export const TUNING = {
     spread: 0.2,
     laser: { charge: 1, lock: 0.45, fire: 0.5, rest: 0.8, halfWidth: 13 },
   },
+  powers: { cap: 8, warning: 1.2, recovery: 1.5, speed: 165, lifetime: 3.2,
+    sweepDuration: 2.8, sweepArc: 1.2, shieldDuration: 2.8 },
   crumbleTime: 2.2,
   lostDelay: 1.2,
   maxParticles: 420,
@@ -379,7 +396,7 @@ export function createWorld(opts: {
   particleScale?: number;
   shipFloor?: number;
   phoneMode?: boolean;
-  run?: number;
+  level?: number;
 }): World {
   const world: World = {
     w: opts.w,
@@ -412,7 +429,8 @@ export function createWorld(opts: {
     anger: 0,
     lives: TUNING.lives,
     score: 0,
-    run: opts.run ?? 1,
+    level: validLevel(opts.level) ? opts.level : 1,
+    attack: restingPower(),
     fireIn: 0,
     spawnIn: TUNING.rock.spawnEvery,
     scale: Math.max(0.6, Math.min(1, opts.w / 900)),
@@ -441,6 +459,9 @@ export function resize(world: World, w: number, h: number, statueHome: Rect) {
   world.w = w;
   world.h = h;
   world.statue.home = statueHome;
+  world.scale = Math.max(0.6, Math.min(1, w / 900));
+  // Geometry changed: give every telegraph again in the new playfield.
+  if (world.phase === "boss") clearAttacks(world);
 }
 
 /* ------------------------------------------------------------------ */
@@ -540,22 +561,20 @@ export function throwPoint(statue: Statue) {
 /** Boss stage from the statue's health: 1 throws, 2 fast spreads, 3 laser eye. */
 export function bossStage(world: World): 1 | 2 | 3 {
   const left = world.statue.hp / world.statue.maxHp;
-  const { laserAt, laserAtPerRun, laserAtMax, stage2At } = TUNING.boss;
-  if (left <= Math.min(laserAtMax, laserAt + laserAtPerRun * (world.run - 1))) return 3;
+  const { laserAt, stage2At } = TUNING.boss;
+  if (left <= laserAt) return 3;
   return left <= stage2At ? 2 : 1;
 }
 
 function loseShip(world: World, events: GameEvent[]) {
-  const { ship, statue } = world;
+  const { ship } = world;
   ship.alive = false;
   ship.respawn = TUNING.ship.respawnTime;
   world.lives -= 1;
   burst(world, ship.x, ship.y, 40, SPARK, 260);
   burst(world, ship.x, ship.y, 20, ["#ffffff", "#000000"], 180);
   events.push({ type: "shipLost", livesLeft: world.lives });
-  // The laser starts over, so it never fires at an empty screen.
-  if (statue.laser) statue.laser = { state: "rest", t: TUNING.boss.laser.rest, angle: 0 };
-  statue.windup = 0;
+  clearAttacks(world);
   if (world.lives <= 0) setPhase(world, "lost");
 }
 
@@ -563,7 +582,6 @@ function loseShip(world: World, events: GameEvent[]) {
 function bossAttack(world: World, dt: number, events: GameEvent[]) {
   const { ship, statue, random } = world;
   const B = TUNING.boss;
-  const fast = 1 + B.runSpeedUp * (world.run - 1);
 
   const stage = bossStage(world);
   if (stage !== statue.stage) {
@@ -583,18 +601,18 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
         const chunk = makeRock(world, stage === 1 && random() < 0.5 ? 1 : 2, from.x, from.y, aim + turn);
         // Only half the small-screen shrink and slow-down: a phone is narrow, but the ship is just as far away.
         const small = (1 + world.scale) / 2;
-        const speed = between(random, slow, quick) * small * fast;
+        const speed = between(random, slow, quick) * small;
         chunk.r = TUNING.rock.radius[chunk.size] * small;
         chunk.vx = Math.cos(aim + turn) * speed;
         chunk.vy = Math.sin(aim + turn) * speed;
         chunk.thrown = true;
-        world.rocks.push(chunk);
+        if (world.rocks.length < TUNING.powers.cap - (statue.laser ? 1 : 0)) world.rocks.push(chunk);
       }
     }
   } else {
     statue.throwIn -= dt;
     if (statue.throwIn <= 0) {
-      statue.throwIn = B.throwEvery[stage - 1] / fast;
+      statue.throwIn = B.throwEvery[stage - 1];
       statue.windup = B.windup;
       statue.side = ship.x < statue.home.x + statue.dx + statue.home.w / 2 ? -1 : 1;
       events.push({ type: "throwWarn" });
@@ -610,7 +628,7 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
   if (laser.t <= 0) {
     if (laser.state === "rest") {
       laser.state = "charge";
-      laser.t = B.laser.charge / fast;
+      laser.t = B.laser.charge;
       laser.angle = Math.atan2(ship.y - eye.y, ship.x - eye.x);
       events.push({ type: "laserCharge" });
     } else if (laser.state === "charge") {
@@ -622,7 +640,7 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
       events.push({ type: "laserFire" });
     } else {
       laser.state = "rest";
-      laser.t = B.laser.rest / fast;
+      laser.t = B.laser.rest;
     }
   }
   if (laser.state === "fire" && ship.safe <= 0) {
@@ -632,6 +650,101 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
     const off = Math.abs(py * Math.cos(laser.angle) - px * Math.sin(laser.angle));
     if (along > 0 && off < B.laser.halfWidth + TUNING.ship.radius * (world.phoneMode ? TUNING.phone.shipScale : 1) * 0.5) loseShip(world, events);
   }
+}
+
+function restingPower(): PowerAttack {
+  return { state: "rest", t: TUNING.powers.recovery, elapsed: 0, x: 0, y: 0, angle: 0, lanes: [], wave: 0 };
+}
+
+function clearAttacks(world: World) {
+  world.attack = restingPower();
+  world.rocks = [];
+  world.statue.laser = null;
+  // The original guardian must restart its stage-3 laser after respawn too.
+  world.statue.stage = 1;
+  world.statue.windup = 0;
+  world.statue.throwIn = TUNING.boss.throwEvery[0];
+}
+
+export function orbitRadius(world: World) {
+  return Math.min(90, (world.h - world.shipFloor) * 0.23);
+}
+
+function fragment(world: World, x: number, y: number, angle: number, speed = TUNING.powers.speed) {
+  if (world.rocks.length >= TUNING.powers.cap || y > world.h - world.shipFloor - 18 ||
+    Math.hypot(x - world.ship.x, y - world.ship.y) < 60) return null;
+  const rock = makeRock(world, 2, x, y, angle);
+  rock.power = true;
+  rock.life = TUNING.powers.lifetime;
+  rock.vx = Math.cos(angle) * speed * world.scale;
+  rock.vy = Math.sin(angle) * speed * world.scale;
+  world.rocks.push(rock);
+  return rock;
+}
+
+/** One warned power at a time. All fragments expire before the next recovery/warning. */
+function powerAttack(world: World, dt: number, events: GameEvent[]) {
+  const a = world.attack;
+  const P = TUNING.powers;
+  const playHeight = world.h - world.shipFloor;
+  a.t -= dt;
+  if (a.state === "rest") {
+    if (a.t > 0 || world.rocks.length) return;
+    const eye = eyePoint(world.statue);
+    a.x = Math.max(30, Math.min(world.w - 30, eye.x));
+    a.y = Math.max(30, Math.min(playHeight - 36, eye.y));
+    a.angle = Math.atan2(world.ship.y - a.y, world.ship.x - a.x);
+    const safeLane = Math.max(0, Math.min(4, Math.floor(world.ship.x / world.w * 5)));
+    a.lanes = [(safeLane + 2) % 5, (safeLane + 3) % 5];
+    a.state = "warn"; a.t = P.warning; a.wave = 0; a.elapsed = 0;
+    events.push({ type: "powerWarn" });
+    return;
+  }
+  if (a.state === "warn") {
+    if (a.t > 0) return;
+    a.state = "active";
+    a.t = world.level === 6 ? P.sweepDuration : P.lifetime;
+    if (world.level === 6) events.push({ type: "laserFire" });
+  }
+  a.elapsed += dt;
+  if (world.level === 2 && a.wave < 2 && a.elapsed >= a.wave * 0.55) {
+    // Fixed two-wave fan; no tracking after the warning, no splitting.
+    const count = world.shipFloor > 0 ? 3 : 4;
+    for (let i = 0; i < count; i++) {
+      const angle = a.angle + (i - (count - 1) / 2) * 0.38 + (a.wave ? 0.16 : -0.16);
+      fragment(world, a.x, a.y, angle);
+    }
+    a.wave++;
+  } else if (world.level === 3 && a.wave === 0) {
+    // A 90-degree gap faces the player's warned position; the rest is shootable.
+    for (let i = 0; i < 8; i++) {
+      const angle = a.angle + Math.PI / 4 + (i + 0.5) * (Math.PI * 1.5 / 8);
+      fragment(world, a.x + Math.cos(angle) * 28, a.y + Math.sin(angle) * 28, angle, 135);
+    }
+    a.wave = 1;
+  } else if (world.level === 4 && a.wave < 2 && a.elapsed >= a.wave * 0.6) {
+    for (const lane of a.lanes) fragment(world, (lane + 0.5) * world.w / 5, 16, Math.PI / 2, 155);
+    a.wave++;
+  } else if (world.level === 5 && a.wave === 0) {
+    for (let i = 0; i < 3; i++) {
+      const angle = a.angle + Math.PI / 3 + i * Math.PI * 2 / 3;
+      const radius = orbitRadius(world);
+      const rock = fragment(world, a.x + Math.cos(angle) * radius, a.y + Math.sin(angle) * radius, angle, 0);
+      if (rock) { rock.orbit = angle; rock.life = P.shieldDuration; rock.r *= 1.3; }
+    }
+    a.wave = 1;
+  } else if (world.level === 6 && world.ship.safe <= 0) {
+    const angle = a.angle - P.sweepArc / 2 + P.sweepArc * Math.min(1, a.elapsed / P.sweepDuration);
+    const px = world.ship.x - a.x, py = world.ship.y - a.y;
+    const along = px * Math.cos(angle) + py * Math.sin(angle);
+    const off = Math.abs(py * Math.cos(angle) - px * Math.sin(angle));
+    if (along > 0 && off < 9 + TUNING.ship.radius * (world.phoneMode ? TUNING.phone.shipScale : 1) * 0.5) {
+      loseShip(world, events);
+      return;
+    }
+  }
+  // Finite lifetimes + explicit cleanup give every power the same clear recovery.
+  if (a.t <= 0) { world.rocks = []; world.attack = restingPower(); }
 }
 
 function breakTile(world: World, tile: Tile, fromX: number, fromY: number) {
@@ -748,6 +861,13 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
     world.rocks = world.rocks.filter((r) => Math.hypot(cx - r.x, cy - r.y) > 30);
   }
   for (const rock of world.rocks) {
+    if (rock.life !== undefined) rock.life -= dt;
+    if (rock.orbit !== undefined) {
+      rock.orbit += dt * 0.7;
+      const radius = orbitRadius(world);
+      rock.x = world.attack.x + Math.cos(rock.orbit) * radius;
+      rock.y = world.attack.y + Math.sin(rock.orbit) * radius;
+    }
     rock.x += rock.vx * dt;
     rock.y += rock.vy * dt;
     rock.angle += rock.spin * dt;
@@ -755,7 +875,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   }
   // Thrown marble that missed leaves the screen for good.
   world.rocks = world.rocks.filter(
-    (r) => !r.thrown || (r.x > -r.r && r.x < world.w + r.r && r.y > -r.r && r.y < world.h + r.r)
+    (r) => (r.life === undefined || r.life > 0) && (!(r.thrown || r.power) || (r.x > -r.r && r.x < world.w + r.r && r.y > -r.r && r.y < world.h - (r.power ? world.shipFloor : 0) + r.r))
   );
 
   if (world.phase === "play") {
@@ -785,7 +905,10 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
     statue.dx = Math.sin(statue.time * 0.8) * TUNING.statue.sway * statue.wake;
     statue.dy = -TUNING.statue.rise * statue.wake + Math.sin(statue.time * 1.7) * 4 * statue.wake;
   }
-  if (world.phase === "boss" && ship.alive) bossAttack(world, dt, events);
+  if (world.phase === "boss" && ship.alive) {
+    if (world.level === 1) bossAttack(world, dt, events);
+    else powerAttack(world, dt, events);
+  }
   for (const tile of statue.tiles) {
     if (tile.attached) continue;
     tile.vy += TUNING.statue.gravity * dt;
@@ -859,7 +982,8 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
     addAnger(world, TUNING.rock.anger[rock.size]);
     burst(world, rock.x, rock.y, 10 + (2 - rock.size) * 6, MARBLE, 160);
     events.push({ type: "rockBroken", size: rock.size });
-    if (rock.size < 2) {
+    if (rock.orbit !== undefined) damageStatue(world, b, events);
+    if (rock.size < 2 && !rock.power) {
       const next = (rock.size + 1) as 1 | 2;
       const heading = Math.atan2(rock.vy, rock.vx);
       for (const turn of [-0.6, 0.6]) {
@@ -880,26 +1004,7 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
   if (world.phase === "boss") {
     const tile = attachedTileAt(statue, b.x, b.y);
     if (tile) {
-      statue.hp -= 1;
-      world.score += TUNING.statue.hitScore;
-      events.push({ type: "statueHit" });
-      burst(world, b.x, b.y, 8, MARBLE, 140, 500);
-      // Break tiles until the picture matches the health bar again.
-      const keep = Math.ceil((statue.breakOrder.length * Math.max(0, statue.hp)) / statue.maxHp);
-      while (statue.breakOrder.length - statue.broken > keep) {
-        breakTile(world, statue.breakOrder[statue.broken++], b.x, b.y);
-      }
-      // (If only unhittable edge tiles were left, it would be over too.)
-      if (statue.hp <= 0 || !statue.tiles.some((t) => t.attached && t.solid)) {
-        for (const t of statue.tiles) if (t.attached) breakTile(world, t, b.x, b.y - 200);
-        statue.hp = 0;
-        statue.laser = null;
-        statue.windup = 0;
-        world.score += TUNING.statue.crumbleScore;
-        world.rocks = [];
-        setPhase(world, "crumbling");
-        events.push({ type: "statueCrumbled" });
-      }
+      damageStatue(world, b, events);
       return true;
     }
   }
@@ -939,4 +1044,28 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
   }
 
   return false;
+}
+
+/** Breaking a shield chips the statue too, so armour adds no extra hit points. */
+function damageStatue(world: World, b: Bullet, events: GameEvent[]) {
+  const { statue } = world;
+  statue.hp -= 1;
+  world.score += TUNING.statue.hitScore;
+  events.push({ type: "statueHit" });
+  burst(world, b.x, b.y, 8, MARBLE, 140, 500);
+  // Break tiles until the picture matches the health bar again.
+  const keep = Math.ceil((statue.breakOrder.length * Math.max(0, statue.hp)) / statue.maxHp);
+  while (statue.breakOrder.length - statue.broken > keep) {
+    breakTile(world, statue.breakOrder[statue.broken++], b.x, b.y);
+  }
+  // (If only unhittable edge tiles were left, it would be over too.)
+  if (statue.hp <= 0 || !statue.tiles.some((t) => t.attached && t.solid)) {
+    for (const t of statue.tiles) if (t.attached) breakTile(world, t, b.x, b.y - 200);
+    statue.hp = 0;
+    clearAttacks(world);
+    world.score += TUNING.statue.crumbleScore;
+    world.rocks = [];
+    setPhase(world, "crumbling");
+    events.push({ type: "statueCrumbled" });
+  }
 }

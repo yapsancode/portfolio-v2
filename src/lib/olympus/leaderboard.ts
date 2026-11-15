@@ -1,14 +1,14 @@
 /** Bump when scoring or difficulty changes; old results stay in the database. */
-export const GAME_VERSION = "olympus-2";
+export const GAME_VERSION = "olympus-3";
 export const SESSION_SECONDS = 60 * 60;
 
-export type RunTicket = { token: string; run: number };
-export type RunResult = { score: number; durationMs: number; outcome: "won" | "lost" };
+export type LevelTicket = { token: string; level: number };
+export type LevelResult = { score: number; durationMs: number; outcome: "won" | "lost" };
 export type ScoreEntry = {
   id: string;
   name: string;
   score: number;
-  run: number;
+  level: number;
   outcome: "won" | "lost";
   createdAt: string;
   isYou: boolean;
@@ -34,7 +34,7 @@ export function parseToken(value: unknown): string {
   return value;
 }
 
-export function parseResult(value: Record<string, unknown>): RunResult {
+export function parseResult(value: Record<string, unknown>): LevelResult {
   const { score, durationMs, outcome } = value;
   if (
     !Number.isSafeInteger(score) || typeof score !== "number" || score <= 0 || score > 100_000 || score % 10 !== 0 ||

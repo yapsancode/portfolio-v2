@@ -7,14 +7,16 @@ import type { DesktopIconId, WindowId } from "@/config/site";
 import { TASKBAR_HEIGHT } from "@/components/desktop/Taskbar";
 import { drawWorld, type StatueArt } from "./draw";
 import { useMusic } from "@/components/desktop/music";
-import { BEST_RUN_KEY, loadBest, saveBest } from "./GameContext";
+import { loadBest, saveBest } from "./GameContext";
 import { playSound, setSoundVolume, unlockSound } from "./sound";
 import TouchJoystick from "./TouchJoystick";
 import FullscreenHelp from "./FullscreenHelp";
 import { isPhoneTouchDevice, usesTouchControls, type StickVector } from "./touch-controls";
 import { enterGameFullscreen } from "./fullscreen";
+import { LAST_LEVEL, levelInfo, progressAt, type Progress } from "@/lib/olympus/levels";
+import StartOver from "./StartOver";
 import ScoreStatus from "./ScoreStatus";
-import { beginRankedRun, finishRankedRun, type RankedRun, type ScoreSubmission } from "@/lib/olympus/client";
+import { beginRankedAttempt, finishRankedAttempt, saveGuest, type RankedAttempt, type ScoreSubmission } from "@/lib/olympus/client";
 import {
   createStatue,
   createWorld,
@@ -48,14 +50,13 @@ export type OlympusGameProps = {
   onIconDestroyed: (id: DesktopIconId) => void;
   onWindowCrashed: (id: WindowId) => void;
   onStatueAwake: () => void;
-  /** 1 on a fresh game. Each win in a row raises it, and the fight gets harder. */
-  level: number;
-  /** Put the desktop back; `replay` starts a fresh game straight away (a harder one after a win). */
-  onEnd: (replay: boolean, won: boolean) => void;
+  /** Checkpoint selected by the returning player. Each attempt starts fresh. */
+  progress: Progress;
+  onEnd: (replay: boolean, progress?: Progress) => void;
 };
 
 type Hud = { score: number; lives: number; anger: number; statue: number; phase: Phase };
-type Ending = { kind: "won" | "lost"; score: number; best: number; newBest: boolean; submission: ScoreSubmission | null };
+type Ending = { kind: "won" | "lost"; score: number; best: number; newBest: boolean; submission: ScoreSubmission | null; checkpoint: Progress | null; notice: string };
 type Crash = { key: number; name: string; x: number; y: number };
 type Control = "left" | "right" | "thrust" | "fire";
 
@@ -195,15 +196,16 @@ function EndScreen({
 }: {
   ending: Ending;
   level: number;
-  onReplay: () => void;
+  onReplay: (progress: Progress) => void;
   onExit: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const actions = useRef({ onReplay, onExit });
+  const [checkpoint, setCheckpoint] = useState(ending.checkpoint);
+  const actions = useRef({ onReplay, onExit, checkpoint });
   const won = ending.kind === "won";
 
   useEffect(() => {
-    actions.current = { onReplay, onExit };
+    actions.current = { onReplay, onExit, checkpoint };
   });
 
   useEffect(() => {
@@ -215,8 +217,9 @@ function EndScreen({
       if (e.key !== "Enter" && e.key !== "Escape") return;
       if (e.key === "Enter" && e.target instanceof HTMLButtonElement) return;
       e.preventDefault();
-      if (e.key === "Enter") actions.current.onReplay();
-      else actions.current.onExit();
+      if (e.key === "Enter") {
+        if (actions.current.checkpoint) actions.current.onReplay(actions.current.checkpoint);
+      } else actions.current.onExit();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -246,16 +249,18 @@ function EndScreen({
         <p>
           Score: {ending.score.toLocaleString("en")} &nbsp;{" "}
           {ending.newBest ? "New best!" : `Best: ${ending.best.toLocaleString("en")}`}
-          {level > 1 && <> &nbsp; Run {level}</>}
+          <> &nbsp; Level {level}</>
         </p>
         <div className="olympus-actions">
-          <button type="button" className="olympus-button olympus-button-primary" onClick={onReplay}>
-            {won ? "Next run" : "Play again"}
+          <button type="button" className="olympus-button olympus-button-primary" disabled={!checkpoint} onClick={() => checkpoint && onReplay(checkpoint)}>
+            {!checkpoint ? "Save to continue" : won ? (level === LAST_LEVEL ? `Replay level ${level}` : "Next level") : `Retry level ${level}`}
           </button>
           <button type="button" className="olympus-button" onClick={onExit}>Exit to desktop</button>
         </div>
-        {won && <p className="olympus-menu-hint">Run {level + 1} · Harder difficulty</p>}
-        {ending.submission && <ScoreStatus submission={ending.submission} />}
+        {won && <p className="olympus-menu-hint">{level === LAST_LEVEL ? "All available levels complete! More powers are planned." : `Level ${level} complete · Next: ${levelInfo(level + 1).name}`}</p>}
+        {ending.notice && <p role="status" className="olympus-menu-hint">{ending.notice}</p>}
+        {won && level === LAST_LEVEL && checkpoint && <StartOver progress={checkpoint} onReset={onReplay} />}
+        {ending.submission && <ScoreStatus submission={ending.submission} onSaved={setCheckpoint} />}
       </div>
     </div>
   );
@@ -336,7 +341,7 @@ export default function OlympusGame(props: OlympusGameProps) {
   const [rotateRequired, setRotateRequired] = useState(needsLandscape);
   const rotateRequiredRef = useRef(rotateRequired);
   const endedRef = useRef(false);
-  const rankedRunRef = useRef<Promise<RankedRun> | null>(null);
+  const rankedAttemptRef = useRef<Promise<RankedAttempt> | null>(null);
   const [touchDevice] = useState(usesTouchControls);
   // On-screen buttons follow the last input used: a touch shows them, a game key hides them.
   const [touch, setTouch] = useState(usesTouchControls);
@@ -364,7 +369,7 @@ export default function OlympusGame(props: OlympusGameProps) {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     canvas.focus();
-    rankedRunRef.current ??= beginRankedRun(propsRef.current.level);
+    rankedAttemptRef.current ??= beginRankedAttempt(propsRef.current.progress.resumeLevel, propsRef.current.progress.epoch);
 
     const reducedMotion = window.matchMedia(REDUCED_MOTION).matches;
     const timers = new Set<ReturnType<typeof setTimeout>>();
@@ -393,7 +398,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       rotateRequiredRef.current = portrait;
       setRotateRequired(portrait);
       if (portrait) {
-        // Preserve the run and require an explicit resume after rotation.
+        // Preserve the attempt and require an explicit resume after rotation.
         pausedRef.current = true;
         inputRef.current = { ...NO_INPUT };
         setPaused(true);
@@ -481,7 +486,8 @@ export default function OlympusGame(props: OlympusGameProps) {
               shake(9, 2200);
               say(copy.statue.wakes);
             });
-            setAnnounce("The statue woke up. Shoot it to break it.");
+            setAnnounce(`${levelInfo(p.progress.resumeLevel).name}. ${levelInfo(p.progress.resumeLevel).hint}`);
+            later(500, () => say(levelInfo(p.progress.resumeLevel).hint));
             break;
           case "statueHit":
             playSound("statueHit");
@@ -491,6 +497,10 @@ export default function OlympusGame(props: OlympusGameProps) {
             shake(6, 500);
             say(e.stage === 2 ? copy.statue.stage2 : copy.statue.stage3);
             setAnnounce(e.stage === 2 ? "The statue throws faster." : "The statue's eye is charging a laser. Keep moving.");
+            break;
+          case "powerWarn":
+            playSound("rumble");
+            setAnnounce(levelInfo(p.progress.resumeLevel).hint);
             break;
           case "throwWarn":
             playSound("throwWarn");
@@ -525,14 +535,16 @@ export default function OlympusGame(props: OlympusGameProps) {
             if (newBest) saveBest(world.score);
             if (e.type === "won") {
               playSound("win");
-              if (propsRef.current.level > loadBest(BEST_RUN_KEY)) saveBest(propsRef.current.level, BEST_RUN_KEY);
             }
-            const submission = world.score > 0 && rankedRunRef.current
-              ? finishRankedRun(rankedRunRef.current, {
+            const submission = p.progress.epoch && world.score > 0 && rankedAttemptRef.current
+              ? finishRankedAttempt(rankedAttemptRef.current, {
                   score: world.score, durationMs: Math.round(world.time * 1000), outcome: e.type,
                 })
               : null;
-            setEnding({ kind: e.type, score: world.score, best: Math.max(best, world.score), newBest, submission });
+            const guestCheckpoint = e.type === "won" ? progressAt(Math.max(p.progress.highestCompletedLevel, p.progress.resumeLevel)) : p.progress;
+            const checkpoint = p.progress.epoch ? (e.type === "won" ? null : p.progress) : guestCheckpoint;
+            const notice = p.progress.epoch ? "" : saveGuest(guestCheckpoint);
+            setEnding({ kind: e.type, score: world.score, best: Math.max(best, world.score), newBest, submission, checkpoint, notice });
             setAnnounce(
               `${e.type === "won" ? "You won" : "Game over"}. Score ${world.score.toLocaleString("en")}.`
             );
@@ -610,7 +622,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         particleScale: reducedMotion ? 0.35 : 1,
         shipFloor: touchRef.current ? TOUCH_STRIP : 0,
         phoneMode: isPhoneTouchDevice(),
-        run: propsRef.current.level,
+        level: propsRef.current.progress.resumeLevel,
       });
       setTargets(world, readTargets(propsRef.current.windows));
       last = performance.now();
@@ -745,7 +757,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         <div className="player-lcd">
           <div className="flex justify-between gap-4">
             <span>SCORE {String(hud.score).padStart(6, "0")}</span>
-            {props.level > 1 && <span>RUN {props.level}</span>}
+            <span>LEVEL {props.progress.resumeLevel}</span>
             <span className="flex items-center gap-1">
               {Array.from({ length: Math.max(0, hud.lives) }, (_, i) => (
                 <CursorGlyph key={i} />
@@ -763,6 +775,8 @@ export default function OlympusGame(props: OlympusGameProps) {
           </div>
         </div>
       </div>
+
+      <div className="olympus-power-label" aria-hidden="true">{levelInfo(props.progress.resumeLevel).name}</div>
 
       {crashes.map((c) => (
         <div
@@ -801,7 +815,7 @@ export default function OlympusGame(props: OlympusGameProps) {
             <p>Turn your phone or tablet sideways to landscape.</p>
             <p>Your game is paused while you rotate.</p>
           </div>
-          <button type="button" className="olympus-button" onClick={() => props.onEnd(false, false)}>
+          <button type="button" className="olympus-button" onClick={() => props.onEnd(false)}>
             Back to desktop
           </button>
         </div>
@@ -810,12 +824,14 @@ export default function OlympusGame(props: OlympusGameProps) {
       {paused && !rotateRequired && !ending && (
         <div className="olympus-paused" role="dialog" aria-modal="true" aria-label="Game paused" onKeyDown={trapMenuFocus}>
           <div className="olympus-pause-menu">
-            <p className="olympus-menu-hint">RUN {props.level} · SCORE {String(hud.score).padStart(6, "0")}</p>
+            <p className="olympus-menu-hint">LEVEL {props.progress.resumeLevel} · SCORE {String(hud.score).padStart(6, "0")}</p>
             <h2>PAUSED</h2>
-            <p>Your run is on hold.</p>
+            <p>{levelInfo(props.progress.resumeLevel).name}</p>
+            <p className="olympus-menu-hint">{levelInfo(props.progress.resumeLevel).hint}</p>
+            <p>Your level is on hold.</p>
             <div className="olympus-actions">
               <button type="button" className="olympus-button olympus-button-primary" autoFocus onClick={resume}>Resume</button>
-              <button type="button" className="olympus-button" onClick={() => props.onEnd(false, false)}>Exit to desktop</button>
+              <button type="button" className="olympus-button" onClick={() => props.onEnd(false)}>Exit to desktop</button>
             </div>
             <FullscreenHelp duringGame />
           </div>
@@ -830,9 +846,9 @@ export default function OlympusGame(props: OlympusGameProps) {
       {ending && (
         <EndScreen
           ending={ending}
-          level={props.level}
-          onReplay={() => props.onEnd(true, ending.kind === "won")}
-          onExit={() => props.onEnd(false, ending.kind === "won")}
+          level={props.progress.resumeLevel}
+          onReplay={(progress) => props.onEnd(true, progress)}
+          onExit={() => props.onEnd(false)}
         />
       )}
 

@@ -794,6 +794,23 @@ body {
   border: 1px solid #00a800;
 }
 
+.olympus-power-label {
+  position: fixed;
+  top: max(66px, calc(env(safe-area-inset-top) + 58px));
+  right: max(8px, env(safe-area-inset-right));
+  z-index: 26;
+  padding: 2px 6px;
+  color: #ffdf64;
+  background: #080808;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.olympus-reset { max-width: 520px; padding: 12px; border: 1px solid #665d38; }
+.olympus-reset p { margin-bottom: 12px; }
+.olympus-button:disabled { opacity: .55; cursor: wait; }
+
 .olympus-meter > span {
   display: block;
   height: 100%;

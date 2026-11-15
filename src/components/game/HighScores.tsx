@@ -38,7 +38,7 @@ export default function HighScores() {
       ) : (
         <div className="olympus-scores-scroll" tabIndex={0} aria-label="High score table">
           <table>
-            <thead><tr><th scope="col">#</th><th scope="col">NAME</th><th scope="col">SCORE</th><th scope="col">RUN</th></tr></thead>
+            <thead><tr><th scope="col">#</th><th scope="col">NAME</th><th scope="col">SCORE</th><th scope="col">LEVEL</th></tr></thead>
             <tbody>{entries.map((entry, index) => (
               <tr key={entry.id} className={[
                 index < 3 ? `olympus-score-${medals[index].toLowerCase()}` : "",
@@ -63,13 +63,13 @@ export default function HighScores() {
                   </span>
                 </td>
                 <td>{entry.score.toLocaleString("en")}</td>
-                <td>{entry.run}<span aria-label={entry.outcome === "won" ? " cleared" : " reached"}>{entry.outcome === "won" ? "★" : ""}</span></td>
+                <td>{entry.level}<span aria-label={entry.outcome === "won" ? " cleared" : " reached"}>{entry.outcome === "won" ? "★" : ""}</span></td>
               </tr>
             ))}</tbody>
           </table>
         </div>
       )}
-      <p className="olympus-scores-note">★ Run cleared · ties: higher run, then first posted</p>
+      <p className="olympus-scores-note">★ Level cleared · ties: higher level, then first posted</p>
     </section>
   );
 }

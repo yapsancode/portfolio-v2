@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LEVELS, type Progress } from "@/lib/olympus/levels";
 import type { MouseEvent } from "react";
 import { site } from "@/config/site";
-import { BEST_RUN_KEY, loadBest, useGame } from "@/components/game/GameContext";
+import { loadBest, useGame } from "@/components/game/GameContext";
 import { usesTouchControls } from "@/components/game/touch-controls";
 import FullscreenHelp from "@/components/game/FullscreenHelp";
 import HighScores from "@/components/game/HighScores";
@@ -24,7 +25,6 @@ function Key({ children }: { children: string }) {
 export default function OlympusWindow() {
   const { start, close } = useGame();
   const [best] = useState(() => loadBest());
-  const [bestRun] = useState(() => loadBest(BEST_RUN_KEY));
   // Same test the game uses to show its on-screen buttons.
   const [touch] = useState(usesTouchControls);
   const [showGuide, setShowGuide] = useState(false);
@@ -37,8 +37,8 @@ export default function OlympusWindow() {
   }, [showGuide]);
 
   // A mouse click spawns the ship where the pointer is; Enter starts it in the middle.
-  const play = (e: MouseEvent<HTMLButtonElement>) =>
-    start(e.detail === 0 ? null : { x: e.clientX, y: e.clientY });
+  const play = (e: MouseEvent<HTMLButtonElement>, progress: Progress) =>
+    start(e.detail === 0 ? null : { x: e.clientX, y: e.clientY }, progress);
   const onStart = () => setShowName(true);
 
   if (showName) return <PlayerNamePrompt onPlay={play} onBack={() => setShowName(false)} />;
@@ -81,6 +81,11 @@ export default function OlympusWindow() {
             <p className="olympus-guide-tip">{guide.tip}</p>
           </section>
         </div>
+        <section>
+          <h2>Six encounters, six powers</h2>
+          <ol>{LEVELS.map((level) => <li key={level.id}><h3>Level {level.id} · {level.name}</h3><p>{level.hint}</p></li>)}</ol>
+          <p>Higher levels change the guardian’s power, not its health or your lives. Continue restarts your saved level; Start Over resets the campaign and keeps your best score.</p>
+        </section>
         <p className="olympus-guide-reassurance">{guide.reassurance}</p>
       </div>
       <div className="olympus-actions olympus-guide-actions">
@@ -141,7 +146,6 @@ export default function OlympusWindow() {
       {best > 0 && (
         <p className="olympus-title-score">
           HI-SCORE {String(best).padStart(6, "0")}
-          {bestRun > 0 && ` · RUN ${bestRun}`}
         </p>
       )}
       <p className="olympus-title-dim">{copy.warning}</p>

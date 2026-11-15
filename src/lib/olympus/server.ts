@@ -3,7 +3,9 @@ import "server-only";
 import { createHmac, createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { NextRequest, NextResponse } from "next/server";
-import { GAME_VERSION, LeaderboardError, SESSION_SECONDS, type RunResult } from "./leaderboard";
+import { GAME_VERSION, LeaderboardError, SESSION_SECONDS, type LevelResult } from "./leaderboard";
+
+import { LAST_LEVEL, progressAt, type Progress } from "./levels";
 
 const COOKIE = "olympus-player";
 
@@ -130,45 +132,63 @@ export async function limit(request: NextRequest, scope: string, id: string | nu
   if (counts.some((row) => row.hits > maximum)) throw new LeaderboardError("Too many attempts. Please try again later.", 429);
 }
 
-export async function startSession(id: string, previous: string | null) {
+export async function progress(id: string): Promise<Progress> {
   const sql = database();
-  if (!await playerName(id)) throw new LeaderboardError("Choose your player name before starting a game.", 403);
-  const token = randomBytes(32).toString("hex");
-  const hash = tokenHash(token);
-  const publicId = randomUUID();
-  if (!previous) {
-    await sql`INSERT INTO olympus_sessions (token_hash, id, player_id, game_version, run)
-      VALUES (${hash}, ${publicId}, ${id}, ${scoreVersion()}, 1)`;
-    return { token, run: 1 };
-  }
-  const rows = await sql`
-    INSERT INTO olympus_sessions (token_hash, id, player_id, game_version, run, previous_hash)
-    SELECT ${hash}, ${publicId}, ${id}, ${scoreVersion()}, run + 1, token_hash
-    FROM olympus_sessions
-    WHERE token_hash = ${tokenHash(previous)} AND player_id = ${id} AND game_version = ${scoreVersion()}
-      AND outcome = 'won' AND finished_at > now() - interval '1 hour' AND run < 1000
-    ON CONFLICT (previous_hash) DO NOTHING
-    RETURNING run
-  `;
-  if (!rows.length) throw new LeaderboardError("This winning streak has expired. Start a fresh game to post scores.", 409);
-  return { token, run: rows[0].run as number };
+  if (!await playerName(id)) throw new LeaderboardError("Your player name is missing. Choose a name to save progress.", 403);
+  const rows = await sql`INSERT INTO olympus_progress (player_id, environment, epoch)
+    VALUES (${id}, ${environment()}, ${randomUUID()})
+    ON CONFLICT (player_id, environment) DO UPDATE SET player_id = EXCLUDED.player_id
+    RETURNING highest_completed, epoch`;
+  if (rows[0].highest_completed > LAST_LEVEL) throw new LeaderboardError("Your save needs a newer version of Olympus. Refresh the game.", 409);
+  return progressAt(rows[0].highest_completed, rows[0].epoch);
 }
 
-export async function finishSession(id: string, token: string, result: RunResult) {
+export async function resetProgress(id: string, epoch: string): Promise<Progress> {
   const sql = database();
+  const rows = await sql`UPDATE olympus_progress SET highest_completed = 0, epoch = ${randomUUID()}, updated_at = now()
+    WHERE player_id = ${id} AND environment = ${environment()} AND epoch = ${epoch}
+    RETURNING epoch`;
+  if (!rows.length) throw new LeaderboardError("Your campaign changed in another tab. Go back and reload your saved level.", 409);
+  return progressAt(0, rows[0].epoch);
+}
+
+export async function startSession(id: string, level: number, epoch: string) {
+  const sql = database();
+  const token = randomBytes(32).toString("hex");
+  const rows = await sql`INSERT INTO olympus_sessions (token_hash, id, player_id, game_version, run, campaign_epoch)
+    SELECT ${tokenHash(token)}, ${randomUUID()}, ${id}, ${scoreVersion()}, ${level}, epoch
+    FROM olympus_progress WHERE player_id = ${id} AND environment = ${environment()} AND epoch = ${epoch}
+      AND LEAST(highest_completed + 1, ${LAST_LEVEL}) = ${level}
+    RETURNING run`;
+  if (!rows.length) throw new LeaderboardError("Your saved level changed. Exit and continue from the title screen.", 409);
+  return { token, level };
+}
+
+export async function finishSession(id: string, token: string, result: LevelResult): Promise<Progress> {
+  const sql = database();
+  // Recording the result and advancing its checkpoint are one atomic statement.
+  // A duplicate win cannot skip a level; an old tab cannot undo Start Over.
   const rows = await sql`
-    UPDATE olympus_sessions SET score = ${result.score}, duration_ms = ${result.durationMs},
-      outcome = ${result.outcome}, finished_at = COALESCE(finished_at, now()),
-      player_name = (SELECT name FROM olympus_players WHERE id = ${id} AND environment = ${environment()}),
-      published_at = COALESCE(published_at, now())
-    WHERE token_hash = ${tokenHash(token)} AND player_id = ${id} AND game_version = ${scoreVersion()}
-      AND started_at > now() - ${SESSION_SECONDS} * interval '1 second'
-      AND ${result.durationMs} <= EXTRACT(EPOCH FROM (now() - started_at)) * 1000 + 2000
-      AND (finished_at IS NULL OR (score = ${result.score} AND duration_ms = ${result.durationMs} AND outcome = ${result.outcome}))
-      AND EXISTS (SELECT 1 FROM olympus_players WHERE id = ${id} AND environment = ${environment()})
-    RETURNING id
-  `;
-  if (!rows.length) throw new LeaderboardError("This game could not be recorded. It may have expired or already been submitted.", 409);
+    WITH recorded AS (
+      UPDATE olympus_sessions SET score = ${result.score}, duration_ms = ${result.durationMs},
+        outcome = ${result.outcome}, finished_at = COALESCE(finished_at, now()),
+        player_name = (SELECT name FROM olympus_players WHERE id = ${id} AND environment = ${environment()}),
+        published_at = COALESCE(published_at, now())
+      WHERE token_hash = ${tokenHash(token)} AND player_id = ${id} AND game_version = ${scoreVersion()}
+        AND started_at > now() - ${SESSION_SECONDS} * interval '1 second'
+        AND ${result.durationMs} <= EXTRACT(EPOCH FROM (now() - started_at)) * 1000 + 2000
+        AND (finished_at IS NULL OR (score = ${result.score} AND duration_ms = ${result.durationMs} AND outcome = ${result.outcome}))
+        AND EXISTS (SELECT 1 FROM olympus_players WHERE id = ${id} AND environment = ${environment()})
+      RETURNING run, campaign_epoch
+    ), advanced AS (
+      UPDATE olympus_progress p SET highest_completed = CASE
+          WHEN ${result.outcome} = 'won' AND p.highest_completed = r.run - 1 THEN r.run ELSE p.highest_completed END,
+        updated_at = now()
+      FROM recorded r WHERE p.player_id = ${id} AND p.environment = ${environment()} AND p.epoch = r.campaign_epoch
+      RETURNING p.highest_completed, p.epoch
+    ) SELECT * FROM advanced`;
+  if (!rows.length) throw new LeaderboardError("This attempt could not update your save. It expired, was already submitted differently, or the campaign was reset. Exit and reload your saved level.", 409);
+  return progressAt(rows[0].highest_completed, rows[0].epoch);
 }
 
 export async function scores(id: string | null) {
@@ -180,7 +200,7 @@ export async function scores(id: string | null) {
       WHERE game_version = ${scoreVersion()} AND published_at IS NOT NULL AND hidden = false
       ORDER BY player_id, score DESC, run DESC, published_at ASC, id ASC
     )
-    SELECT id, player_name AS name, score, run, outcome, published_at AS "createdAt",
+    SELECT id, player_name AS name, score, run AS level, outcome, published_at AS "createdAt",
       COALESCE(player_id = ${id}::uuid, false) AS "isYou"
     FROM best ORDER BY score DESC, run DESC, published_at ASC, id ASC LIMIT 10
   `;

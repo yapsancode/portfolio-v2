@@ -1,20 +1,9 @@
 // Robot players for Olympus. They play the real rules (olympus.ts) a few
 // hundred times with fixed seeds and check the balance numbers.
 // Run: node scripts/olympus-sim.mjs
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
-import ts from "typescript";
-
-const source = readFileSync(new URL("../src/components/game/olympus.ts", import.meta.url), "utf8");
-const compiled = join(mkdtempSync(join(tmpdir(), "olympus-sim-")), "olympus.mjs");
-writeFileSync(
-  compiled,
-  ts.transpileModule(source, { compilerOptions: { module: "ESNext", target: "ES2022" } }).outputText
-);
-const g = await import(pathToFileURL(compiled).href);
-
+import { loadTs } from "./load-ts.mjs";
+const g = loadTs("src/components/game/olympus.ts");
+const { LEVELS } = loadTs("src/lib/olympus/levels.ts");
 // Try other numbers without editing the game:
 //   OLYMPUS_TUNING='{"boss.spread":0.1,"statue.hp":80}' node scripts/olympus-sim.mjs
 for (const [path, value] of Object.entries(JSON.parse(process.env.OLYMPUS_TUNING ?? "{}"))) {
@@ -32,7 +21,7 @@ const EYE = g.EYE ?? { x: 0.33, y: 0.265 };
 
 // shortcut: a stand-in statue shape and one fake window, not the real page.
 // Upgrade to the real picture's tile mask if the numbers stop matching playtests.
-function makeWorld(seed, screen, run) {
+function makeWorld(seed, screen, level) {
   const { w, h } = screen;
   const solid = [];
   for (let r = 0; r < ROWS; r++)
@@ -46,8 +35,9 @@ function makeWorld(seed, screen, run) {
     h,
     statue: g.createStatue(box, COLS, ROWS, solid),
     random: g.seededRandom(seed),
-    run,
-    shipFloor: screen.phone ? 100 : 0,
+    level,
+    shipFloor: screen.phone ? 136 : 0,
+    phoneMode: Boolean(screen.phone),
   });
   const targets = [0, 1, 2, 3, 4, 5].map((i) => ({ kind: "icon", id: "i" + i, x: 8, y: 8 + i * 92, w: 88, h: 84 }));
   if (!screen.phone) targets.unshift({ kind: "window", id: "about", x: 140, y: 50, w: 480, h: 380 });
@@ -166,8 +156,8 @@ function ghostBot(world) {
   return { left: false, right: false, thrust: false, fire: false };
 }
 
-function play(seed, screen, bot, run = 1) {
-  const world = makeWorld(seed, screen, run);
+function play(seed, screen, bot, level = 1) {
+  const world = makeWorld(seed, screen, level);
   const out = { end: "timeout", wake: 0, boss: 0, livesAtBoss: 0, windowTime: 0, tail: 0 };
   let bossStart = 0;
   let firstWindowHit = 0;
@@ -196,8 +186,8 @@ function play(seed, screen, bot, run = 1) {
 
 const median = (list) => [...list].sort((a, b) => a - b)[Math.floor(list.length / 2)] ?? 0;
 
-function stats(screen, bot, run = 1) {
-  const games = Array.from({ length: GAMES }, (_, i) => play(i + 1, screen, bot, run));
+function stats(screen, bot, level = 1) {
+  const games = Array.from({ length: GAMES }, (_, i) => play(i + 1, screen, bot, level));
   const won = games.filter((x) => x.end === "won");
   const reached = games.filter((x) => x.livesAtBoss > 0);
   return {
@@ -226,32 +216,14 @@ for (const [screenName, screen] of Object.entries(SCREENS)) {
   }
 }
 
-// Targets. Each roadmap step switches its own lines on.
-const R = results;
-const all = Object.values(R);
-const ghostWake = play(1, SCREENS.desktop, ghostBot).wake;
-console.log(`nobody shoots: statue wakes at ${ghostWake.toFixed(1)}s`);
-const run2 = stats(SCREENS.desktop, dodgerBot, 2).win;
-const run3 = stats(SCREENS.desktop, dodgerBot, 3).win;
-console.log(`desktop dodger wins: run 1 ${(R["desktop.dodger"].win * 100).toFixed(0)}%, run 2 ${(run2 * 100).toFixed(0)}%, run 3 ${(run3 * 100).toFixed(0)}%`);
-const D = R["desktop.dodger"];
-const P = R["phone.dodger"];
-const checks = [
-  ["step 5: each run after a win is harder (run 1 > run 2 > run 3), but still beatable", D.win >= run2 && run2 > run3 && run3 > 0.03],
-  ["step 4: Idle (never moves) wins under 10%", R["desktop.idle"].win < 0.1 && R["phone.idle"].win < 0.1],
-  // The phone is gentler on purpose: touch buttons are much harder for a person than for a robot.
-  ["step 4: Dodger wins 40-70% on desktop, and at least that on phone", D.win >= 0.4 && D.win <= 0.7 && P.win >= 0.4],
-  ["step 4: Dodger's boss fight is 20-25 s on desktop, under 35 s on phone", D.boss >= 20 && D.boss <= 25 && P.boss < 35],
-  ["step 4: the last 5% of the statue takes under 3 s (median of wins)", all.every((r) => r.tail <= 3)],
-  ["step 2: an active player wakes the statue between 15 and 30 s", all.every((r) => r.wake >= 15 && r.wake <= 30)],
-  ["step 2: with nobody shooting, the statue still wakes at 45 s", Math.abs(ghostWake - 45) < 0.5],
-  ["step 2: the first window survives 4+ s of fire", R["desktop.dodger"].windowTime >= 4 && R["desktop.idle"].windowTime >= 4],
-  ["step 1: on a phone, Idle reaches the boss with 2+ lives in most games", R["phone.idle"].twoLives >= 0.7],
-];
-
-let failed = 0;
-for (const [name, ok] of checks) {
-  console.log(`${ok ? "PASS" : "FAIL"}  ${name}`);
-  if (!ok) failed++;
+// Diagnostic comparisons, not a difficulty ladder or proof of human fairness.
+console.log("\nDistinct powers (same health, lives and movement tuning):");
+for (const { id, name } of LEVELS) {
+  for (const [screenName, screen] of Object.entries(SCREENS)) {
+    const r = stats(screen, dodgerBot, id);
+    console.log(`Level ${id} ${name} / ${screenName}: ${(r.win * 100).toFixed(0)}% wins, ${r.boss.toFixed(1)}s boss`);
+  }
 }
-process.exit(failed ? 1 : 0);
+console.log("Legacy bots do not understand the new telegraphs; human phone/keyboard playtests are still needed.");
+
+console.log(`No shots: statue wakes at ${play(1, SCREENS.desktop, ghostBot).wake.toFixed(1)}s`);

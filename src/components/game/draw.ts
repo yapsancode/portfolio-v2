@@ -1,4 +1,4 @@
-import { EYE, eyePoint, throwPoint, tileOrigin, TUNING, type Rock, type Ship, type World } from "./olympus";
+import { EYE, eyePoint, orbitRadius, throwPoint, tileOrigin, TUNING, type Rock, type Ship, type World } from "./olympus";
 
 /** The statue picture and the part of it the wallpaper shows. */
 export type StatueArt = {
@@ -87,7 +87,7 @@ function drawRock(ctx: CanvasRenderingContext2D, rock: Rock) {
   ctx.fill();
   ctx.lineWidth = rock.thrown ? 3 : 2;
   ctx.lineJoin = "miter";
-  ctx.strokeStyle = rock.thrown ? "#c00000" : "#404040";
+  ctx.strokeStyle = rock.thrown ? "#c00000" : rock.power ? "#9cfff3" : "#404040";
   ctx.stroke();
   // A lighter face toward the top-left.
   ctx.translate(-Math.round(rock.r * 0.14), -Math.round(rock.r * 0.14));
@@ -180,6 +180,7 @@ function drawStatue(ctx: CanvasRenderingContext2D, world: World, art: StatueArt)
 
 /** The statue's attacks: the warning before a throw, and the laser eye. */
 function drawAttacks(ctx: CanvasRenderingContext2D, world: World) {
+  if (world.level > 1) { drawPower(ctx, world); return; }
   const { statue } = world;
 
   // Warning before a throw: a square that closes in on the throwing hand.
@@ -219,6 +220,64 @@ function drawAttacks(ctx: CanvasRenderingContext2D, world: World) {
     line(wide, "#ff2020");
     line(wide * 0.4, "#ffffff");
   }
+}
+
+function drawPower(ctx: CanvasRenderingContext2D, world: World) {
+  const a = world.attack;
+  if (a.state === "rest") return;
+  const warning = a.state === "warn";
+  const reach = world.w + world.h;
+  const height = world.h - world.shipFloor;
+  ctx.save();
+  // Attacks and their cues stop above the touch controls.
+  ctx.beginPath(); ctx.rect(0, 0, world.w, height); ctx.clip();
+  ctx.strokeStyle = "#ffdb54"; ctx.lineWidth = 2;
+  const ray = (angle: number) => {
+    ctx.beginPath(); ctx.moveTo(a.x, a.y);
+    ctx.lineTo(a.x + Math.cos(angle) * reach, a.y + Math.sin(angle) * reach); ctx.stroke();
+  };
+  const arc = (radius: number, start: number, end: number) => {
+    ctx.beginPath(); ctx.arc(a.x, a.y, radius, start, end); ctx.stroke();
+  };
+  if (world.level === 4) {
+    for (const lane of a.lanes) {
+      const left = lane * world.w / 5;
+      ctx.fillStyle = warning ? "rgba(255,216,0,.13)" : "rgba(255,216,0,.04)";
+      ctx.fillRect(left, 0, world.w / 5, height);
+      ctx.setLineDash(warning ? [6, 6] : []);
+      ctx.strokeRect(left + 4, 4, world.w / 5 - 8, height - 8);
+      ctx.fillStyle = "#ffdb54"; ctx.font = "14px monospace";
+      ctx.textAlign = "center"; ctx.fillText(warning ? "↓ RAIN" : "↓", left + world.w / 10, 24);
+    }
+  } else if (world.level === 6) {
+    const start = a.angle - TUNING.powers.sweepArc / 2;
+    const end = a.angle + TUNING.powers.sweepArc / 2;
+    ctx.setLineDash([6, 6]); ray(start); ray(end);
+    arc(65, start, end);
+    // Arrow at the end of the warning arc communicates the clockwise sweep.
+    const x = a.x + Math.cos(end) * 65, y = a.y + Math.sin(end) * 65;
+    ctx.setLineDash([]); ctx.fillStyle = "#ffdb54";
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(end - 0.8) * 12, y + Math.sin(end - 0.8) * 12);
+    ctx.lineTo(x + Math.cos(end - 2.3) * 12, y + Math.sin(end - 2.3) * 12); ctx.fill();
+    if (!warning) {
+      const angle = start + TUNING.powers.sweepArc * Math.min(1, a.elapsed / TUNING.powers.sweepDuration);
+      ctx.lineWidth = 18; ctx.strokeStyle = "#ff5030"; ray(angle);
+      ctx.lineWidth = 6; ctx.strokeStyle = "#fff8de"; ray(angle);
+    }
+  } else if (world.level === 3) {
+    const radius = warning ? 28 : 28 + a.elapsed * 135 * world.scale;
+    ctx.setLineDash([5, 8]); arc(radius, a.angle + Math.PI / 4, a.angle + Math.PI * 1.75);
+    ctx.setLineDash([]); ctx.strokeStyle = "#74ffbf"; ctx.lineWidth = 4;
+    arc(radius, a.angle - Math.PI / 4, a.angle + Math.PI / 4);
+  } else if (world.level === 5) {
+    ctx.setLineDash([5, 10]); arc(orbitRadius(world), 0, Math.PI * 2);
+  } else if (warning) {
+    // Swirling rings and a fixed fan show where the two waves will travel.
+    arc(18 + (1 - a.t / TUNING.powers.warning) * 20, world.time, world.time + Math.PI * 1.6);
+    ctx.setLineDash([3, 12]); ray(a.angle - 0.73); ray(a.angle + 0.73);
+  }
+  ctx.restore();
 }
 
 export function drawWorld(

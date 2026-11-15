@@ -1,16 +1,9 @@
 // Run with: node --test scripts/olympus-controls.test.mjs
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import ts from "typescript";
-
-async function load(name) {
-  const source = readFileSync(new URL(`../src/components/game/${name}.ts`, import.meta.url), "utf8");
-  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } });
-  return import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
-}
-const { createWorld, createStatue, seededRandom, step, TUNING } = await load("olympus");
-const { joystickVector } = await load("touch-controls");
+import { loadTs } from "./load-ts.mjs";
+const { createWorld, createStatue, seededRandom, step, TUNING } = loadTs("src/components/game/olympus.ts");
+const { joystickVector } = loadTs("src/components/game/touch-controls.ts");
 const neutral = { left: false, right: false, thrust: false, fire: false };
 const makeWorld = () => createWorld({ w: 4000, h: 3000, statue: createStatue({ x: 3000, y: 2500, w: 100, h: 200 }, 1, 1, [1]), random: seededRandom(42) });
 const advance = (world, joystick, frames = 60, fire = false) => {

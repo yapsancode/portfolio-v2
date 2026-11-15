@@ -1,5 +1,6 @@
 "use client";
 
+import type { Progress } from "@/lib/olympus/levels";
 import { createContext, useContext } from "react";
 
 /**
@@ -9,7 +10,7 @@ import { createContext, useContext } from "react";
 export type GameControls = {
   close: () => void;
   /** `spawnAt` is where the pointer was, so the ship appears there. */
-  start: (spawnAt: { x: number; y: number } | null) => void;
+  start: (spawnAt: { x: number; y: number } | null, progress: Progress) => void;
 };
 
 export const GameContext = createContext<GameControls | null>(null);
@@ -21,7 +22,7 @@ export function useGame(): GameControls {
 }
 
 export const BEST_SCORE_KEY = "isyraf98:olympus-best";
-/** The highest run (wins in a row) the visitor has cleared. */
+/** Legacy consecutive-win record; not used to unlock campaign levels. */
 export const BEST_RUN_KEY = "isyraf98:olympus-best-run";
 
 export function loadBest(key = BEST_SCORE_KEY): number {
