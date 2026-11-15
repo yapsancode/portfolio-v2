@@ -5,6 +5,7 @@ import type { MouseEvent } from "react";
 import { site } from "@/config/site";
 import { BEST_RUN_KEY, loadBest, useGame } from "@/components/game/GameContext";
 import { usesTouchControls } from "@/components/game/touch-controls";
+import FullscreenHelp from "@/components/game/FullscreenHelp";
 
 const copy = site.olympus.title;
 
@@ -40,6 +41,7 @@ export default function OlympusWindow() {
         </button>
         <button type="button" className="olympus-button" onClick={close}>Back to desktop</button>
       </div>
+      <FullscreenHelp />
 
       {touch ? (
         <p className="olympus-title-keys">

@@ -481,6 +481,47 @@ body {
   font-size: 15px;
 }
 
+.olympus-fullscreen-help {
+  width: min(100%, 400px);
+  flex-shrink: 0;
+  color: #c0c0c0;
+  font-family: var(--font-pixel);
+  font-size: 17px;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.olympus-install {
+  width: min(100%, 560px);
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border: 1px solid #665d38;
+  background: #141412;
+  font-family: var(--font-pixel);
+  text-align: left;
+}
+
+.olympus-install-heading { display: flex; align-items: center; gap: 12px; }
+.olympus-install-heading img { flex-shrink: 0; border-radius: 10px; image-rendering: pixelated; }
+.olympus-install .olympus-install-heading h2 { color: #ffd800; font-size: 20px; line-height: 1.1; margin: 0 0 4px; letter-spacing: 0; text-shadow: none; }
+.olympus-install p { color: #c0c0c0; font-size: 16px; line-height: 1.2; }
+.olympus-install .olympus-fullscreen-help { width: 100%; }
+.olympus-install .olympus-fullscreen-help summary { padding: 8px 0 0; font-size: 16px; }
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .olympus-install { padding: 8px 12px; }
+}
+
+.olympus-fullscreen-help summary {
+  padding: 10px 0;
+  color: #ffd800;
+  cursor: pointer;
+}
+
+.olympus-fullscreen-help ol { list-style: decimal; padding-left: 22px; margin: 8px 0; }
+.olympus-fullscreen-help li { margin: 6px 0; }
+.olympus-fullscreen-help a { color: #ffd800; text-decoration: underline; }
+
 .olympus-shortcut {
   color: #c0c0c0;
   font-size: 15px;
@@ -599,7 +640,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.olympus-playing { touch-action: none; }
+/* Canvas and joystick block gestures; menus must still scroll on short phones. */
+.olympus-paused,
+.olympus-title,
+.bsod { touch-action: pan-y; overscroll-behavior: contain; }
 .olympus-touch-playing .desktop-taskbar { display: none; }
 
 /* Touch play uses the whole viewport; desktop keeps its taskbar. */
@@ -1387,4 +1431,23 @@ body {
   .boot-screen {
     display: none;
   }
+}
+
+/* Edge-to-edge backgrounds, with interactive content clear of the notch. */
+@media (pointer: coarse) {
+  .win-window.fixed { padding-top: env(safe-area-inset-top); }
+  .win-titlebar,
+  .taskbar {
+    padding-left: max(4px, env(safe-area-inset-left));
+    padding-right: max(4px, env(safe-area-inset-right));
+  }
+  .taskbar { bottom: env(safe-area-inset-bottom); }
+  .olympus-title,
+  .olympus-paused,
+  .olympus-rotate,
+  .bsod {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .olympus-paused { align-items: safe center; }
 }

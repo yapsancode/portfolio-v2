@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { VT323 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { site } from "@/config/site";
@@ -11,6 +11,13 @@ const vt323 = VT323({
 });
 
 const siteUrl = site.url;
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#000000",
+};
+
 const pageTitle =
   "Isyraf Afifi - Software Engineer in Malaysia";
 const pageDescription =

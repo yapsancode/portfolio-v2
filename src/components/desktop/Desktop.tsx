@@ -403,7 +403,11 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
         <nav
           aria-label="Desktop icons"
           className="absolute left-2 top-2 z-10 flex flex-col flex-wrap content-start items-start gap-1"
-          style={{ maxHeight: `calc(100% - ${TASKBAR_HEIGHT + 16}px)` }}
+          style={{
+            left: "max(8px, env(safe-area-inset-left))",
+            top: "max(8px, env(safe-area-inset-top))",
+            maxHeight: `calc(100% - ${TASKBAR_HEIGHT + 16}px - env(safe-area-inset-top) - env(safe-area-inset-bottom))`,
+          }}
         >
           {desktopIcons.map((icon) => (
             <DesktopIcon

@@ -10,6 +10,7 @@ import { useMusic } from "@/components/desktop/music";
 import { BEST_RUN_KEY, loadBest, saveBest } from "./GameContext";
 import { playSound, setSoundVolume, unlockSound } from "./sound";
 import TouchJoystick from "./TouchJoystick";
+import FullscreenHelp from "./FullscreenHelp";
 import { isPhoneTouchDevice, usesTouchControls, type StickVector } from "./touch-controls";
 import { enterGameFullscreen } from "./fullscreen";
 import {
@@ -311,9 +312,9 @@ function TouchPad({
 
 function trapMenuFocus(e: ReactKeyboardEvent<HTMLDivElement>) {
   if (e.key !== "Tab") return;
-  const buttons = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button"));
-  const first = buttons[0];
-  const last = buttons[buttons.length - 1];
+  const controls = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("button, summary, a[href]"));
+  const first = controls[0];
+  const last = controls[controls.length - 1];
   if (!first || !last) return;
   if (e.shiftKey && (document.activeElement === first || document.activeElement === e.currentTarget)) {
     e.preventDefault();
@@ -806,6 +807,7 @@ export default function OlympusGame(props: OlympusGameProps) {
               <button type="button" className="olympus-button olympus-button-primary" autoFocus onClick={resume}>Resume</button>
               <button type="button" className="olympus-button" onClick={() => props.onEnd(false, false)}>Exit to desktop</button>
             </div>
+            <FullscreenHelp duringGame />
           </div>
         </div>
       )}
