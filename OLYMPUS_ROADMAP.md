@@ -2,7 +2,7 @@
 
 Updated: 15 November 2026.
 
-**Status: levels 1–6 and resumable player progress implemented; automated verification completed for this release.** Reviewed against `56aa5df`, including the latest score-card and social-sharing update. Levels 7–10 are documented concepts below, not implemented. Real-device and human balance playtests remain open.
+**Status: levels 1–6 and resumable player progress implemented. The current revision adds the Earth-resource story, per-level dialogue, and stronger level 2–6 attack patterns; pending release.** Reviewed against `56aa5df`, including the latest score-card and social-sharing update. Levels 7–10 are documented concepts below, not implemented. Real-device and human balance playtests remain open.
 
 This is the active plan. The latest clarification prioritizes creative, distinctive, memorable encounters over difficulty progression. It supersedes both the earlier harder-replay targets and the later requirement for equal difficulty, as well as the pre-launch merge restrictions. The original plan and historical simulation results are preserved in [the 14 November archive](docs/archive/OLYMPUS_ROADMAP_2026-11-14.md). Historical numbers are not acceptance targets for the new levels.
 
@@ -29,11 +29,11 @@ This is the active plan. The latest clarification prioritizes creative, distinct
 - A story and device-specific instructions.
 - Reserved player names, signed browser identity cookies, Neon score storage, and the global top ten with retro medals.
 - Shareable saved-score cards and public result pages, with native sharing where supported, image download, and a copyable challenge. Card ranks describe the time the card was created, not a permanently fixed leaderboard position.
-- The original encounter remains level 1. Levels 2–6 use new powers, with no level-based speed or health increase. Loss and exit keep the checkpoint.
+- The original encounter remains level 1. Revised levels 2–6 use distinct stronger patterns and 48 health, compared with level 1’s 38. Three lives and movement controls are preserved. Loss and exit keep the checkpoint.
 
 ## Experience and terminology
 
-Each level is another encounter with the same marble guardian, who changes powers to protect the desktop. Keep the Windows 98 and marble visual identity, pointer fighter, destruction/anger introduction, awakening, and restored desktop on exit.
+Earth needs marble resources to rebuild its cities and orbital stations. Inside Isyraf 98, the pointer becomes a small salvage battleship sent to collect Olympus marble. The egotistical guardian sees the expedition as theft of its own greatness. Each level is another encounter with that guardian, who changes powers to defend the marble. Breaking fragments represents automatic resource collection through the existing score rewards; this story does not introduce a separate inventory, economy, or mining upgrade system. Keep the Windows 98 and marble visual identity, pointer fighter, destruction/anger introduction, awakening, and restored desktop on exit.
 
 A **level** is a numbered encounter with its own attack profile. A **phase** is a section of that encounter. An **attempt** is one try at a level. A component remount identifier is only an implementation detail, never player progress.
 
@@ -58,11 +58,11 @@ These six profiles are implemented. Complete level 1 to unlock level 2, and so o
 | Level | Statue power | Warning and attack | Player response |
 | --- | --- | --- | --- |
 | 1 | Marble Guardian | Existing throws, spread, and aimed laser with fixed baseline timing and health-based phases. | Dodge hot marble; move away when the eye beam locks. |
-| 2 | Marble Swarm | A marked marble formation point and swirling rings announce two waves of small destructible marble asteroids. | Shoot an opening or steer between fragments. |
-| 3 | Shattered Halo | A visible ring marks an expanding circle of fragments with a clear safe gap. | Move through the gap; keep an escape route available. |
-| 4 | Meteor Rain | Mark selected lanes before marble falls through them. | Move into an unmarked lane; always leave a reachable safe lane. |
-| 5 | Orbiting Armour | Breakable marble shields orbit the statue with visible openings and recovery windows. | Break a shield or fire through a gap to hit the statue. |
-| 6 | Sweeping Gaze | A warning arc shows the direction of a slow laser sweep before it becomes damaging. | Move around the sweep into the advertised safe space. |
+| 2 | Marble Swarm | A marked marble formation point and swirling rings announce three warned shoulder volleys of destructible marble asteroids. | Shoot an opening or steer between fragments. |
+| 3 | Shattered Halo | Two expanding fragment rings have offset, shifting safe gaps and separate warnings. | Move through the gap; keep an escape route available. |
+| 4 | Meteor Rain | Three waves target occupied lanes; each locks its lane and drop positions during a fresh warning. | Move into an unmarked lane; always leave a reachable safe lane. |
+| 5 | Orbiting Armour | Breakable shields absorb shots, then surviving shields freeze, warn, and launch outward. | Break a shield or fire through a gap to hit the statue. |
+| 6 | Sweeping Gaze | A wider sweep makes a separately warned return pass; the next cycle reverses its starting direction. | Move around the sweep into the advertised safe space. |
 
 Each profile **replaces** the appropriate part of the previous attack schedule. It does not inherit every earlier power. In particular, level 2 does not add a swarm on top of level 1's simultaneous spreads and laser. This is the current baseline for levels 2–6. Future levels may use deliberately coordinated combinations, such as the three-clone volley, when they support the creative concept and leave readable counterplay and recovery.
 
@@ -119,13 +119,13 @@ These concepts extend the lineup without changing the six currently playable lev
 ### Level 2: Marble Swarm specification
 
 - Use marble fragments, not unrelated space assets. Destructible swarm fragments must look distinct from hot, indestructible thrown marble.
-- Use a 1.2-second visual warning and matching rumble. Audio is supplementary; the warning must work with sound muted.
-- Two waves, 0.55 seconds apart: up to six total fragments on phones/tablets and eight on desktop. Spawns too close to the player are omitted.
+- Use a 1-second desktop / 1.2-second touch visual warning before each volley, with matching rumble. Audio is supplementary; the warning must work with sound muted.
+- Three volleys from alternating shoulders, each aimed and locked during its own warning. Use three fragments per touch volley or four on desktop, with an active cap of nine/twelve respectively. Spawns too close to the player are omitted.
 - Spawn from visibly marked positions near the statue. Never materialize damaging fragments on the player or inside the joystick/Fire area.
 - Swarm fragments can be destroyed and do not split into extra fragments.
 - No concurrent laser or spread during the swarm. Leave a navigable escape route and enough warning for the slower phone pointer.
-- Give the player 1.5 seconds of recovery/attack opportunity afterward; tune against the baseline encounter.
-- Apply a shared active-hazard budget, including existing fragments, before scheduling another wave. Despawn expired fragments and clear all attack state on retry, exit, and level transition.
+- Finish with 1 second of recovery on desktop or 1.2 seconds on touch. Earlier volleys may still travel during a later volley’s warning, within the shared profile budget.
+- Apply the profile’s active-hazard budget, including existing fragments, before spawning another wave. Despawn expired fragments and clear all attack state on retry, exit, and level transition.
 - The boss remains beatable through both shooting and movement. Reject a pattern that forces unavoidable damage or rewards only standing still and holding Fire.
 
 ### Creative identity first; difficulty second
@@ -142,15 +142,15 @@ The desired reaction is “I want to see what the statue does next.” Each leve
 - Use an explicit active-hazard budget and bounded lifetimes for each profile. Raising a budget is a conscious design decision, not an accidental consequence of stacking powers.
 - Playtests should ask: Did this feel different? Was the reveal memorable? Did the player understand what happened? Would they replay it or want to see the next level? Use difficulty and fight duration as supporting evidence.
 
-## Planned statue personality and per-level dialogue
+## Statue personality and per-level dialogue
 
-**Status: dialogue expansion is planned, not implemented.** The current game still uses its existing shared lines. Add level-specific pools alongside the power catalogue when this feature is built.
+**Status: levels 1–6 now have 15 authored lines each in `src/components/game/dialogue.ts` (90 total).** Levels 7–10 and topical rotations remain planned. The shared generic lines and the competing hint/wakeup speech timers have been removed. Gameplay hints remain in the guide, pause menu, and accessibility announcements.
 
 The guardian has an enormous ego and takes a tiny desktop pointer far too personally. It boasts, overreacts, invents excuses, and treats every new power as proof of its own greatness. Humour should make players enjoy provoking it. Mix short emotional barks (“ARHHH!”, “AGAIN?!”, “MY FACE!”) with lines that reference the current transformation.
 
 ### Draft voice palette for all ten levels
 
-These are example lines to develop into larger pools, not a fixed script played in order.
+This table describes the voice direction; the runtime file contains the final level 1–6 pools. Levels 7–10 remain draft examples. Lines are selected from shuffled event pools, not spoken as a fixed script.
 
 | Level | Character angle | Example randomized lines |
 | --- | --- | --- |
@@ -167,10 +167,10 @@ These are example lines to develop into larger pools, not a fixed script played 
 
 ### Dialogue events and selection
 
-- Provide separate pools per level for awakening/entrance, power reveal, occasional damage reaction, player life lost, and statue defeat. A rare idle boast may fill a quiet recovery window.
+- Provide separate pools per level for awakening/entrance, power reveal, occasional damage reaction, player life lost, and statue defeat. The implemented events are entrance, attack, hurt, player-hit taunt, and defeat. Idle chatter is a possible future addition.
 - Make the first power reveal understandable; afterwards vary the line so retries feel lively. Keep essential instructions and attack warnings deterministic even when flavour text is random.
 - Use a shuffled pool or recent-line exclusion to avoid immediate repeats. Exhaust several alternatives before repeating a joke. Short barks supplement each level's voice instead of replacing it.
-- Rate-limit speech and hit reactions. Never produce a bubble for every bullet hit; important reveal/defeat lines take precedence over idle chatter.
+- Speech lasts 3.2 seconds of simulation time, with a five-second chatter cooldown. Hurt reactions are sampled sparingly. Entrance and defeat have priority; bullet-hit spam cannot replace them. Recent lines are remembered across attempts in the same page session.
 - Level 7 can use occasional brief clone disagreement or a synchronized shout, but show one readable exchange at a time rather than three overlapping bubbles.
 - Keep bubbles short, legible, and clear of warnings, the HUD, and touch controls. Pause dialogue timers with gameplay and clear them on exit, retry, or level transition.
 - Keep accessibility announcements useful: announce significant reveals and warnings; avoid overwhelming screen-reader users with every random taunt. Text works with sound muted; new voice acting is not required by this plan.
@@ -222,7 +222,7 @@ The scoreboard now supplies the identity and Neon connection. Named players use 
 - The signed cookie remembers a browser, **not a cross-device account**. Clearing cookies loses access. Safari and a Home Screen install may have separate storage; do not promise transfer or recovery by name. Existing valid cookies are refreshed when the named player is loaded.
 - If the server cannot be reached, an explicitly labeled guest option uses the separate local key `isyraf98:olympus-progress:v1`. It validates the same versioned checkpoint shape with `epoch: null`; invalid saves start safely at level 1 with feedback. Blocked local storage allows in-memory play and reports that the save will not survive closing. Guest progress does not merge into a named player's campaign.
 - Keep `isyraf98:olympus-best` for the independent local best score. Leave legacy `isyraf98:olympus-best-run` untouched, but do not display it or unlock new powers from it. Start Over changes no scores, player names, music settings, or unrelated storage.
-- The scoreboard is versioned as `olympus-3`, because new shootable powers change scoring opportunities. Historical `olympus-2` scores remain in Neon; the current board ranks the new rules separately. Existing player names and local best scores remain.
+- The revised scoreboard is versioned as `olympus-4`, because attack difficulty, health, and scoring opportunities changed. Historical `olympus-2` and `olympus-3` scores remain in Neon; the current board ranks the new rules separately. Existing player names, level checkpoints, local best scores, and previously shared score-card links remain.
 
 ### Database deployment
 
@@ -232,11 +232,11 @@ The scoreboard now supplies the identity and Neon connection. Named players use 
 
 1. **Complete: level model and wording.** Catalogue, level/power names, distinct attempt IDs, fixed baseline tuning, HUD/pause/endings/guide and scoreboard wording.
 2. **Complete: saved progression and menus.** Signed player checkpoints, immediate win saves, retry/continue, final-level behavior, Start Over, guest fallback and explicit save failures.
-3. **Complete: Marble Swarm.** Warned two-wave attack, shootable non-splitting fragments, eight-hazard cap, finite lifetime, recovery, visual and audio cues, touch counts.
-4. **Complete: levels 3–6.** Halo with a safe gap; rain with safe lanes; three breakable orbiting shields whose destruction also damages the statue (no extra required hits); slow, warned sweep. All use separate schedules and finite cleanup.
+3. **Complete: revised Marble Swarm.** Three separately warned shoulder volleys, shootable non-splitting fragments, profile-specific hazard budget, finite lifetime and recovery.
+4. **Complete: revised levels 3–6.** Two halo rings with shifting gaps; three targeted rain waves; shields that absorb shots and then launch after warning; wider outbound/return laser sweeps. Breaking a shield no longer awards free statue damage. All use bounded hazards and explicit cleanup.
 5. **Open: human playtest and polish.** Test keyboard, phone/tablet joystick, real iPhone Safari and its Home Screen app. Prioritize distinctiveness, enjoyment, clarity, and memorable reveals. Use challenge and encounter duration to refine the experience, not to enforce equal difficulty.
 6. **Planned next: levels 7–10.** Marble Mirage, Borrowed Time, Gates of Olympus, and The Marble Leviathan, as specified above. Implement and validate one profile at a time.
-7. **Planned: statue dialogue.** Per-level, per-event randomized pools, repetition control, dramatic barks, and occasional curated topical lines.
+7. **Complete for levels 1–6: statue dialogue and Earth mission story.** Per-level event pools, repetition control, dramatic barks, simulation-time cooldowns. Levels 7–10 dialogue and curated topical rotations remain planned.
 8. **Later: levels 11–100.** Expand after the initial ten are stable. The number 100 remains future scope, not shipped content.
 
 ## Future 100-level direction
@@ -255,7 +255,7 @@ Level 100 should have a distinctive finale and story payoff. It may be harder, c
 | `src/components/desktop/Desktop.tsx` | Start a selected/saved level; separate attempt/remount ID from progression; preserve desktop and fullscreen cleanup. |
 | `src/components/game/GameContext.tsx` and a focused progress helper | Storage schema, validation, migration, save-result handling, start/continue controls. |
 | `src/components/window/OlympusWindow.tsx` | Continue / Play / Start Over choices and saved-level information. |
-| `src/config/site.ts` | Level story, power instructions, UI labels, save/reset feedback. |
+| `src/config/site.ts`, `src/components/game/dialogue.ts` | Earth mission story, power instructions, per-level dialogue pools and speech scheduling. |
 | `src/app/globals.css`, joystick, fullscreen and Home Screen helpers | Preserve current mobile layout, safe areas, no-selection behavior, readable/scrollable menus, and installation experience. |
 | `scripts/olympus-sim.mjs` and focused tests | Per-profile scenarios, save transitions, difficulty comparisons; retire historical “later runs must be harder” expectations. |
 
@@ -296,3 +296,14 @@ Prefer the existing canvas/React/Web Audio implementation and avoid new dependen
 - Production build and TypeScript pass. ESLint passes with the pre-existing `opengraph-image.tsx` image warning.
 - Headless Edge browser checks use mocked player/score API responses and the real built game: desktop 1280×800 and phone 667×320 cover returning level 2, reset/cancel, retained best score, reload, pause/resume, mobile-only joystick and exit. They complement the real SQL tests; they are not a live Neon or physical iPhone test.
 - Seeded legacy-bot diagnostics (20 attempts/profile/device) show no rising difficulty formula and no longer require later levels to be harder. New powers often finish faster than the original guardian because the bot can fire more consistently. These keyboard-oriented bots do not establish touch balance or equal difficulty. Human comparisons of enjoyment, readability, and distinctiveness remain required.
+
+## Current difficulty and story revision
+
+- The user approved stronger encounters, level-specific speech, and a marble-resource expedition from Earth. Levels 7–10 are still concepts, not part of this implementation.
+- Initial revised-pattern simulations still ended several encounters after roughly one cycle. Level 2–6 health was therefore tuned from 38 to 48; level 1 remains unchanged. This is an explicit tuning choice, not an endlessly increasing level multiplier.
+- Swarm: three waves, 225 base fragment speed; halo: two rings, 190 speed, 72-degree gaps offset from the player; rain: three waves, two threatened lanes out of five, 245 fall speed and locked target positions; armour: 2.4-second orbit, warned aimed launch at 245 speed; gaze: 2.1-radian arc, 2.4 seconds per pass and a full return warning. Existing viewport scaling applies to fragment speed.
+- Active budgets are 9/12 swarm fragments (touch/desktop), 12/16 halo fragments, 12 rain fragments, and three shields. Each wave is warned for 1.0/1.2 seconds (desktop/touch); cycle recovery is 1.0/1.2 seconds. Patterns clear on death, resize, victory, retry, and exit.
+- Resource collection is narrative framing for the existing automatic marble-destruction score rewards. Desktop damage provokes the guardian; it is not described as a separate marble inventory.
+- Automated verification: 22 game/control/dialogue tests and 18 PostgreSQL-backed score/progress/share checks pass. TypeScript and the production build pass; lint has only the existing Open Graph image warning.
+- Browser checks use the built game with mocked API responses. Short landscape phone checks cover each level 2–6 entrance, speech bounds, pause/resume expiry, and attack rendering; the Earth-resource guide is also checked. Screenshots remain local review artifacts.
+- Thirty-seed legacy-bot diagnostics: desktop dodger median boss durations are 18.5s (L2), 15.5s (L3), 17.8s (L4), 12.6s (L5), and 14.8s (L6). The laser is substantially more dangerous. Several auto-aiming bots still perform well against shootable powers; these bots do not understand the new warnings and their phone scenarios still use keyboard steering. These results are diagnostics, not a claim of final human difficulty balance. Physical phone/tablet playtesting remains open.

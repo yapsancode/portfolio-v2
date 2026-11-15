@@ -136,7 +136,7 @@ export const site = {
     /** The title screen inside the olympus.exe window. */
     title: {
       presents: "Isyraf 98 presents",
-      tagline: "Shoot everything on this desktop.",
+      tagline: "Collect marble. Supply Earth. Survive Olympus.",
       start: "Press Enter to start",
       startTouch: "Tap to start",
       warning: "Windows may crash. Icons may not survive. Everything comes back when you quit.",
@@ -145,10 +145,10 @@ export const site = {
       label: "Story & how to play",
       title: "Welcome to Olympus",
       storyTitle: "The desktop has a guardian",
-      story: "Deep inside Isyraf 98, a marble guardian watches over the desktop. Your pointer has escaped its everyday job and become a tiny fighter. Every shattered icon and flying marble chip stirs the guardian's temper. Survive the chaos, bring the statue down, and reclaim the desktop.",
+      story: "Earth needs resources to rebuild its cities and orbital stations. Inside Isyraf 98, your pointer becomes a tiny salvage battleship, sent to Olympus to gather its precious marble. Shatter drifting fragments to collect resources for home. But the marble belongs to an ancient guardian with an enormous ego. Every piece you take wakes its anger, and each encounter reveals another power. Fill Earth's supply ships, survive the guardian, and bring the marble home.",
       missionTitle: "Your mission",
       steps: [
-        { title: "Cause a little chaos", text: "Shoot drifting rocks, desktop icons, and open windows to score points. Watch the ANGER meter rise." },
+        { title: "Gather resources for Earth", text: "Shoot marble fragments to collect their resources automatically and earn points. Desktop icons and windows also score points and provoke the guardian. Watch the ANGER meter rise." },
         { title: "Take on the guardian", text: "When the statue wakes, shoot the marble still attached to it to drain its health. Each level brings a different power: watch its warning and use the gaps. Orange marble is too hot to break; pale fragments with blue edges can be shot." },
         { title: "Bring Olympus down", text: "You have three lives. Destroy the statue before you lose them all. After a win, choose Next level for a different statue power. Your level saves after each win, so you can return and continue." },
       ],
@@ -170,18 +170,9 @@ export const site = {
     },
     hint: "← → turn · ↑ thrust · Space fire · P pause · Esc menu",
     crash: "{name} has performed an illegal operation and will be shut down.",
-    statue: {
-      wakes: "Who keeps shooting my desktop?",
-      /** Said when the fight gets harder: faster throws, then the laser eye. */
-      stage2: "I am marble. You are a mouse pointer.",
-      stage3: "Fine. Look me in the eye.",
-      /** Said when it takes one of your lives. */
-      taunts: ["Pointer not responding.", "Have you tried turning it off and on again?", "Click harder."],
-      falls: "I was only a wallpaper...",
-    },
     win: {
       title: "It is now safe to turn off your statue.",
-      lines: ["The statue crumbled. Your desktop will be restored."],
+      lines: ["The guardian crumbled. Marble secured for Earth. Your desktop will be restored."],
     },
     bsod: [
       "A fatal exception 0E has occurred at 0028:C0DE1998 in VXD STATUE(01).",

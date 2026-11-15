@@ -59,6 +59,7 @@ export type Rock = {
   power?: boolean;
   life?: number;
   orbit?: number;
+  launchAngle?: number;
 };
 
 /** The statue's laser eye: it charges (following you), locks, fires, rests. */
@@ -79,6 +80,8 @@ export type PowerAttack = {
   angle: number;
   lanes: number[];
   wave: number;
+  direction: number;
+  targetX: number;
 };
 
 export type Bullet = { x: number; y: number; vx: number; vy: number; life: number };
@@ -268,8 +271,8 @@ export const TUNING = {
     spread: 0.2,
     laser: { charge: 1, lock: 0.45, fire: 0.5, rest: 0.8, halfWidth: 13 },
   },
-  powers: { cap: 8, warning: 1.2, recovery: 1.5, speed: 165, lifetime: 3.2,
-    sweepDuration: 2.8, sweepArc: 1.2, shieldDuration: 2.8 },
+  powers: { hp: 48, cap: 8, warning: 1, touchWarning: 1.2, recovery: 1, touchRecovery: 1.2, speed: 225, lifetime: 3.4,
+    sweepDuration: 2.4, sweepArc: 2.1, shieldDuration: 2.4 },
   crumbleTime: 2.2,
   lostDelay: 1.2,
   maxParticles: 420,
@@ -430,7 +433,7 @@ export function createWorld(opts: {
     lives: TUNING.lives,
     score: 0,
     level: validLevel(opts.level) ? opts.level : 1,
-    attack: restingPower(),
+    attack: restingPower((opts.shipFloor ?? 0) > 0),
     fireIn: 0,
     spawnIn: TUNING.rock.spawnEvery,
     scale: Math.max(0.6, Math.min(1, opts.w / 900)),
@@ -439,6 +442,8 @@ export function createWorld(opts: {
     random: opts.random,
     lostSent: false,
   };
+  // Let the revised encounters show more than one pattern before a focused burst wins.
+  if (world.level > 1) world.statue.hp = world.statue.maxHp = TUNING.powers.hp;
   // The pointer "becomes" the ship.
   burst(world, world.ship.x, world.ship.y, 28, SPARK, 240);
   for (let i = 0; i < TUNING.rock.start; i++) world.rocks.push(chipFromStatue(world));
@@ -652,26 +657,42 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
   }
 }
 
-function restingPower(): PowerAttack {
-  return { state: "rest", t: TUNING.powers.recovery, elapsed: 0, x: 0, y: 0, angle: 0, lanes: [], wave: 0 };
+function restingPower(touch = false): PowerAttack {
+  return { state: "rest", t: touch ? TUNING.powers.touchRecovery : TUNING.powers.recovery,
+    elapsed: 0, x: 0, y: 0, angle: 0, lanes: [], wave: 0, direction: 1, targetX: 0 };
 }
 
 function clearAttacks(world: World) {
-  world.attack = restingPower();
+  world.attack = restingPower(world.shipFloor > 0);
   world.rocks = [];
   world.statue.laser = null;
-  // The original guardian must restart its stage-3 laser after respawn too.
   world.statue.stage = 1;
   world.statue.windup = 0;
   world.statue.throwIn = TUNING.boss.throwEvery[0];
 }
 
 export function orbitRadius(world: World) {
-  return Math.min(90, (world.h - world.shipFloor) * 0.23);
+  return Math.min(105, (world.h - world.shipFloor) * 0.23);
+}
+export function powerWarning(world: World) {
+  return world.shipFloor > 0 ? TUNING.powers.touchWarning : TUNING.powers.warning;
+}
+export function hazardLimit(world: World) {
+  const touch = world.shipFloor > 0;
+  if (world.level === 2) return touch ? 9 : 12;
+  if (world.level === 3) return touch ? 12 : 16;
+  if (world.level === 4) return 12;
+  if (world.level === 5) return 3;
+  return TUNING.powers.cap;
+}
+export function sweepAngle(world: World) {
+  const a = world.attack;
+  const direction = a.direction * (a.wave === 0 ? 1 : -1);
+  return a.angle + direction * TUNING.powers.sweepArc * (Math.min(1, a.elapsed / TUNING.powers.sweepDuration) - 0.5);
 }
 
 function fragment(world: World, x: number, y: number, angle: number, speed = TUNING.powers.speed) {
-  if (world.rocks.length >= TUNING.powers.cap || y > world.h - world.shipFloor - 18 ||
+  if (world.rocks.length >= hazardLimit(world) || y > world.h - world.shipFloor - 18 ||
     Math.hypot(x - world.ship.x, y - world.ship.y) < 60) return null;
   const rock = makeRock(world, 2, x, y, angle);
   rock.power = true;
@@ -682,59 +703,97 @@ function fragment(world: World, x: number, y: number, angle: number, speed = TUN
   return rock;
 }
 
-/** One warned power at a time. All fragments expire before the next recovery/warning. */
+/** Lock a new, visible warning before each wave. Nothing tracks after this point. */
+function warnPower(world: World, events: GameEvent[]) {
+  const a = world.attack;
+  const eye = eyePoint(world.statue);
+  if (a.wave === 0 || world.level === 2) {
+    const side = a.direction * (a.wave % 2 ? -1 : 1);
+    a.x = world.level === 2 ? world.statue.home.x + world.statue.dx + world.statue.home.w * (0.5 + side * 0.26) : eye.x;
+    a.y = world.level === 2 ? world.statue.home.y + world.statue.dy + world.statue.home.h * 0.38 : eye.y;
+    a.x = Math.max(30, Math.min(world.w - 30, a.x));
+    a.y = Math.max(30, Math.min(world.h - world.shipFloor - 36, a.y));
+    a.angle = Math.atan2(world.ship.y - a.y, world.ship.x - a.x);
+    if (world.level === 3) a.angle += a.direction * 0.95;
+  } else if (world.level === 3) a.angle += a.direction * 0.65;
+  if (world.level === 4) {
+    const target = Math.max(0, Math.min(4, Math.floor(world.ship.x / world.w * 5)));
+    a.targetX = world.ship.x;
+    a.lanes = [target, (target + 2 + a.wave % 2) % 5];
+  }
+  if (world.level === 5 && a.wave === 1) {
+    for (const rock of world.rocks) rock.launchAngle = Math.atan2(world.ship.y - rock.y, world.ship.x - rock.x);
+  }
+  a.state = "warn"; a.t = powerWarning(world); a.elapsed = 0;
+  events.push({ type: "powerWarn" });
+}
+
+function launchPower(world: World, events: GameEvent[]) {
+  const a = world.attack, P = TUNING.powers;
+  const touch = world.shipFloor > 0;
+  a.state = "active"; a.elapsed = 0;
+  a.t = P.lifetime;
+  if (world.level === 2) {
+    const count = touch ? 3 : 4;
+    for (const turn of count === 3 ? [-0.32, 0, 0.32] : [-0.45, -0.2, 0, 0.3]) fragment(world, a.x, a.y, a.angle + turn * a.direction);
+    if (a.wave < 2) a.t = 0.4;
+  } else if (world.level === 3) {
+    const count = touch ? 6 : 8;
+    const gap = Math.PI * 0.4;
+    for (let i = 0; i < count; i++) {
+      const angle = a.angle + gap / 2 + (i + 0.5) * ((Math.PI * 2 - gap) / count);
+      fragment(world, a.x + Math.cos(angle) * 28, a.y + Math.sin(angle) * 28, angle, 190);
+    }
+    if (a.wave === 0) a.t = 0.65;
+  } else if (world.level === 4) {
+    for (const lane of a.lanes) {
+      const width = world.w / 5;
+      const middle = lane === a.lanes[0] ? Math.max((lane + 0.1) * width, Math.min((lane + 0.9) * width, a.targetX)) : (lane + 0.5) * width;
+      for (const x of [(lane + 0.2) * width, middle, (lane + 0.8) * width]) fragment(world, x, -8, Math.PI / 2, 245);
+    }
+    if (a.wave < 2) a.t = 0.55;
+  } else if (world.level === 5) {
+    if (a.wave === 0) {
+      for (let i = 0; i < 3; i++) {
+        const angle = a.angle + Math.PI / 3 + i * Math.PI * 2 / 3;
+        const radius = orbitRadius(world);
+        const rock = fragment(world, a.x + Math.cos(angle) * radius, a.y + Math.sin(angle) * radius, angle, 0);
+        if (rock) { rock.orbit = angle; rock.life = P.shieldDuration + powerWarning(world) + 0.5; rock.r *= 1.65; }
+      }
+      a.t = P.shieldDuration;
+    } else {
+      for (const rock of world.rocks) {
+        const angle = rock.launchAngle ?? 0;
+        delete rock.orbit;
+        rock.vx = Math.cos(angle) * 245 * world.scale;
+        rock.vy = Math.sin(angle) * 245 * world.scale;
+        rock.life = P.lifetime;
+      }
+    }
+  } else if (world.level === 6) {
+    a.t = P.sweepDuration;
+    events.push({ type: "laserFire" });
+  }
+}
+
+/** Distinct multi-wave patterns: each launch has its own locked warning and a bounded budget. */
 function powerAttack(world: World, dt: number, events: GameEvent[]) {
   const a = world.attack;
-  const P = TUNING.powers;
-  const playHeight = world.h - world.shipFloor;
   a.t -= dt;
   if (a.state === "rest") {
-    if (a.t > 0 || world.rocks.length) return;
-    const eye = eyePoint(world.statue);
-    a.x = Math.max(30, Math.min(world.w - 30, eye.x));
-    a.y = Math.max(30, Math.min(playHeight - 36, eye.y));
-    a.angle = Math.atan2(world.ship.y - a.y, world.ship.x - a.x);
-    const safeLane = Math.max(0, Math.min(4, Math.floor(world.ship.x / world.w * 5)));
-    a.lanes = [(safeLane + 2) % 5, (safeLane + 3) % 5];
-    a.state = "warn"; a.t = P.warning; a.wave = 0; a.elapsed = 0;
-    events.push({ type: "powerWarn" });
+    if (a.t > 0) return;
+    world.statue.side = world.statue.side === 1 ? -1 : 1;
+    a.direction = world.statue.side;
+    warnPower(world, events);
     return;
   }
   if (a.state === "warn") {
-    if (a.t > 0) return;
-    a.state = "active";
-    a.t = world.level === 6 ? P.sweepDuration : P.lifetime;
-    if (world.level === 6) events.push({ type: "laserFire" });
+    if (a.t <= 0) launchPower(world, events);
+    return;
   }
   a.elapsed += dt;
-  if (world.level === 2 && a.wave < 2 && a.elapsed >= a.wave * 0.55) {
-    // Fixed two-wave fan; no tracking after the warning, no splitting.
-    const count = world.shipFloor > 0 ? 3 : 4;
-    for (let i = 0; i < count; i++) {
-      const angle = a.angle + (i - (count - 1) / 2) * 0.38 + (a.wave ? 0.16 : -0.16);
-      fragment(world, a.x, a.y, angle);
-    }
-    a.wave++;
-  } else if (world.level === 3 && a.wave === 0) {
-    // A 90-degree gap faces the player's warned position; the rest is shootable.
-    for (let i = 0; i < 8; i++) {
-      const angle = a.angle + Math.PI / 4 + (i + 0.5) * (Math.PI * 1.5 / 8);
-      fragment(world, a.x + Math.cos(angle) * 28, a.y + Math.sin(angle) * 28, angle, 135);
-    }
-    a.wave = 1;
-  } else if (world.level === 4 && a.wave < 2 && a.elapsed >= a.wave * 0.6) {
-    for (const lane of a.lanes) fragment(world, (lane + 0.5) * world.w / 5, 16, Math.PI / 2, 155);
-    a.wave++;
-  } else if (world.level === 5 && a.wave === 0) {
-    for (let i = 0; i < 3; i++) {
-      const angle = a.angle + Math.PI / 3 + i * Math.PI * 2 / 3;
-      const radius = orbitRadius(world);
-      const rock = fragment(world, a.x + Math.cos(angle) * radius, a.y + Math.sin(angle) * radius, angle, 0);
-      if (rock) { rock.orbit = angle; rock.life = P.shieldDuration; rock.r *= 1.3; }
-    }
-    a.wave = 1;
-  } else if (world.level === 6 && world.ship.safe <= 0) {
-    const angle = a.angle - P.sweepArc / 2 + P.sweepArc * Math.min(1, a.elapsed / P.sweepDuration);
+  if (world.level === 6 && world.ship.safe <= 0) {
+    const angle = sweepAngle(world);
     const px = world.ship.x - a.x, py = world.ship.y - a.y;
     const along = px * Math.cos(angle) + py * Math.sin(angle);
     const off = Math.abs(py * Math.cos(angle) - px * Math.sin(angle));
@@ -743,8 +802,15 @@ function powerAttack(world: World, dt: number, events: GameEvent[]) {
       return;
     }
   }
-  // Finite lifetimes + explicit cleanup give every power the same clear recovery.
-  if (a.t <= 0) { world.rocks = []; world.attack = restingPower(); }
+  if (world.level === 5 && world.rocks.length === 0) {
+    world.attack = restingPower(world.shipFloor > 0);
+    return;
+  }
+  if (a.t <= 0) {
+    const waves = world.level === 2 || world.level === 4 ? 3 : 2;
+    if (a.wave + 1 < waves) { a.wave++; warnPower(world, events); }
+    else { world.rocks = []; world.attack = restingPower(world.shipFloor > 0); }
+  }
 }
 
 function breakTile(world: World, tile: Tile, fromX: number, fromY: number) {
@@ -863,7 +929,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   for (const rock of world.rocks) {
     if (rock.life !== undefined) rock.life -= dt;
     if (rock.orbit !== undefined) {
-      rock.orbit += dt * 0.7;
+      if (!(world.level === 5 && world.attack.state === "warn" && world.attack.wave === 1)) rock.orbit += dt * 1.1;
       const radius = orbitRadius(world);
       rock.x = world.attack.x + Math.cos(rock.orbit) * radius;
       rock.y = world.attack.y + Math.sin(rock.orbit) * radius;
@@ -982,7 +1048,6 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
     addAnger(world, TUNING.rock.anger[rock.size]);
     burst(world, rock.x, rock.y, 10 + (2 - rock.size) * 6, MARBLE, 160);
     events.push({ type: "rockBroken", size: rock.size });
-    if (rock.orbit !== undefined) damageStatue(world, b, events);
     if (rock.size < 2 && !rock.power) {
       const next = (rock.size + 1) as 1 | 2;
       const heading = Math.atan2(rock.vy, rock.vx);

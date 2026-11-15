@@ -1,5 +1,5 @@
 /** Bump when scoring or difficulty changes; old results stay in the database. */
-export const GAME_VERSION = "olympus-3";
+export const GAME_VERSION = "olympus-4";
 export const SESSION_SECONDS = 60 * 60;
 
 export type LevelTicket = { token: string; level: number };

@@ -9,6 +9,7 @@ import { drawWorld, type StatueArt } from "./draw";
 import { useMusic } from "@/components/desktop/music";
 import { loadBest, saveBest } from "./GameContext";
 import { playSound, setSoundVolume, unlockSound } from "./sound";
+import { createDialogue, type DialogueEvent } from "./dialogue";
 import TouchJoystick from "./TouchJoystick";
 import FullscreenHelp from "./FullscreenHelp";
 import { isPhoneTouchDevice, usesTouchControls, type StickVector } from "./touch-controls";
@@ -388,7 +389,8 @@ export default function OlympusGame(props: OlympusGameProps) {
     let disposed = false;
     let shakeUntil = 0;
     let shakeSize = 0;
-    let taunts = 0;
+    const dialogue = createDialogue(propsRef.current.progress.resumeLevel);
+    let speechShown: string | null = null;
     let freezeUntil = 0;
     const killPause = () => {
       if (!reducedMotion) freezeUntil = performance.now() + KILL_PAUSE_MS;
@@ -419,10 +421,12 @@ export default function OlympusGame(props: OlympusGameProps) {
       shakeUntil = performance.now() + ms;
     };
 
-    const say = (text: string) => {
+    const say = (event: DialogueEvent) => {
+      const text = dialogue.line(event, world?.time ?? 0);
+      if (!text) return;
+      speechShown = text;
       const box = statueBox();
-      setSpeech({ text, x: box.x + box.w * 0.42, y: Math.max(8, box.y + box.h * 0.06 - 48) });
-      later(3500, () => setSpeech((s) => (s?.text === text ? null : s)));
+      setSpeech({ text, x: Math.max(132, Math.min(window.innerWidth - 132, box.x + box.w * 0.42)), y: Math.max(8, box.y + box.h * 0.06 - 48) });
     };
 
     const handle = (events: GameEvent[]) => {
@@ -482,24 +486,23 @@ export default function OlympusGame(props: OlympusGameProps) {
             // Swap the wallpaper for the canvas statue; then a beat of
             // silence (the rules freeze too) before it all breaks loose.
             p.onStatueAwake();
-            later(TUNING.awakenFreeze * 1000, () => {
-              playSound("rumble");
-              shake(9, 2200);
-              say(copy.statue.wakes);
-            });
+            playSound("rumble");
+            shake(9, 2200);
+            say("entrance");
             setAnnounce(`${levelInfo(p.progress.resumeLevel).name}. ${levelInfo(p.progress.resumeLevel).hint}`);
-            later(500, () => say(levelInfo(p.progress.resumeLevel).hint));
             break;
           case "statueHit":
+            if (Math.random() < 0.12) say("hurt");
             playSound("statueHit");
             shake(2, 90);
             break;
           case "bossStage":
             shake(6, 500);
-            say(e.stage === 2 ? copy.statue.stage2 : copy.statue.stage3);
+            say("attack");
             setAnnounce(e.stage === 2 ? "The statue throws faster." : "The statue's eye is charging a laser. Keep moving.");
             break;
           case "powerWarn":
+            say("attack");
             playSound("rumble");
             setAnnounce(levelInfo(p.progress.resumeLevel).hint);
             break;
@@ -517,14 +520,14 @@ export default function OlympusGame(props: OlympusGameProps) {
             playSound("crumble");
             killPause();
             shake(9, 900);
-            say(copy.statue.falls);
+            say("defeat");
             setAnnounce("The statue crumbled.");
             break;
           case "shipLost":
             playSound("shipLost");
             shake(5, 300);
             if (world?.phase === "boss" && e.livesLeft > 0)
-              say(copy.statue.taunts[taunts++ % copy.statue.taunts.length]);
+              say("taunt");
             setAnnounce(e.livesLeft > 0 ? `Hit. ${e.livesLeft} ${e.livesLeft === 1 ? "life" : "lives"} left.` : "Hit. No lives left.");
             break;
           case "won":
@@ -578,6 +581,10 @@ export default function OlympusGame(props: OlympusGameProps) {
             joystick: touchRef.current ? (inputRef.current.joystick ?? { x: 0, y: 0 }) : undefined,
           }, DT));
         }
+      }
+      if (speechShown && !dialogue.visible(world.time)) {
+        speechShown = null;
+        setSpeech(null);
       }
       const shaking = now < shakeUntil;
       const offset = shaking

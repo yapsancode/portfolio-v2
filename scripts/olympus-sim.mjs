@@ -217,11 +217,12 @@ for (const [screenName, screen] of Object.entries(SCREENS)) {
 }
 
 // Diagnostic comparisons, not a difficulty ladder or proof of human fairness.
-console.log("\nDistinct powers (same health, lives and movement tuning):");
+console.log("\nDistinct powers (revised patterns and health; same lives and movement):");
 for (const { id, name } of LEVELS) {
   for (const [screenName, screen] of Object.entries(SCREENS)) {
     const r = stats(screen, dodgerBot, id);
-    console.log(`Level ${id} ${name} / ${screenName}: ${(r.win * 100).toFixed(0)}% wins, ${r.boss.toFixed(1)}s boss`);
+    const idle = stats(screen, idleBot, id);
+    console.log(`Level ${id} ${name} / ${screenName}: dodger ${(r.win * 100).toFixed(0)}%, idle ${(idle.win * 100).toFixed(0)}% wins, ${r.boss.toFixed(1)}s boss`);
   }
 }
 console.log("Legacy bots do not understand the new telegraphs; human phone/keyboard playtests are still needed.");

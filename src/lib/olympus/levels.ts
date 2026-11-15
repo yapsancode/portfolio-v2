@@ -1,11 +1,11 @@
 /** Level numbers choose powers, never difficulty multipliers. */
 export const LEVELS = [
   { id: 1, name: "Marble Guardian", hint: "Dodge hot marble. Move when the eye beam locks." },
-  { id: 2, name: "Marble Swarm", hint: "Two waves of marble. Shoot an opening or steer between fragments." },
-  { id: 3, name: "Shattered Halo", hint: "An expanding ring. Follow the green gap or shoot through a fragment." },
-  { id: 4, name: "Meteor Rain", hint: "Gold lanes will rain marble. Stay in an unmarked lane." },
-  { id: 5, name: "Orbiting Armour", hint: "Break the orbiting shields to chip the statue, or fire through the gaps." },
-  { id: 6, name: "Sweeping Gaze", hint: "The gold arc shows the sweep. Move outside it before the eye fires." },
+  { id: 2, name: "Marble Swarm", hint: "Three shoulder volleys. Watch each warning, move, and shoot an opening." },
+  { id: 3, name: "Shattered Halo", hint: "Two expanding rings with shifting gaps. Follow the green openings." },
+  { id: 4, name: "Meteor Rain", hint: "The storm targets your lane. Move before each warned wave falls." },
+  { id: 5, name: "Orbiting Armour", hint: "Break shields to expose the statue. Dodge their warned launch." },
+  { id: 6, name: "Sweeping Gaze", hint: "Watch the sweep direction and its warned return. Get outside the gold arc." },
 ] as const;
 
 export const LAST_LEVEL = LEVELS.length;

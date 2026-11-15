@@ -893,6 +893,13 @@ body {
   pointer-events: none;
 }
 
+.olympus-speech.tray-tip {
+  width: max-content;
+  max-width: min(250px, calc(100vw - 24px));
+  transform: translateX(-50%);
+  text-align: center;
+}
+
 /* .tray-tip caps its width at 280px further down: two classes win over it. */
 .olympus-hint.tray-tip {
   left: 50%;

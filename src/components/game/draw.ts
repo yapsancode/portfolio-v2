@@ -1,4 +1,4 @@
-import { EYE, eyePoint, orbitRadius, throwPoint, tileOrigin, TUNING, type Rock, type Ship, type World } from "./olympus";
+import { EYE, eyePoint, orbitRadius, powerWarning, sweepAngle, throwPoint, tileOrigin, TUNING, type Rock, type Ship, type World } from "./olympus";
 
 /** The statue picture and the part of it the wallpaper shows. */
 export type StatueArt = {
@@ -250,32 +250,46 @@ function drawPower(ctx: CanvasRenderingContext2D, world: World) {
       ctx.textAlign = "center"; ctx.fillText(warning ? "↓ RAIN" : "↓", left + world.w / 10, 24);
     }
   } else if (world.level === 6) {
-    const start = a.angle - TUNING.powers.sweepArc / 2;
-    const end = a.angle + TUNING.powers.sweepArc / 2;
+    const direction = a.direction * (a.wave === 0 ? 1 : -1);
+    const start = a.angle - direction * TUNING.powers.sweepArc / 2;
+    const end = a.angle + direction * TUNING.powers.sweepArc / 2;
     ctx.setLineDash([6, 6]); ray(start); ray(end);
-    arc(65, start, end);
-    // Arrow at the end of the warning arc communicates the clockwise sweep.
+    ctx.beginPath(); ctx.arc(a.x, a.y, 65, start, end, direction < 0); ctx.stroke();
+    // Arrow follows the actual travel direction, including the return sweep.
     const x = a.x + Math.cos(end) * 65, y = a.y + Math.sin(end) * 65;
     ctx.setLineDash([]); ctx.fillStyle = "#ffdb54";
     ctx.beginPath(); ctx.moveTo(x, y);
-    ctx.lineTo(x + Math.cos(end - 0.8) * 12, y + Math.sin(end - 0.8) * 12);
-    ctx.lineTo(x + Math.cos(end - 2.3) * 12, y + Math.sin(end - 2.3) * 12); ctx.fill();
+    const tangent = end + direction * Math.PI / 2;
+    const baseX = x - Math.cos(tangent) * 12, baseY = y - Math.sin(tangent) * 12;
+    ctx.lineTo(baseX - Math.sin(tangent) * 5, baseY + Math.cos(tangent) * 5);
+    ctx.lineTo(baseX + Math.sin(tangent) * 5, baseY - Math.cos(tangent) * 5); ctx.fill();
+    ctx.fillStyle = "#ffdb54"; ctx.font = "12px monospace"; ctx.textAlign = "center";
+    if (warning) ctx.fillText(a.wave === 1 ? "RETURN SWEEP" : (direction > 0 ? "SWEEP ↻" : "SWEEP ↺"), a.x, a.y - 20);
     if (!warning) {
-      const angle = start + TUNING.powers.sweepArc * Math.min(1, a.elapsed / TUNING.powers.sweepDuration);
+      const angle = sweepAngle(world);
       ctx.lineWidth = 18; ctx.strokeStyle = "#ff5030"; ray(angle);
       ctx.lineWidth = 6; ctx.strokeStyle = "#fff8de"; ray(angle);
     }
   } else if (world.level === 3) {
-    const radius = warning ? 28 : 28 + a.elapsed * 135 * world.scale;
-    ctx.setLineDash([5, 8]); arc(radius, a.angle + Math.PI / 4, a.angle + Math.PI * 1.75);
+    const radius = warning ? 28 : 28 + a.elapsed * 190 * world.scale;
+    ctx.setLineDash([5, 8]); arc(radius, a.angle + Math.PI * 0.2, a.angle + Math.PI * 1.8);
     ctx.setLineDash([]); ctx.strokeStyle = "#74ffbf"; ctx.lineWidth = 4;
-    arc(radius, a.angle - Math.PI / 4, a.angle + Math.PI / 4);
+    arc(radius, a.angle - Math.PI * 0.2, a.angle + Math.PI * 0.2);
   } else if (world.level === 5) {
-    ctx.setLineDash([5, 10]); arc(orbitRadius(world), 0, Math.PI * 2);
+    ctx.setLineDash([5, 10]);
+    if (a.wave === 0) arc(orbitRadius(world), 0, Math.PI * 2);
+    else if (warning) {
+      for (const rock of world.rocks) {
+        const angle = rock.launchAngle ?? 0;
+        ctx.beginPath(); ctx.moveTo(rock.x, rock.y);
+        ctx.lineTo(rock.x + Math.cos(angle) * reach, rock.y + Math.sin(angle) * reach); ctx.stroke();
+        ctx.strokeRect(rock.x - rock.r - 4, rock.y - rock.r - 4, rock.r * 2 + 8, rock.r * 2 + 8);
+      }
+    }
   } else if (warning) {
-    // Swirling rings and a fixed fan show where the two waves will travel.
-    arc(18 + (1 - a.t / TUNING.powers.warning) * 20, world.time, world.time + Math.PI * 1.6);
-    ctx.setLineDash([3, 12]); ray(a.angle - 0.73); ray(a.angle + 0.73);
+    // Each shoulder warns the locked direction of its next wave.
+    arc(18 + (1 - a.t / powerWarning(world)) * 20, world.time, world.time + Math.PI * 1.6);
+    ctx.setLineDash([3, 12]); ray(a.angle - 0.55); ray(a.angle + 0.55);
   }
   ctx.restore();
 }

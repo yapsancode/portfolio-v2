@@ -16,10 +16,10 @@ function world(level, touch = false) {
 }
 function advance(w, seconds) { for (let i = 0; i < Math.ceil(seconds / dt); i++) g.step(w, input, dt); }
 
-test("every level has identical lives, health, movement and original health thresholds", () => {
+test("encounters use deliberate health tuning, three lives and unchanged original health thresholds", () => {
   for (const level of LEVELS) {
     const w = world(level.id);
-    assert.equal(w.lives, 3); assert.equal(w.statue.hp, 38);
+    assert.equal(w.lives, 3); assert.equal(w.statue.hp, level.id === 1 ? 38 : 48);
     w.statue.hp = 20; assert.equal(g.bossStage(w), 2);
     w.statue.hp = 9; assert.equal(g.bossStage(w), 3);
   }
@@ -28,72 +28,122 @@ test("every level has identical lives, health, movement and original health thre
   assert.equal(world(100).level, 1);
 });
 
-test("all five new powers warn before damage, respect the hazard cap, and recover on both screens", () => {
+function until(w, predicate, limit = 2400) {
+  for (let i = 0; i < limit; i++) { g.step(w, input, dt); if (predicate(w)) return; }
+  assert.fail(`Level ${w.level} never reached the expected state`);
+}
+
+test("multi-wave powers warn before every launch, respect budgets, and finish with recovery", () => {
   for (const touch of [false, true]) for (const { id } of LEVELS.slice(1)) {
     const w = world(id, touch);
-    let warningFrames = 0, attacks = 0, recovered = false;
+    let warningFrames = 0, launches = 0, recovered = false;
     for (let frame = 0; frame < 60 * 30; frame++) {
       const before = w.attack.state;
-      const events = g.step(w, input, dt);
-      if (events.some(e => e.type === "powerWarn")) attacks++;
-      if (w.attack.state === "warn") {
-        warningFrames++;
-        assert.equal(w.rocks.length, 0);
+      g.step(w, input, dt);
+      if (w.attack.state === "warn") warningFrames++;
+      if (before === "warn" && w.attack.state === "active") {
+        assert.ok(warningFrames >= Math.floor(g.powerWarning(w) / dt) - 1);
+        warningFrames = 0; launches++;
       }
       assert.equal(w.statue.laser, null);
       assert.equal(w.statue.windup, 0);
-      assert.ok(w.rocks.length <= 8);
+      assert.ok(w.rocks.length <= g.hazardLimit(w));
       assert.ok(w.rocks.every(r => r.power && !r.thrown && r.size === 2 && r.life > 0));
       if (before === "active" && w.attack.state === "rest") {
         recovered = true;
         assert.equal(w.rocks.length, 0);
-        assert.equal(w.attack.t, g.TUNING.powers.recovery);
+        assert.equal(w.attack.t, touch ? g.TUNING.powers.touchRecovery : g.TUNING.powers.recovery);
       }
     }
-    assert.ok(attacks >= 4 && warningFrames >= attacks * 60);
-    assert.ok(recovered, `Level ${id} must recover`);
+    assert.ok(launches >= 4); assert.ok(recovered);
   }
 });
 
-test("swarm has two waves, six touch/eight desktop fragments, and shots never split them", () => {
+test("swarm fires three warned, alternating shoulder waves and fragments never split", () => {
   for (const touch of [false, true]) {
-    const w = world(2, touch);
-    advance(w, 2.8);
-    assert.equal(w.attack.wave, 1);
-    assert.equal(w.rocks.length, touch ? 3 : 4);
-    advance(w, .55);
-    assert.equal(w.attack.wave, 2);
-    assert.equal(w.rocks.length, touch ? 6 : 8);
-    const rock = w.rocks[0], count = w.rocks.length;
-    w.bullets = [{ x: rock.x + rock.vx * dt, y: rock.y + rock.vy * dt, vx: 0, vy: 0, life: 1 }];
-    g.step(w, input, dt);
-    assert.equal(w.rocks.length, count - 1);
-    assert.equal(w.score, 100);
+    const w = world(2, touch), origins = [];
+    for (let wave = 0; wave < 3; wave++) {
+      until(w, w => w.attack.state === "warn" && w.attack.wave === wave);
+      origins.push(w.attack.x);
+      const locked = w.attack.angle;
+      advance(w, .2); assert.equal(w.attack.angle, locked);
+      until(w, w => w.attack.state === "active" && w.attack.wave === wave);
+      if (wave === 0) {
+        assert.equal(w.rocks.length, touch ? 3 : 4);
+        const rock = w.rocks[0], count = w.rocks.length;
+        w.bullets = [{ x: rock.x + rock.vx * dt, y: rock.y + rock.vy * dt, vx: 0, vy: 0, life: 1 }];
+        g.step(w, input, dt);
+        assert.equal(w.rocks.length, count - 1); assert.equal(w.score, 100);
+      }
+    }
+    assert.ok(origins[1] > origins[0] && origins[1] > origins[2]);
   }
 });
 
-test("meteor warning leaves the current lane and a neighbour safe, including on a short phone", () => {
-  for (let lane = 0; lane < 5; lane++) {
-    const w = world(4, true);
+test("halo gap is offset from the player and shifts for the second warned ring", () => {
+  const w = world(3, true);
+  until(w, w => w.attack.state === "warn");
+  const first = w.attack.angle;
+  const playerAngle = Math.atan2(w.ship.y - w.attack.y, w.ship.x - w.attack.x);
+  assert.ok(Math.abs(first - playerAngle) > Math.PI * .2);
+  until(w, w => w.attack.state === "warn" && w.attack.wave === 1);
+  assert.ok(Math.abs(w.attack.angle - first) > .6);
+});
+
+test("rain targets the occupied lane, locks its warning, and leaves an adjacent escape lane", () => {
+  for (const touch of [true, false]) for (let lane = 0; lane < 5; lane++) {
+    const w = world(4, touch);
     w.ship.x = (lane + .5) * w.w / 5;
-    advance(w, 1.6);
-    assert.equal(w.attack.state, "warn");
-    assert.ok(!w.attack.lanes.includes(lane));
-    assert.ok(!w.attack.lanes.includes((lane + 1) % 5));
-    advance(w, 1.2);
-    assert.ok(w.rocks.every(r => r.y < w.h - w.shipFloor - 18));
+    until(w, w => w.attack.state === "warn");
+    const lanes = [...w.attack.lanes];
+    assert.ok(lanes.includes(lane));
+    assert.ok(!lanes.includes((lane + 1) % 5));
+    const warnedX = w.attack.targetX;
+    w.ship.x = (lane + .8) * w.w / 5;
+    advance(w, .25);
+    assert.deepEqual(w.attack.lanes, lanes); assert.equal(w.attack.targetX, warnedX);
+    until(w, w => w.attack.state === "active");
+    assert.ok(w.rocks.length >= 4);
   }
+  const stationary = world(4); stationary.ship.safe = 0;
+  advance(stationary, 5);
+  assert.ok(stationary.lives < 3, "the storm must punish remaining at its warned target");
 });
 
-test("breaking armour damages the statue instead of adding extra required hits", () => {
+test("armour absorbs shots without free boss damage; surviving shields warn then launch", () => {
   const w = world(5);
-  advance(w, 2.8);
-  const rock = w.rocks[0];
-  assert.notEqual(rock.orbit, undefined);
-  const radius = g.orbitRadius(w), angle = rock.orbit + dt * .7;
+  until(w, w => w.attack.state === "active");
+  const rock = w.rocks[0], count = w.rocks.length;
+  const radius = g.orbitRadius(w), angle = rock.orbit + dt * 1.1;
   w.bullets = [{ x: w.attack.x + Math.cos(angle) * radius, y: w.attack.y + Math.sin(angle) * radius, vx: 0, vy: 0, life: 1 }];
   g.step(w, input, dt);
-  assert.equal(w.statue.hp, 37);
+  assert.equal(w.statue.hp, 48); assert.equal(w.rocks.length, count - 1);
+  until(w, w => w.attack.state === "warn" && w.attack.wave === 1);
+  const shield = w.rocks[0]; const pos = {x: shield.x, y: shield.y, angle: shield.launchAngle};
+  advance(w, .25);
+  assert.equal(shield.x, pos.x); assert.equal(shield.y, pos.y);
+  until(w, w => w.attack.state === "active" && w.attack.wave === 1);
+  assert.equal(shield.orbit, undefined);
+  assert.ok(Math.hypot(shield.vx, shield.vy) > 0);
+  assert.equal(shield.launchAngle, pos.angle);
+});
+
+test("laser reverses only after a full warning, then alternates its next starting direction", () => {
+  const w = world(6, true);
+  until(w, w => w.attack.state === "active");
+  const start = g.sweepAngle(w), firstDirection = w.attack.direction;
+  advance(w, 1); const middle = g.sweepAngle(w);
+  assert.equal(Math.sign(middle - start), firstDirection);
+  until(w, w => w.attack.state === "warn" && w.attack.wave === 1);
+  const centre = w.attack.angle; const returnStart = g.sweepAngle(w);
+  w.ship.x += 50;
+  advance(w, .3); assert.equal(w.attack.angle, centre);
+  until(w, w => w.attack.state === "active" && w.attack.wave === 1);
+  advance(w, 1);
+  assert.equal(Math.sign(g.sweepAngle(w) - returnStart), -firstDirection);
+  until(w, w => w.attack.state === "rest");
+  until(w, w => w.attack.state === "warn");
+  assert.equal(w.attack.direction, -firstDirection);
 });
 
 test("resize, death and victory clear active hazards before another attempt", () => {
