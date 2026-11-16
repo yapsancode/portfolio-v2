@@ -1,10 +1,10 @@
 {
-  "id": "/olympus",
+  "id": "/games/olympus",
   "name": "Olympus",
   "short_name": "Olympus",
   "description": "A retro arcade battle on Isyraf's desktop.",
-  "start_url": "/olympus",
-  "scope": "/olympus",
+  "start_url": "/games/olympus",
+  "scope": "/games/olympus",
   "display": "standalone",
   "display_override": ["fullscreen", "standalone"],
   "orientation": "landscape",

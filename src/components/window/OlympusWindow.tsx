@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LEVELS, type Progress } from "@/lib/olympus/levels";
+import { LEVELS, type Progress } from "@/lib/games/olympus/levels";
 import type { MouseEvent } from "react";
 import { site } from "@/config/site";
-import { loadBest, useGame } from "@/components/game/GameContext";
-import { usesTouchControls } from "@/components/game/touch-controls";
-import FullscreenHelp from "@/components/game/FullscreenHelp";
-import { missionInfo } from "@/lib/olympus/missions";
-import HighScores from "@/components/game/HighScores";
-import PlayerNamePrompt from "@/components/game/PlayerNamePrompt";
+import { loadBest, useGame } from "@/components/games/olympus/GameContext";
+import { usesTouchControls } from "@/components/games/olympus/touch-controls";
+import FullscreenHelp from "@/components/games/olympus/FullscreenHelp";
+import { missionInfo } from "@/lib/games/olympus/missions";
+import HighScores from "@/components/games/olympus/HighScores";
+import PlayerNamePrompt from "@/components/games/olympus/PlayerNamePrompt";
 
 const copy = site.olympus.title;
 const guide = site.olympus.guide;
@@ -152,7 +152,7 @@ export default function OlympusWindow() {
       )}
       <p className="olympus-title-dim">{copy.warning}</p>
       {touch && <p className="olympus-title-dim">Play in landscape — turn your phone or tablet sideways.</p>}
-      <a className="olympus-shortcut" href="/olympus">Direct game shortcut · /olympus</a>
+      <a className="olympus-shortcut" href="/games/olympus">Direct game shortcut · /games/olympus</a>
     </div>
   );
 }

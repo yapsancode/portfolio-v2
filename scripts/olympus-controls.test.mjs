@@ -2,8 +2,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadTs } from "./load-ts.mjs";
-const { createWorld, createStatue, seededRandom, step, TUNING } = loadTs("src/components/game/olympus.ts");
-const { joystickVector, stickFromBox } = loadTs("src/components/game/touch-controls.ts");
+const { createWorld, createStatue, seededRandom, step, TUNING } = loadTs("src/components/games/olympus/olympus.ts");
+const { joystickVector, stickFromBox } = loadTs("src/components/games/olympus/touch-controls.ts");
 const neutral = { left: false, right: false, thrust: false, fire: false };
 const makeWorld = () => createWorld({ w: 4000, h: 3000, statue: createStatue({ x: 3000, y: 2500, w: 100, h: 200 }, 1, 1, [1]), random: seededRandom(42) });
 const advance = (world, joystick, frames = 60, fire = false) => {

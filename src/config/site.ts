@@ -16,7 +16,8 @@ export type WindowId =
   | "photos"
   | "hire"
   | "music"
-  | "olympus";
+  | "olympus"
+  | "games";
 
 export type DesktopIconId = WindowId | "hire-me";
 
@@ -696,7 +697,7 @@ export const desktopIcons: {
   { id: "photos", label: "Photos", opens: "photos", icon: "folder" },
   { id: "contact", label: "Contact", opens: "contact", icon: "envelope" },
   { id: "hire-me", label: "Work with me", opens: "hire", icon: "smiley" },
-  { id: "olympus", label: "Olympus", opens: "olympus", icon: "olympus" },
+  { id: "games", label: "Games", opens: "games", icon: "folder" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -772,6 +773,14 @@ export const windowDefaults: Record<
     height: 240,
     x: 900,
     y: 400,
+  },
+  games: {
+    title: "C:\\isyraf\\games",
+    icon: "folder",
+    width: 420,
+    height: 300,
+    x: 240,
+    y: 90,
   },
   // A Win98 warning dialog; Start runs the game over the whole desktop.
   olympus: {

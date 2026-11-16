@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadTs } from "./load-ts.mjs";
-const { DIALOGUE, createDialogue } = loadTs("src/components/game/dialogue.ts");
+const { DIALOGUE, createDialogue } = loadTs("src/components/games/olympus/dialogue.ts");
 
 test("each playable level has eighteen distinct, short, event-specific lines", () => {
   const all = [];

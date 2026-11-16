@@ -2,8 +2,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadTs } from "./load-ts.mjs";
-const g = loadTs("src/components/game/olympus.ts");
-const { drawWorld } = loadTs("src/components/game/draw.ts");
+const g = loadTs("src/components/games/olympus/olympus.ts");
+const { drawWorld } = loadTs("src/components/games/olympus/draw.ts");
 const input = { left: false, right: false, thrust: false, fire: false };
 const still = { ...input, joystick: { x: 0, y: 0 } };
 const dt = 1 / 60;

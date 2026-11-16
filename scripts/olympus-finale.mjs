@@ -1,8 +1,8 @@
 // Shared harness for Last Stand tests: a short landscape phone with the statue at its finale threshold.
 import assert from "node:assert/strict";
 import { loadTs } from "./load-ts.mjs";
-export const g = loadTs("src/components/game/olympus.ts");
-export const { FINALE } = loadTs("src/components/game/finales/types.ts");
+export const g = loadTs("src/components/games/olympus/olympus.ts");
+export const { FINALE } = loadTs("src/components/games/olympus/finales/types.ts");
 export const dt = 1 / 60;
 export const idle = { left: false, right: false, thrust: false, fire: false };
 export const still = { ...idle, joystick: { x: 0, y: 0 } };

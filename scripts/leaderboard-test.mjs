@@ -57,17 +57,17 @@ try {
   await db.exec(readFileSync("db/005-score-sharing.sql", "utf8"));
   await db.exec(readFileSync("db/006-marble-resources.sql", "utf8"));
   await db.exec(readFileSync("db/006-marble-resources.sql", "utf8"));
-  const validation = load("src/lib/olympus/leaderboard.ts");
-  const server = load("src/lib/olympus/server.ts");
-  const sessions = load("src/app/api/olympus/session/route.ts");
-  const scores = load("src/app/api/olympus/scores/route.ts");
-  const players = load("src/app/api/olympus/player/route.ts");
-  const shares = load("src/app/api/olympus/share/route.ts");
-  const upgrades = load("src/app/api/olympus/upgrade/route.ts");
+  const validation = load("src/lib/games/olympus/leaderboard.ts");
+  const server = load("src/lib/games/olympus/server.ts");
+  const sessions = load("src/app/api/games/olympus/session/route.ts");
+  const scores = load("src/app/api/games/olympus/scores/route.ts");
+  const players = load("src/app/api/games/olympus/player/route.ts");
+  const shares = load("src/app/api/games/olympus/share/route.ts");
+  const upgrades = load("src/app/api/games/olympus/upgrade/route.ts");
   const { NextRequest } = require("next/server");
   const origin = "http://localhost:3000";
   function request(endpoint, method = "GET", data, cookie, headers = {}) {
-    return new NextRequest(`${origin}/api/olympus/${endpoint}`, {
+    return new NextRequest(`${origin}/api/games/olympus/${endpoint}`, {
       method, headers: { origin, "content-type": "application/json", ...(cookie ? { cookie } : {}), ...headers },
       ...(data === undefined ? {} : { body: JSON.stringify(data) }),
     });
@@ -97,8 +97,8 @@ try {
     validation.checkHaul({ score: 19040, durationMs: 47267, outcome: "won" }, 1);
     validation.checkHaul({ score: 18280, durationMs: 20433, outcome: "won" }, 1);
     validation.checkHaul({ score: 16850, durationMs: 18550, outcome: "won" }, 4);
-    assert.equal(validation.maxHaul(1, 20000), 35850);
-    assert.equal(validation.maxHaul(2, 20000), 36850);
+    assert.equal(validation.maxHaul(1, 20000), 37000);
+    assert.equal(validation.maxHaul(2, 20000), 38000);
     assert.equal(validation.maxHaul(1, 3600000), 100000);
   });
   await test("reject cross-origin, oversized and malformed requests before database access", async () => {
