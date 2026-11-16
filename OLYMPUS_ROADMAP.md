@@ -76,7 +76,7 @@ Each profile **replaces** the appropriate part of the previous attack schedule. 
 
 ## Last Stand finales (planned)
 
-**Status: the shared Last Stand base and level 2's Marble Fist are implemented (17 November 2026). Levels 3–6 are approved specifications, not built.** Each finale lives in its own file under `src/components/games/olympus/finales/`, with its tests under `scripts/finales/`. Level 1 already changes as the guardian is hurt: faster spreads at 60% health and the laser eye at 25%. Levels 2–6 run one repeating cycle with no health stages, so their fights have no ending moment.
+**Status: the shared Last Stand base and all five finales for levels 2–6 are implemented (17 November 2026). The harder versions are not built.** Each finale passes a warning-only bot test over 30 seeds on a 667×320 phone, and levels 3–6 also test that no spot outside the marked safe area survives. Human playtests remain open. Each finale lives in its own file under `src/components/games/olympus/finales/`, with its tests under `scripts/finales/`. Level 1 already changes as the guardian is hurt: faster spreads at 60% health and the laser eye at 25%. Levels 2–6 run one repeating cycle with no health stages, so their fights have no ending moment.
 
 A **Last Stand** is one signature final attack per power. When the statue's health is low it stops its normal cycle, announces itself, and repeats the finale until it is beaten. The Last Stand belongs to the power, not the level number, so a power keeps its finale wherever it appears in a season.
 
@@ -118,26 +118,30 @@ All five follow the shared rules above. “Harder version” is the hard setting
 - Dodge: fly out through the gap as the ring passes.
 - Risk: shoot ring pieces to cut another gap.
 - Reward: the ring lands on the statue's head as a crown and stuns it.
-- Harder version: two crowns in a row with gaps on opposite sides.
+- Harder version: two crowns in a row with gaps on opposite sides. Not built.
+- As built: the ring is a rounded square that starts outside the screen, so the gap is the only way through. A green band shows the gap's whole path during the warning. Breaking 4 pieces crowns the statue.
 
 **Level 4 · Meteor Rain → The Sky Falls**
 
 - Attack: one huge meteor. Its shadow grows over the three middle lanes during the warning.
 - Dodge: reach an edge lane.
 - Risk: stay under it and shoot. Enough hits crack it into harmless dust and bonus marble, and stun the statue.
-- Harder version: the shadow covers four lanes.
+- Harder version: the shadow covers four lanes. Not built.
+- As built: the meteor's hit circle stops 1 px short of the edge lanes. It takes 10 hits, each paying bonus marble. It falls in about 3.7 s on a phone and about 6 s on a large desktop screen.
 
 **Level 5 · Orbiting Armour → Full Plate**
 
 - Attack: shields form a full spinning shell with one missing plate. The statue can be hit only through the hole. After a warning every plate bursts outward; the safe line is where the hole was.
 - Risk: break a plate to widen the hole, using the existing shield-breaking rule.
-- Harder version: a faster spin and two bursts.
+- Harder version: a faster spin and two bursts. Not built.
+- As built: 9 plates of two hits each spin for 2.4 s; breaking 3 collapses the shell. The safe line is shown and locked from the first warning. Before the burst the shell tightens onto the head, so the inside of the shell is not safe, and plates grow as they fly so the corners are covered.
 
 **Level 6 · Sweeping Gaze → Double Vision**
 
 - Attack: both eyes fire. Two beams start on opposite sides and close like scissors, leaving one marked safe pocket.
 - Beams cannot be broken. The reward comes after the scissors close: the eyes tire and the statue is open for about two seconds.
-- Harder version: the scissors open again and the pocket is smaller.
+- Harder version: the scissors open again and the pocket is smaller. Not built.
+- As built: a second eye sits just beside the picture's eye. The beams start crossed below the head and sweep 2.4 s to the edges of a 28 px green pocket near the top edge, placed between 28% and 54% of the width so the score box never covers it. A thin wedge between the head and the pocket is also safe and is drawn.
 
 ### Last Stand acceptance
 
