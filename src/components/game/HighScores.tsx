@@ -23,7 +23,7 @@ export default function HighScores() {
   return (
     <section className="olympus-scores" aria-label="Global top collectors">
       <h2>HALL OF OLYMPUS</h2>
-      <p className="olympus-scores-note">Global top 10 · one best haul per player</p>
+      <p className="olympus-scores-note">Global top 10 · best haul on each level, added up</p>
       {error ? (
         <div role="status" className="olympus-scores-message">
           <p>{error}</p>
@@ -69,7 +69,7 @@ export default function HighScores() {
           </table>
         </div>
       )}
-      <p className="olympus-scores-note">★ Level cleared · ties: higher level, then first posted</p>
+      <p className="olympus-scores-note">LEVEL = furthest reached · ★ cleared · ties: higher level, faster time, then first</p>
     </section>
   );
 }
