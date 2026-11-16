@@ -1,14 +1,14 @@
 "use client";
 
 import { lazy, Suspense, useEffect, useReducer, useState, useSyncExternalStore } from "react";
-import type { Progress } from "@/lib/olympus/levels";
+import type { Progress } from "@/lib/games/olympus/levels";
 import Image from "next/image";
 import { site, desktopIcons, windowDefaults } from "@/config/site";
 import type { DesktopIconId, WindowId } from "@/config/site";
-import { unlockSound } from "@/components/game/sound";
-import { enterGameFullscreen, leaveGameFullscreen } from "@/components/game/fullscreen";
-import { usesTouchControls } from "@/components/game/touch-controls";
-import { GameContext, type GameControls } from "@/components/game/GameContext";
+import { unlockSound } from "@/components/games/olympus/sound";
+import { enterGameFullscreen, leaveGameFullscreen } from "@/components/games/olympus/fullscreen";
+import { usesTouchControls } from "@/components/games/olympus/touch-controls";
+import { GameContext, type GameControls } from "@/components/games/olympus/GameContext";
 import Window from "@/components/window/Window";
 import { windowRegistry } from "@/components/window/windowRegistry";
 import BootScreen from "./BootScreen";
@@ -18,7 +18,7 @@ import ShootingStar from "./ShootingStar";
 import Taskbar, { TASKBAR_HEIGHT } from "./Taskbar";
 
 // Olympus (the desktop asteroids game) is only downloaded when someone presses Start.
-const OlympusGame = lazy(() => import("@/components/game/OlympusGame"));
+const OlympusGame = lazy(() => import("@/components/games/olympus/OlympusGame"));
 
 /* ------------------------------------------------------------------ */
 /* Window state (single source of truth — see CLAUDE.md)               */
@@ -225,7 +225,7 @@ function useIsMobile(): boolean {
 /* Desktop                                                             */
 /* ------------------------------------------------------------------ */
 
-function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
+function DesktopRoot({ launch }: { launch?: WindowId }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const isMobile = useIsMobile();
   // "Shut Down..." in the Start menu: a full-screen goodbye until restart.
@@ -264,13 +264,13 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
 
   // Give desktop visitors immediate context without covering the mobile desktop.
   useEffect(() => {
-    if (launchOlympus) {
-      dispatch({ type: "OPEN", id: "olympus", rect: getDesktopRect("olympus") });
+    if (launch) {
+      dispatch({ type: "OPEN", id: launch, rect: getDesktopRect(launch) });
       return;
     }
     if (window.matchMedia(MOBILE_QUERY).matches) return;
     dispatch({ type: "OPEN", id: "about", rect: getDesktopRect("about") });
-  }, [launchOlympus]);
+  }, [launch]);
 
   // Escape closes the focused window (but not while Olympus is running).
   useEffect(() => {
@@ -285,6 +285,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
   }, [state.activeId, game]);
 
   const gameControls: GameControls = {
+    open: () => openWindow("olympus"),
     close: () => dispatch({ type: "CLOSE", id: "olympus" }),
     start: (spawnAt, progress) => {
       unlockSound(); // browsers only allow sound from inside a click
@@ -311,7 +312,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
     if (!replay) {
       leaveGameFullscreen();
       requestAnimationFrame(() =>
-        document.querySelector<HTMLElement>('[data-icon-id="olympus"]')?.focus()
+        document.querySelector<HTMLElement>('[data-icon-id="games"]')?.focus()
       );
     }
   };
@@ -357,7 +358,7 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
         onContextMenu={(e) => { if (game) e.preventDefault(); }}
         onDragStart={(e) => { if (game) e.preventDefault(); }}
       >
-        {!launchOlympus && <BootScreen />}
+        {!launch && <BootScreen />}
 
         {shutDown && (
           <button
@@ -476,12 +477,12 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
   );
 }
 
-export default function Desktop({ launchOlympus = false }: { launchOlympus?: boolean }) {
+export default function Desktop({ launch }: { launch?: WindowId }) {
   // The music provider holds the one audio element, so the track keeps
   // playing no matter which windows are open.
   return (
     <MusicProvider>
-      <DesktopRoot launchOlympus={launchOlympus} />
+      <DesktopRoot launch={launch} />
     </MusicProvider>
   );
 }

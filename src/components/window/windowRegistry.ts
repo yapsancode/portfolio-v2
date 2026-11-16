@@ -8,6 +8,7 @@ import HireWindow from "./HireWindow";
 import PhotosWindow from "./PhotosWindow";
 import MusicWindow from "./MusicWindow";
 import OlympusWindow from "./OlympusWindow";
+import GamesWindow from "./GamesWindow";
 
 /**
  * Maps a window id to the component rendered inside the window frame.
@@ -23,4 +24,5 @@ export const windowRegistry: Record<WindowId, ComponentType> = {
   hire: HireWindow,
   music: MusicWindow,
   olympus: OlympusWindow,
+  games: GamesWindow,
 };

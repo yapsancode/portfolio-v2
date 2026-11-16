@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Olympus moved under /games; keep saved home-screen shortcuts and old share links working.
+  async redirects() {
+    return [{ source: "/olympus/:path*", destination: "/games/olympus/:path*", permanent: true }];
+  },
 };
 
 export default nextConfig;

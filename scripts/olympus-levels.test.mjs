@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadTs } from "./load-ts.mjs";
-const g = loadTs("src/components/game/olympus.ts");
-const { LEVELS, parseProgress, progressAt } = loadTs("src/lib/olympus/levels.ts");
+const g = loadTs("src/components/games/olympus/olympus.ts");
+const { LEVELS, parseProgress, progressAt } = loadTs("src/lib/games/olympus/levels.ts");
 const input = { left: false, right: false, thrust: false, fire: false };
 const dt = 1 / 60;
 function world(level, touch = false) {
@@ -177,7 +177,7 @@ test("progress validates fields, ignores legacy streaks and migrates a smaller c
 });
 
 test("guest saves handle corruption/blocked storage and never touch best score or legacy streak", async () => {
-  const client = loadTs("src/lib/olympus/client.ts");
+  const client = loadTs("src/lib/games/olympus/client.ts");
   const values = new Map([["isyraf98:olympus-best", "12000"], ["isyraf98:olympus-best-run", "100"]]);
   globalThis.localStorage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
   try {
@@ -199,7 +199,7 @@ test("guest saves handle corruption/blocked storage and never touch best score o
 });
 
 test("victory starts saving immediately, shares duplicate requests, and allows a failed save to retry", async () => {
-  const client = loadTs("src/lib/olympus/client.ts");
+  const client = loadTs("src/lib/games/olympus/client.ts");
   const originalFetch = globalThis.fetch;
   let calls = 0;
   globalThis.fetch = async (_url, options) => {
