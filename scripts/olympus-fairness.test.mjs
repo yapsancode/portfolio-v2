@@ -8,8 +8,8 @@ const input = { left: false, right: false, thrust: false, fire: false };
 const still = { ...input, joystick: { x: 0, y: 0 } };
 const dt = 1 / 60;
 const box = (w, h) => ({ x: w * .4, y: h * .5, w: w * .22, h: h * .5 });
-function make(level, { w = 1280, h = 764, floor = 0, phone = false, random = g.seededRandom(42), upgrades } = {}) {
-  return g.createWorld({ w, h, level, shipFloor: floor, phoneMode: phone, upgrades,
+function make(level, { w = 1280, h = 764, touch = false, phone = false, random = g.seededRandom(42), upgrades } = {}) {
+  return g.createWorld({ w, h, level, touch, phoneMode: phone, upgrades,
     statue: g.createStatue(box(w, h), 16, 18, Array(288).fill(1)), random, particleScale: 0 });
 }
 function boss(level, opts) {
@@ -23,8 +23,8 @@ function until(w, predicate, inp = input, limit = 3600) {
   assert.fail(`level ${w.level} never reached the expected state`);
 }
 const rockAt = (x, y, r = 20) => ({ x, y, vx: 0, vy: 0, r, size: 0, angle: 0, spin: 0, shape: [1, 1, 1] });
-const TOUCH = { w: 1024, h: 768, floor: 136 };
-const PHONE = { w: 667, h: 320, floor: 136, phone: true };
+const TOUCH = { w: 1024, h: 768, touch: true };
+const PHONE = { w: 667, h: 320, touch: true, phone: true };
 
 test("resize keeps a charging laser, the throw timer and every warned power", () => {
   const w = boss(1); w.statue.hp = 9;
@@ -173,7 +173,7 @@ test("fast shots cannot skip the smallest rock or a phone-sized statue tile", ()
 
   let tileHits = 0;
   for (let k = 0; k < 100; k++) {
-    const w = boss(1, { w: 844, h: 390, floor: 136, phone: true });
+    const w = boss(1, { w: 844, h: 390, touch: true, phone: true });
     w.ship.alive = false; w.ship.respawn = 999;
     const keep = w.statue.tiles.find(t => t.solid && t.row === 9 && t.col === 8);
     for (const t of w.statue.tiles) t.attached = t === keep;
@@ -255,4 +255,18 @@ test("rain lanes and halo gap cues stay drawn while that wave's pieces are alive
   assert.ok(h.rocks.length > 0);
   const d = mockCtx(); drawWorld(d.ctx, h, null, { x: 0, y: 0 });
   assert.ok(d.calls.some(c => c[0] === "arc" && Math.abs(c[4] - (angle - Math.PI * .2)) < 1e-9 && c[3] > 28), "old ring's gap cue");
+});
+
+test("on touch the ship reaches the bottom middle but is pushed out of the control boxes", () => {
+  const w = boss(1, PHONE);
+  w.controls = [{ x: 16, y: 196, w: 112, h: 112 }, { x: 567, y: 224, w: 84, h: 84 }];
+  w.ship.x = 333; w.ship.y = 300;
+  g.step(w, still, dt);
+  assert.equal(w.ship.y, 300); // the empty bottom middle is playfield now
+  w.ship.x = 70; w.ship.y = 205; // just inside the joystick's top edge
+  g.step(w, still, dt);
+  assert.ok(w.ship.y < 196, "pushed up above the joystick");
+  w.ship.x = 560; w.ship.y = 290; // just inside the fire button's left edge
+  g.step(w, still, dt);
+  assert.ok(w.ship.x < 567 && w.ship.y === 290, "pushed sideways, not up through the button");
 });

@@ -202,8 +202,10 @@ export type World = {
   spawnIn: number;
   /** Below 1 on small screens: rocks are smaller and slower there. */
   scale: number;
-  /** Pixels at the bottom the ship stays out of (the touch buttons). */
-  shipFloor: number;
+  /** On-screen touch controls: gentler power timings. */
+  touch: boolean;
+  /** Screen boxes of the touch buttons; the ship stays out of them. */
+  controls: Rect[];
   /** 0 → 1, for fewer particles with reduced motion. */
   particleScale: number;
   random: () => number;
@@ -412,7 +414,7 @@ export function createWorld(opts: {
   statue: Statue;
   random: () => number;
   particleScale?: number;
-  shipFloor?: number;
+  touch?: boolean;
   phoneMode?: boolean;
   level?: number;
   upgrades?: Upgrades;
@@ -451,11 +453,12 @@ export function createWorld(opts: {
     upgrades,
     score: 0,
     level: validLevel(opts.level) ? opts.level : 1,
-    attack: restingPower((opts.shipFloor ?? 0) > 0),
+    attack: restingPower(opts.touch ?? false),
     fireIn: 0,
     spawnIn: TUNING.rock.spawnEvery,
     scale: Math.max(0.6, Math.min(1, opts.w / 900)),
-    shipFloor: opts.shipFloor ?? 0,
+    touch: opts.touch ?? false,
+    controls: [],
     particleScale: opts.particleScale ?? 1,
     random: opts.random,
     lostSent: false,
@@ -491,12 +494,25 @@ export function resize(world: World, w: number, h: number, statueHome: Rect) {
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-function wrap(world: World, o: { x: number; y: number }, margin: number, floor = 0) {
-  const h = world.h - floor;
+function wrap(world: World, o: { x: number; y: number }, margin: number) {
+  const h = world.h;
   if (o.x < -margin) o.x += world.w + margin * 2;
   else if (o.x > world.w + margin) o.x -= world.w + margin * 2;
   if (o.y < -margin) o.y += h + margin * 2;
   else if (o.y > h + margin) o.y -= h + margin * 2;
+}
+
+/** Push the ship out of the touch-button boxes. They sit at the bottom corners, so it goes up or sideways, never under them. */
+function avoidControls(world: World, ship: Ship) {
+  const m = TUNING.ship.radius * (world.phoneMode ? TUNING.phone.shipScale : 1);
+  for (const c of world.controls) {
+    const left = ship.x - (c.x - m), right = c.x + c.w + m - ship.x, up = ship.y - (c.y - m);
+    if (left <= 0 || right <= 0 || up <= 0 || ship.y >= c.y + c.h + m) continue;
+    const min = Math.min(left, right, up);
+    if (min === up) ship.y -= up;
+    else if (min === left) ship.x -= left;
+    else ship.x += right;
+  }
 }
 
 function burst(
@@ -682,7 +698,7 @@ function restingPower(touch = false): PowerAttack {
 }
 
 function clearAttacks(world: World) {
-  world.attack = restingPower(world.shipFloor > 0);
+  world.attack = restingPower(world.touch);
   world.rocks = [];
   // The stage stays, so its announcement does not replay after a death.
   const { statue } = world;
@@ -695,17 +711,17 @@ function clearAttacks(world: World) {
 function clampOrigin(world: World) {
   const a = world.attack;
   a.x = Math.max(30, Math.min(world.w - 30, a.x));
-  a.y = Math.max(30, Math.min(world.h - world.shipFloor - 46, a.y));
+  a.y = Math.max(30, Math.min(world.h - 46, a.y));
 }
 
 export function orbitRadius(world: World) {
-  return Math.min(105, (world.h - world.shipFloor) * 0.23);
+  return Math.min(105, world.h * 0.23);
 }
 export function powerWarning(world: World) {
-  return world.shipFloor > 0 ? TUNING.powers.touchWarning : TUNING.powers.warning;
+  return world.touch ? TUNING.powers.touchWarning : TUNING.powers.warning;
 }
 export function hazardLimit(world: World) {
-  const touch = world.shipFloor > 0;
+  const touch = world.touch;
   if (world.level === 2) return touch ? 9 : 12;
   if (world.level === 3) return touch ? 12 : 16;
   if (world.level === 4) return 18; // three warned waves of six can all be falling on a tall screen
@@ -720,12 +736,12 @@ export function sweepAngle(world: World) {
 
 /** Long enough to cross the whole playfield, so pieces never vanish mid-air on a big screen. */
 function pieceLife(world: World, speed: number) {
-  return Math.max(TUNING.powers.lifetime, Math.hypot(world.w, world.h - world.shipFloor) / (speed * world.scale));
+  return Math.max(TUNING.powers.lifetime, Math.hypot(world.w, world.h) / (speed * world.scale));
 }
 
 /** Halo ring layout. Turning the gap by half a gap plus half a step puts a piece on the line to a still ship. */
 function halo(world: World) {
-  const count = world.shipFloor > 0 ? 6 : 8, gap = Math.PI * 0.4;
+  const count = world.touch ? 6 : 8, gap = Math.PI * 0.4;
   return { count, gap, step: (Math.PI * 2 - gap) / count };
 }
 
@@ -766,7 +782,7 @@ function warnPower(world: World, events: GameEvent[]) {
 
 function launchPower(world: World, events: GameEvent[]) {
   const a = world.attack, P = TUNING.powers;
-  const touch = world.shipFloor > 0;
+  const touch = world.touch;
   a.state = "active"; a.elapsed = 0;
   a.t = P.lifetime;
   if (world.level === 2) {
@@ -839,14 +855,14 @@ function powerAttack(world: World, dt: number, events: GameEvent[]) {
     }
   }
   if (world.level === 5 && world.rocks.length === 0) {
-    world.attack = restingPower(world.shipFloor > 0);
+    world.attack = restingPower(world.touch);
     return;
   }
   if (a.t <= 0) {
     const waves = world.level === 2 || world.level === 4 ? 3 : 2;
     if (a.wave + 1 < waves) { a.wave++; warnPower(world, events); }
     // The last wave ends once its pieces have flown off or been shot, not mid-air.
-    else if (world.rocks.length === 0) world.attack = restingPower(world.shipFloor > 0);
+    else if (world.rocks.length === 0) world.attack = restingPower(world.touch);
   }
 }
 
@@ -912,7 +928,8 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
     }
     ship.x += ship.vx * dt;
     ship.y += ship.vy * dt;
-    wrap(world, ship, 12, world.shipFloor);
+    wrap(world, ship, 12);
+    avoidControls(world, ship);
     ship.safe = Math.max(0, ship.safe - dt);
 
     world.fireIn -= dt;
@@ -939,7 +956,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
       Object.assign(ship, {
         x: world.w / 2,
         // Below the level-4 rain's 60px keep-out band at the top.
-        y: Math.max(80, (world.h - world.shipFloor) * 0.18),
+        y: Math.max(80, world.h * 0.18),
         vx: 0,
         vy: 0,
         angle: 0,
@@ -977,7 +994,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   }
   // Thrown marble that missed leaves the screen for good.
   world.rocks = world.rocks.filter(
-    (r) => (r.life === undefined || r.life > 0) && (!(r.thrown || r.power) || (r.x > -r.r && r.x < world.w + r.r && r.y > -r.r && r.y < world.h - (r.power ? world.shipFloor : 0) + r.r))
+    (r) => (r.life === undefined || r.life > 0) && (!(r.thrown || r.power) || (r.x > -r.r && r.x < world.w + r.r && r.y > -r.r && r.y < world.h + r.r))
   );
 
   if (world.phase === "play") {

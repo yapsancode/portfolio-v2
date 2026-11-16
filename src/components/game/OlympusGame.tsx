@@ -86,6 +86,14 @@ function worldSize(touch: boolean) {
   return { w: window.innerWidth, h: Math.max(100, window.innerHeight - (touch ? 0 : TASKBAR_HEIGHT)) };
 }
 
+/** Screen boxes of the joystick and FIRE button (none while they are hidden). */
+function readControls(): Rect[] {
+  return Array.from(document.querySelectorAll(".olympus-joystick, .olympus-touch-fire"), (el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left, y: r.top, w: r.width, h: r.height };
+  });
+}
+
 function statueBox(touch: boolean): Rect {
   const el = document.querySelector<HTMLElement>("[data-statue]");
   const r = el?.getBoundingClientRect();
@@ -356,7 +364,6 @@ export default function OlympusGame(props: OlympusGameProps) {
   // Keys never hide them, so the touch rules cannot flip mid-fight (the ship would jump).
   const [touch, setTouch] = useState(touchDevice);
   const touchRef = useRef(touch);
-  const stripRef = useRef<HTMLDivElement>(null);
 
   const [hud, setHud] = useState<Hud>({ score: 0, lives: TUNING.lives, anger: 0, statue: 1, phase: "play" });
   const [paused, setPaused] = useState(false);
@@ -408,15 +415,6 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (!reducedMotion) freezeUntil = performance.now() + KILL_PAUSE_MS;
     };
 
-    // Height of the touch-control strip (CSS --olympus-strip); the ship stays above it.
-    let strip = 0;
-    const floor = () => (touchRef.current ? strip : 0);
-    const applyFloor = () => {
-      if (!world) return;
-      world.shipFloor = floor();
-      if (world.shipFloor) world.ship.y = Math.min(world.ship.y, world.h - world.shipFloor - 20);
-    };
-
     const fit = () => {
       const portrait = needsLandscape(touchDevice);
       rotateRequiredRef.current = portrait;
@@ -433,10 +431,9 @@ export default function OlympusGame(props: OlympusGameProps) {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      strip = stripRef.current?.getBoundingClientRect().height ?? 0;
       if (world) {
         resize(world, w, h, statueBox(touchDevice));
-        applyFloor();
+        world.controls = readControls();
       }
     };
     fit();
@@ -607,6 +604,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         if (now >= nextSync) {
           nextSync = now + 250;
           setTargets(world, readTargets(propsRef.current.windows));
+          world.controls = readControls();
         }
         if (now >= freezeUntil) acc += elapsed;
         const input = inputRef.current;
@@ -669,11 +667,11 @@ export default function OlympusGame(props: OlympusGameProps) {
       world = createWorld({
         w,
         h,
-        shipAt: { x: Math.min(w - 20, spawn?.x ?? w / 2), y: Math.min(h - floor() - 20, spawn?.y ?? h / 2) },
+        shipAt: { x: Math.min(w - 20, spawn?.x ?? w / 2), y: Math.min(h - 20, spawn?.y ?? h / 2) },
         statue: createStatue(statueBox(touchDevice), COLS, ROWS, tileCover(loaded)),
         random: Math.random,
         particleScale: reducedMotion ? 0.35 : 1,
-        shipFloor: floor(),
+        touch: touchRef.current,
         phoneMode: isPhoneTouchDevice(touchDevice),
         level: propsRef.current.progress.resumeLevel,
         upgrades: attempt?.ticket?.upgrades ?? propsRef.current.progress.resources.upgrades,
@@ -744,7 +742,7 @@ export default function OlympusGame(props: OlympusGameProps) {
       inputRef.current = { ...NO_INPUT };
       touchRef.current = true;
       setTouch(true);
-      applyFloor();
+      if (world) world.touch = true;
     };
     const onBlur = () => pause(true);
     const onVisibility = () => {
@@ -880,7 +878,6 @@ export default function OlympusGame(props: OlympusGameProps) {
           )}
         </div>
       </div>
-      <div ref={stripRef} className="olympus-strip" aria-hidden="true" />
 
       {crashes.map((c) => (
         <div
