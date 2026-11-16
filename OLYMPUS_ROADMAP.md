@@ -93,11 +93,50 @@ Level 1 keeps its laser eye as its finale. Mirage, Borrowed Time, Gates, and Lev
 ### Last Stand rules
 
 - The finale **replaces** the normal cycle. It is not stacked on top of it, and no other power runs during it.
-- Start from the level-1 threshold of 25% health, then tune. **The player must see at least one full finale.** At 48 health, 25% is 12 hits, about 2.4 seconds of held fire, so the threshold alone is not enough. Decide per power between a higher threshold, a short period where the statue swallows shots during the reveal, or cover provided by the attack itself.
+- **The player must see at least one full finale.** At 48 health, level 1's 25% threshold is 12 hits, about 2.4 seconds of held fire, which is too late. Approved starting point: the finale begins at about 35% health, and the statue swallows shots during its short reveal. Tune per power.
+- **Every finale offers two choices:** dodge it safely, or take a risk to beat the move. Beating it stuns the statue for about two seconds, a free damage window. Check in playtests that the stun does not make fights too easy.
 - Each finale has its own locked warning of at least the standard 1.0 second on desktop and 1.2 seconds on touch, readable with sound muted.
 - Hazards are bounded and have finite lifetimes. Everything clears on death, victory, retry, exit, and level transition. Losing a ship during the finale does not replay its announcement.
 - Add a dialogue event for the finale reveal, with lines per power, under the existing cooldown and priority rules.
-- Detailed specifications for each finale are written when levels 2–6 are redesigned.
+
+### Last Stand specifications for levels 2–6 (approved 17 November 2026)
+
+All five follow the shared rules above. “Harder version” is the hard setting used when the power returns at higher levels; levels 2–6 sit at the easy end of the difficulty curve and each is slightly harder than the one before.
+
+**Level 2 · Marble Swarm → Marble Fist**
+
+- Reveal: every loose fragment flies back and clumps into one giant fist above a shoulder, reusing the existing fly-home motion.
+- Warning: a wide gold lane marks the punch path and locks before the punch.
+- Attack: the fist flies down the lane, returns to the other shoulder, and repeats.
+- Risk: stay near the lane and shoot the fist. Each hit chips off bonus marble; enough hits break it and stun the statue.
+- Harder version: two fists, one from each shoulder, staggered.
+
+**Level 3 · Shattered Halo → Closing Crown**
+
+- Attack: a large ring forms at the screen edge, centred on the statue, and closes inward. It has one green gap that turns slowly.
+- Dodge: fly out through the gap as the ring passes.
+- Risk: shoot ring pieces to cut another gap.
+- Reward: the ring lands on the statue's head as a crown and stuns it.
+- Harder version: two crowns in a row with gaps on opposite sides.
+
+**Level 4 · Meteor Rain → The Sky Falls**
+
+- Attack: one huge meteor. Its shadow grows over the three middle lanes during the warning.
+- Dodge: reach an edge lane.
+- Risk: stay under it and shoot. Enough hits crack it into harmless dust and bonus marble, and stun the statue.
+- Harder version: the shadow covers four lanes.
+
+**Level 5 · Orbiting Armour → Full Plate**
+
+- Attack: shields form a full spinning shell with one missing plate. The statue can be hit only through the hole. After a warning every plate bursts outward; the safe line is where the hole was.
+- Risk: break a plate to widen the hole, using the existing shield-breaking rule.
+- Harder version: a faster spin and two bursts.
+
+**Level 6 · Sweeping Gaze → Double Vision**
+
+- Attack: both eyes fire. Two beams start on opposite sides and close like scissors, leaving one marked safe pocket.
+- Beams cannot be broken. The reward comes after the scissors close: the eyes tire and the statue is open for about two seconds.
+- Harder version: the scissors open again and the pocket is smaller.
 
 ### Last Stand acceptance
 
