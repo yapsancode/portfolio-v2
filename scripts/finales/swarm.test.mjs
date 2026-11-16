@@ -2,6 +2,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { dt, FINALE, finaleWorld, g, idle, still, survives, untilState } from "../olympus-finale.mjs";
+import { loadTs } from "../load-ts.mjs";
+const { finaleFor } = loadTs("src/components/games/olympus/finales/index.ts");
 
 /** Reads the gold lane only: if inside it, steer straight out of the nearer edge. */
 const leaveLane = (world, run) => {
@@ -41,8 +43,11 @@ test("the Last Stand starts once at 35% health, and its reveal swallows shots an
   assert.equal(w.statue.hp, hp - 1, "after the reveal the statue can be hurt again");
 });
 
-test("levels without a finale yet keep their normal cycle at low health", () => {
-  const w = finaleWorld(3);
+test("levels without a finale yet keep their normal cycle at low health", (t) => {
+  // Whichever levels are still without one, so this test never needs moving as finales ship.
+  const level = [2, 3, 4, 5, 6].find((l) => !finaleFor(l));
+  if (!level) { t.skip("every power has its finale"); return; }
+  const w = finaleWorld(level);
   for (let i = 0; i < 120; i++) g.step(w, still, dt);
   assert.equal(w.finale, null);
   assert.notEqual(w.attack.state, "rest");
