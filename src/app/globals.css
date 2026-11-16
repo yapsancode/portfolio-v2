@@ -794,7 +794,7 @@ html:has(.olympus-playing) body { overscroll-behavior: none; }
 
 /* Size of the touch controls in the bottom corners; shrinks on very short screens.
    OlympusGame measures the controls, so the ship only avoids those two boxes. */
-:root { --olympus-strip-content: min(136px, 30dvh); }
+:root { --olympus-strip-content: min(160px, 37dvh); }
 
 /* Touch play: the statue stands on the screen bottom between the controls
    (dvh, not vh: iPhone always shows its browser bar). */
@@ -1052,9 +1052,10 @@ html:has(.olympus-playing) body { overscroll-behavior: none; }
 /* On-screen controls for touch screens. */
 .olympus-touch {
   position: fixed;
-  bottom: max(12px, env(safe-area-inset-bottom));
-  right: max(16px, env(safe-area-inset-right));
-  left: max(16px, env(safe-area-inset-left));
+  /* Away from the corners, where thumbs rest in landscape (playtest feedback). */
+  bottom: max(min(11dvh, 48px), env(safe-area-inset-bottom));
+  right: max(min(10vw, 88px), env(safe-area-inset-right));
+  left: max(min(7vw, 64px), env(safe-area-inset-left));
   z-index: 27;
   display: flex;
   align-items: flex-end;

@@ -17,7 +17,8 @@ export function joystickVector(x: number, y: number, radius: number): StickVecto
   const magnitude = Math.min(1, distance / radius);
   const deadZone = 0.14;
   if (magnitude <= deadZone) return { x: 0, y: 0 };
-  const strength = (magnitude - deadZone) / (1 - deadZone);
+  // Curved, not linear: fine control near the centre without losing top speed at the edge.
+  const strength = ((magnitude - deadZone) / (1 - deadZone)) ** 1.5;
   return { x: (x / distance) * strength, y: (y / distance) * strength };
 }
 
