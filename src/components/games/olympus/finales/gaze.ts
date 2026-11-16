@@ -23,8 +23,9 @@ const OVER = 0.15;
 const HALF = 9;
 /** The second eye: this share of the statue's width right of the first, the far eye of the profile face. */
 const EYE2 = 0.05;
-/** The pocket hugs the top edge, its centre in this band of the width: clear of the corners and the thumb controls. */
-const LEFT = 0.28, SPAN = 0.44;
+/** The pocket hugs the top edge, its centre in this band of the width: clear of the corners, the thumb controls
+ *  and the score box, which covers the top right from about 62% of a phone's width. */
+const LEFT = 0.28, SPAN = 0.26;
 const TAU = Math.PI * 2;
 
 /** Eye 0 (the picture's eye) sweeps one side, eye 1 the other. */
