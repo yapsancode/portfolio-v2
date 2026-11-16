@@ -709,6 +709,7 @@ body {
 .olympus-score-name { max-width: 17ch; }
 .olympus-score-player { display: flex; align-items: center; gap: 6px; }
 .olympus-score-player-text { overflow: hidden; text-overflow: ellipsis; }
+.olympus-scores .olympus-score-gap td { text-align: center; color: #888; padding: 0; }
 .olympus-score-you { color: #00e000; background: #082008; }
 .olympus-score-marker { flex-shrink: 0; padding: 1px 3px; border: 1px solid #00e000; color: #00e000; background: #082008; font-size: 12px; line-height: 1; }
 .olympus-score-gold { --medal-color: #ffd800; background: #231e08; }

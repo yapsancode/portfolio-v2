@@ -259,10 +259,14 @@ export async function scores(id: string | null) {
         (array_agg(cleared ORDER BY run DESC))[1] AS cleared, (array_agg(id ORDER BY run DESC))[1] AS id,
         sum(duration_ms) AS duration, max(published_at) AS updated
       FROM level_best GROUP BY player_id
+    ), ranked AS (
+      SELECT *, row_number() OVER (ORDER BY score DESC, level DESC, duration ASC, updated ASC, id ASC)::integer AS rank
+      FROM campaign
     )
+    -- Top 10, plus the viewer's own row when they rank lower.
     SELECT id, name, score, level, CASE WHEN cleared THEN 'won' ELSE 'lost' END AS outcome, updated AS "createdAt",
-      COALESCE(player_id = ${id}::uuid, false) AS "isYou"
-    FROM campaign ORDER BY score DESC, level DESC, duration ASC, updated ASC, id ASC LIMIT 10
+      rank, COALESCE(player_id = ${id}::uuid, false) AS "isYou"
+    FROM ranked WHERE rank <= 10 OR player_id = ${id}::uuid ORDER BY rank
   `;
 }
 

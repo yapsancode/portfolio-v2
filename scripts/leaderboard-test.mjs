@@ -251,8 +251,10 @@ try {
     progress = reset;
   });
   await test("top 10 ranks campaign totals, one row per browser, versioned and moderatable", async () => {
+    let lowest;
     for (let i = 0; i < 12; i++) {
       const visitor = randomUUID();
+      lowest ??= visitor;
       await server.reserveName(visitor, `Player${i}`);
       const checkpoint = await server.progress(visitor);
       const run = await server.startSession(visitor, 1, checkpoint.epoch);
@@ -261,6 +263,12 @@ try {
     }
     const rows = await server.scores(id);
     assert.equal(rows.length, 10);
+    assert.deepEqual(rows.map(row => row.rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    // A player below the top 10 also gets their own row, with their real rank.
+    const own = await server.scores(lowest);
+    assert.equal(own.length, 11);
+    assert.deepEqual([own[10].name, own[10].isYou, own[10].rank > 10], ["Player0", true, true]);
+    assert.equal(own.filter(row => row.isYou).length, 1);
     // Six cleared levels (best haul per level, added up) beat one bigger single haul.
     assert.deepEqual([rows[0].score, rows[0].level, rows[0].outcome, rows[0].isYou], [6 * win.score, 6, "won", true]);
     const singles = (list) => list.filter(row => row.name.startsWith("Player"));

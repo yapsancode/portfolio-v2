@@ -13,6 +13,7 @@ export type ScoreEntry = {
   level: number;
   outcome: "won" | "lost";
   createdAt: string;
+  rank: number;
   isYou: boolean;
 };
 
