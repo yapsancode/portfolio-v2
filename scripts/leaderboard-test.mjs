@@ -246,13 +246,15 @@ try {
     assert.equal((await server.progress(id)).resumeLevel, 1);
     assert.deepEqual((await server.progress(id)).resources, bank);
     assert.equal((await db.query("SELECT finished_at FROM olympus_sessions WHERE token_hash = $1", [server.tokenHash(old.token)])).rows[0].finished_at, null);
-    assert.equal((await server.scores(id)).find(row => row.isYou).score, win.score);
+    assert.equal((await server.scores(id)).find(row => row.isYou).score, 6 * win.score); // campaign total survives Start Over
     assert.equal(await server.playerName(id), "Isyraf_98");
     progress = reset;
   });
-  await test("top 10 is ordered, one best per browser, versioned and moderatable", async () => {
+  await test("top 10 ranks campaign totals, one row per browser, versioned and moderatable", async () => {
+    let lowest;
     for (let i = 0; i < 12; i++) {
       const visitor = randomUUID();
+      lowest ??= visitor;
       await server.reserveName(visitor, `Player${i}`);
       const checkpoint = await server.progress(visitor);
       const run = await server.startSession(visitor, 1, checkpoint.epoch);
@@ -261,10 +263,30 @@ try {
     }
     const rows = await server.scores(id);
     assert.equal(rows.length, 10);
-    assert.equal(rows[0].score, 21100);
-    await db.query("UPDATE olympus_sessions SET hidden = true WHERE id = $1", [rows[0].id]);
-    await db.query("UPDATE olympus_sessions SET game_version = 'old' WHERE id = $1", [rows[1].id]);
-    assert.equal((await server.scores(id))[0].score, 20900);
+    assert.deepEqual(rows.map(row => row.rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    // A player below the top 10 also gets their own row, with their real rank.
+    const own = await server.scores(lowest);
+    assert.equal(own.length, 11);
+    assert.deepEqual([own[10].name, own[10].isYou, own[10].rank > 10], ["Player0", true, true]);
+    assert.equal(own.filter(row => row.isYou).length, 1);
+    // Six cleared levels (best haul per level, added up) beat one bigger single haul.
+    assert.deepEqual([rows[0].score, rows[0].level, rows[0].outcome, rows[0].isYou], [6 * win.score, 6, "won", true]);
+    const singles = (list) => list.filter(row => row.name.startsWith("Player"));
+    assert.equal(singles(rows)[0].score, 21100);
+    await db.query("UPDATE olympus_sessions SET hidden = true WHERE id = $1", [singles(rows)[0].id]);
+    await db.query("UPDATE olympus_sessions SET game_version = 'old' WHERE id = $1", [singles(rows)[1].id]);
+    assert.equal(singles(await server.scores(id))[0].score, 20900);
+  });
+  await test("equal totals rank the faster campaign first; a level without a win has no star", async () => {
+    for (const [name, durationMs, outcome] of [["SlowTie", 100000, "won"], ["NoStar", 95000, "lost"], ["FastTie", 90000, "won"]]) {
+      const visitor = randomUUID();
+      await server.reserveName(visitor, name);
+      const run = await server.startSession(visitor, 1, (await server.progress(visitor)).epoch);
+      await age(run.token, 130);
+      await server.finishSession(visitor, run.token, { score: 30000, durationMs, outcome });
+    }
+    const rows = (await server.scores(id)).filter(row => row.score === 30000);
+    assert.deepEqual(rows.map(row => [row.name, row.outcome]), [["FastTie", "won"], ["NoStar", "lost"], ["SlowTie", "won"]]);
   });
   await test("rate limits are atomic across concurrent requests and reset after expiry", async () => {
     const req = request("session", "POST", {}, cookie);

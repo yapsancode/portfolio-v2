@@ -245,34 +245,54 @@ export async function buyUpgrade(id: string, epoch: string, upgrade: Upgrade, ex
 
 export async function scores(id: string | null) {
   const sql = database();
+  // Campaign total: best haul per level, added up, so going further always counts.
   return sql`
-    WITH best AS (
-      SELECT DISTINCT ON (player_id) id, player_id, player_name, score, run, outcome, published_at
+    WITH level_best AS (
+      -- Each player's best haul on each level; a level's ★ needs any win there, not the best haul.
+      SELECT DISTINCT ON (player_id, run) id, player_id, player_name, score, run, duration_ms, published_at,
+        bool_or(outcome = 'won') OVER (PARTITION BY player_id, run) AS cleared
       FROM olympus_sessions
       WHERE game_version = ${scoreVersion()} AND published_at IS NOT NULL AND hidden = false
-      ORDER BY player_id, score DESC, run DESC, published_at ASC, id ASC
+      ORDER BY player_id, run, score DESC, duration_ms ASC, published_at ASC, id ASC
+    ), campaign AS (
+      SELECT player_id, min(player_name) AS name, sum(score)::integer AS score, max(run) AS level,
+        (array_agg(cleared ORDER BY run DESC))[1] AS cleared, (array_agg(id ORDER BY run DESC))[1] AS id,
+        sum(duration_ms) AS duration, max(published_at) AS updated
+      FROM level_best GROUP BY player_id
+    ), ranked AS (
+      SELECT *, row_number() OVER (ORDER BY score DESC, level DESC, duration ASC, updated ASC, id ASC)::integer AS rank
+      FROM campaign
     )
-    SELECT id, player_name AS name, score, run AS level, outcome, published_at AS "createdAt",
-      COALESCE(player_id = ${id}::uuid, false) AS "isYou"
-    FROM best ORDER BY score DESC, run DESC, published_at ASC, id ASC LIMIT 10
+    -- Top 10, plus the viewer's own row when they rank lower.
+    SELECT id, name, score, level, CASE WHEN cleared THEN 'won' ELSE 'lost' END AS outcome, updated AS "createdAt",
+      rank, COALESCE(player_id = ${id}::uuid, false) AS "isYou"
+    FROM ranked WHERE rank <= 10 OR player_id = ${id}::uuid ORDER BY rank
   `;
 }
 
 export async function createShare(id: string, token: string): Promise<SharedScore> {
   const sql = database();
-  // Rank this exact result, not a player's better result. Freeze the first snapshot.
+  // A medal needs a podium campaign and a haul that counts toward it. Freeze the first snapshot.
   const rows = await sql`
-    WITH best AS (
-      SELECT DISTINCT ON (player_id) id, player_id, score, run, published_at
+    WITH level_best AS (
+      -- Each player's best haul on each level; a level's ★ needs any win there, not the best haul.
+      SELECT DISTINCT ON (player_id, run) id, player_id, player_name, score, run, duration_ms, published_at,
+        bool_or(outcome = 'won') OVER (PARTITION BY player_id, run) AS cleared
       FROM olympus_sessions
       WHERE game_version = ${scoreVersion()} AND published_at IS NOT NULL AND hidden = false
-      ORDER BY player_id, score DESC, run DESC, published_at ASC, id ASC
+      ORDER BY player_id, run, score DESC, duration_ms ASC, published_at ASC, id ASC
+    ), campaign AS (
+      SELECT player_id, min(player_name) AS name, sum(score)::integer AS score, max(run) AS level,
+        (array_agg(cleared ORDER BY run DESC))[1] AS cleared, (array_agg(id ORDER BY run DESC))[1] AS id,
+        sum(duration_ms) AS duration, max(published_at) AS updated
+      FROM level_best GROUP BY player_id
     ), podium AS (
-      SELECT id, row_number() OVER (ORDER BY score DESC, run DESC, published_at ASC, id ASC)::integer AS rank
-      FROM best ORDER BY score DESC, run DESC, published_at ASC, id ASC LIMIT 3
+      SELECT player_id, row_number() OVER (ORDER BY score DESC, level DESC, duration ASC, updated ASC, id ASC)::integer AS rank
+      FROM campaign ORDER BY score DESC, level DESC, duration ASC, updated ASC, id ASC LIMIT 3
     ), snapshot AS (
       INSERT INTO olympus_shares (session_id, rank)
-      SELECT s.id, p.rank FROM olympus_sessions s LEFT JOIN podium p ON p.id = s.id
+      SELECT s.id, p.rank FROM olympus_sessions s
+        LEFT JOIN podium p ON p.player_id = s.player_id AND s.id IN (SELECT id FROM level_best)
       WHERE s.token_hash = ${tokenHash(token)} AND s.player_id = ${id}
         AND s.game_version = ${scoreVersion()} AND s.published_at IS NOT NULL
         AND s.player_name IS NOT NULL AND s.hidden = false
