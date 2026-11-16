@@ -2,9 +2,9 @@
 
 import type { LevelResult, LevelTicket } from "./leaderboard";
 
-import { parseProgress, progressAt, type Progress } from "./levels";
+import { LAST_LEVEL, parseProgress, progressAt, type Progress } from "./levels";
 import type { SharedScore } from "./sharing";
-import { collectMarble, purchaseRefit, upgradeCount, type Upgrade } from "./resources";
+import { collectMarble, parseResources, purchaseRefit, upgradeCount, type Upgrade } from "./resources";
 
 export type RankedAttempt = { ticket: LevelTicket | null; error: string | null };
 export type ScoreSubmission = { record: () => Promise<Progress>; share: () => Promise<SharedScore> };
@@ -61,15 +61,61 @@ export function finishRankedAttempt(session: Promise<RankedAttempt>, result: Lev
   } };
 }
 
+/** A named player never plays without a ticket: a win could never be saved. Guests need none. */
+export function attemptBlocker(epoch: string | null, attempt: RankedAttempt | null): string | null {
+  if (!epoch || attempt?.ticket) return null;
+  return attempt?.error ?? "This attempt could not connect to your save.";
+}
+
 const GUEST_KEY = "isyraf98:olympus-progress:v1";
-export function guestProgress(): { progress: Progress; notice: string } {
+export const GUEST_BACKUP_KEY = `${GUEST_KEY}:backup`;
+
+/** Throws on an unreadable save. Levels and milestones this version does not have are capped. */
+function readGuest(raw: string): Progress {
+  const saved = JSON.parse(raw);
+  const top = Math.min(saved.highestCompletedLevel, LAST_LEVEL);
+  const progress = parseProgress(saved.highestCompletedLevel > LAST_LEVEL || saved.resumeLevel > LAST_LEVEL
+    ? { ...saved, highestCompletedLevel: top, resumeLevel: top, completed: true } : saved);
+  if (progress.epoch !== null) throw new Error();
+  return { ...progress, resources: parseResources({ ...progress.resources, furthestLevel: Math.min(progress.resources.furthestLevel, LAST_LEVEL) }) };
+}
+
+/** Keep an unreadable save before a later save overwrites it. */
+function keepCopy(raw: string | null) {
+  try { if (raw !== null) localStorage.setItem(GUEST_BACKUP_KEY, raw); } catch {}
+}
+
+function newerSave(raw: string | null) {
   try {
-    const raw = localStorage.getItem(GUEST_KEY);
-    const progress = raw ? parseProgress(JSON.parse(raw)) : progressAt();
-    if (progress.epoch !== null) throw new Error();
-    return { progress, notice: "Guest progress stays in this browser. It is separate from a named player’s save." };
+    const saved = JSON.parse(raw ?? "null");
+    return saved?.version > 1 || saved?.highestCompletedLevel > LAST_LEVEL || saved?.resumeLevel > LAST_LEVEL;
+  } catch { return false; }
+}
+const NEWER_NOTICE = "Your guest save is from a newer version of Olympus. Refresh the game to keep all of it.";
+
+export function guestProgress(): { progress: Progress; notice: string } {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(GUEST_KEY);
+    const progress = raw ? readGuest(raw) : progressAt();
+    return { progress, notice: newerSave(raw) ? NEWER_NOTICE : "Guest progress stays in this browser. It is separate from a named player’s save." };
   } catch {
-    return { progress: progressAt(), notice: "Guest save could not be read. Starting at level 1; progress may not survive closing the game." };
+    if (raw === null) return { progress: progressAt(), notice: "Guest save could not be read. Starting at level 1; progress may not survive closing the game." };
+    keepCopy(raw);
+    return { progress: progressAt(), notice: newerSave(raw) ? `${NEWER_NOTICE} A copy was kept in this browser.`
+      : "Guest save could not be read. Starting at level 1; a copy of the old save was kept in this browser." };
+  }
+}
+
+/** Another tab may have saved since this one loaded: build on the stored save, not this tab's copy. */
+export function latestGuest(loaded: Progress): Progress {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(GUEST_KEY);
+    return raw ? readGuest(raw) : loaded;
+  } catch {
+    keepCopy(raw);
+    return loaded;
   }
 }
 export function saveGuest(progress: Progress): string {
@@ -81,7 +127,8 @@ export function saveGuest(progress: Progress): string {
 
 export async function startOver(progress: Progress): Promise<Progress> {
   if (progress.epoch === null) {
-    const reset = progressAt(0, null, progress.resources);
+    // Reset the level only; keep the bank another tab may have grown.
+    const reset = progressAt(0, null, latestGuest(progress).resources);
     try { localStorage.setItem(GUEST_KEY, JSON.stringify(reset)); }
     catch { throw new Error("Could not reset your guest save because browser storage is unavailable. Your saved level was not changed."); }
     return reset;
@@ -90,9 +137,15 @@ export async function startOver(progress: Progress): Promise<Progress> {
   return parseProgress(data.progress);
 }
 
-export function finishGuestAttempt(progress: Progress, result: LevelResult): Progress {
-  const cleared = result.outcome === "won" ? progress.resumeLevel : 0;
+export function finishGuestAttempt(progress: Progress, result: LevelResult, level = progress.resumeLevel): Progress {
+  const cleared = result.outcome === "won" ? level : 0;
   return progressAt(Math.max(progress.highestCompletedLevel, cleared), null, collectMarble(progress.resources, result.score, cleared));
+}
+
+/** Banks this attempt onto the stored guest save, so two tabs add up instead of overwriting each other. */
+export function saveGuestAttempt(loaded: Progress, result: LevelResult): { progress: Progress; notice: string } {
+  const progress = finishGuestAttempt(latestGuest(loaded), result, loaded.resumeLevel);
+  return { progress, notice: saveGuest(progress) };
 }
 
 export async function refitShip(progress: Progress, upgrade: Upgrade): Promise<Progress> {

@@ -3,7 +3,7 @@ import "server-only";
 import { createHmac, createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { NextRequest, NextResponse } from "next/server";
-import { GAME_VERSION, LeaderboardError, SESSION_SECONDS, type LevelResult } from "./leaderboard";
+import { GAME_VERSION, LeaderboardError, SESSION_SECONDS, checkHaul, type LevelResult } from "./leaderboard";
 
 import { LAST_LEVEL, progressAt, type Progress } from "./levels";
 import type { SharedScore } from "./sharing";
@@ -178,8 +178,13 @@ export async function startSession(id: string, level: number, epoch: string) {
 
 export async function finishSession(id: string, token: string, result: LevelResult): Promise<Progress> {
   const sql = database();
+  const [session] = await sql`SELECT run FROM olympus_sessions WHERE token_hash = ${tokenHash(token)} AND player_id = ${id}`;
+  if (!session) throw new LeaderboardError("This attempt could not update your save. Exit and reload your saved level.", 409);
+  checkHaul(result, session.run);
   // Lock the save before the attempt: finish/reset/refit serialize on this row.
   // Capture the first finish under lock so retries cannot mint marble twice.
+  // A first finish must still be the player's current level and newest attempt:
+  // starting an attempt voids older unfinished ones, so parallel tabs cannot each bank marble.
   const rows = await sql`
     WITH saved AS MATERIALIZED (
       SELECT * FROM olympus_progress WHERE player_id = ${id} AND environment = ${environment()} FOR UPDATE
@@ -190,6 +195,9 @@ export async function finishSession(id: string, token: string, result: LevelResu
         AND s.started_at > now() - ${SESSION_SECONDS} * interval '1 second'
         AND ${result.durationMs} <= EXTRACT(EPOCH FROM (now() - s.started_at)) * 1000 + 2000
         AND (s.finished_at IS NULL OR (s.score = ${result.score} AND s.duration_ms = ${result.durationMs} AND s.outcome = ${result.outcome}))
+        AND (s.finished_at IS NOT NULL OR (LEAST(p.highest_completed + 1, ${LAST_LEVEL}) = s.run AND NOT EXISTS (
+          SELECT 1 FROM olympus_sessions n WHERE n.player_id = s.player_id AND n.campaign_epoch = s.campaign_epoch
+            AND (n.started_at, n.id) > (s.started_at, s.id))))
         AND EXISTS (SELECT 1 FROM olympus_players WHERE id = ${id} AND environment = ${environment()})
       FOR UPDATE OF s
     ), recorded AS (

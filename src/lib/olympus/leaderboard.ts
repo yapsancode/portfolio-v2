@@ -45,11 +45,40 @@ export function parseResult(value: Record<string, unknown>): LevelResult {
   ) {
     throw new LeaderboardError("This marble haul could not be accepted.");
   }
-  // Deliberately generous bounds, not a claim that client gameplay is verified.
-  // A bullet can earn up to 550 points (window crash), at up to 8.34 shots/sec with a fully upgraded blaster.
-  const maxScore = 6_000 + Math.ceil(durationMs / 1_000) * 5_000;
-  if (score > maxScore || (outcome === "won" && (score < 8_800 || durationMs < 8_000))) {
-    throw new LeaderboardError("This marble haul does not match the game duration.");
-  }
   return { score, durationMs, outcome };
+}
+
+/**
+ * Scoring limits of the real game, mirrored from TUNING in src/components/game/olympus.ts
+ * (server code must not import the browser engine). scripts/olympus-resources.test.mjs checks they match.
+ */
+export const HAUL = {
+  guardianHp: 38, powersHp: 48, hitScore: 100, crumbleScore: 5_000,
+  windows: 8, windowHp: 14, windowHitScore: 50, windowCrashScore: 500, icons: 7, iconScore: 150,
+  /** The most one repeatable shot earns (the smallest rock). */
+  shotScore: 100,
+  /** Fire interval with a fully upgraded blaster. */
+  fastestShotMs: 120, bulletLifeMs: 800, awakenMs: 3_000, crumbleMs: 2_200,
+};
+const statueHp = (level: number) => level === 1 ? HAUL.guardianHp : HAUL.powersHp;
+
+/** Every statue hit, the crumble, every window and icon once, and the best shot at the top fire rate. */
+export function maxHaul(level: number, durationMs: number) {
+  const desktop = HAUL.windows * ((HAUL.windowHp - 1) * HAUL.windowHitScore + HAUL.windowCrashScore) + HAUL.icons * HAUL.iconScore;
+  const shots = Math.ceil(durationMs / HAUL.fastestShotMs) + 1;
+  return Math.min(100_000, statueHp(level) * HAUL.hitScore + HAUL.crumbleScore + desktop + shots * HAUL.shotScore);
+}
+
+/** Wake-up, every hit at the top fire rate (shots may already be in flight), then the crumble. */
+export function minWinMs(level: number) {
+  return HAUL.awakenMs + (statueHp(level) - 1) * HAUL.fastestShotMs - HAUL.bulletLifeMs + HAUL.crumbleMs;
+}
+
+// Generous bounds that block obvious forgeries, not a claim that client gameplay is verified.
+export function checkHaul(result: LevelResult, level: number) {
+  const { score, durationMs, outcome } = result;
+  if (score > maxHaul(level, durationMs) || (outcome === "won" &&
+      (score < statueHp(level) * HAUL.hitScore + HAUL.crumbleScore || durationMs < minWinMs(level)))) {
+    throw new LeaderboardError("This marble haul does not match the game.");
+  }
 }

@@ -19,7 +19,7 @@ import { missionInfo } from "@/lib/olympus/missions";
 import MarbleBank from "./MarbleBank";
 import StartOver from "./StartOver";
 import ScoreStatus from "./ScoreStatus";
-import { beginRankedAttempt, finishRankedAttempt, finishGuestAttempt, saveGuest, type RankedAttempt, type ScoreSubmission } from "@/lib/olympus/client";
+import { attemptBlocker, beginRankedAttempt, finishRankedAttempt, saveGuestAttempt, type RankedAttempt, type ScoreSubmission } from "@/lib/olympus/client";
 import {
   createStatue,
   createWorld,
@@ -349,6 +349,8 @@ export default function OlympusGame(props: OlympusGameProps) {
   const rotateRequiredRef = useRef(rotateRequired);
   const endedRef = useRef(false);
   const rankedAttemptRef = useRef<Promise<RankedAttempt> | null>(null);
+  const retryStartRef = useRef<(() => void) | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
   const touchDevice = props.touchDevice;
   // Touch devices start with on-screen controls; a touch tap shows them mid-fight.
   // Keys never hide them, so the touch rules cannot flip mid-fight (the ship would jump).
@@ -394,6 +396,7 @@ export default function OlympusGame(props: OlympusGameProps) {
 
     let world: World | null = null;
     let art: StatueArt | null = null;
+    let startBlocked: string | null = null;
     let raf = 0;
     let disposed = false;
     let shakeUntil = 0;
@@ -576,9 +579,10 @@ export default function OlympusGame(props: OlympusGameProps) {
                   score: world.score, durationMs: Math.round(world.time * 1000), outcome: e.type,
                 })
               : null;
-            const guestCheckpoint = finishGuestAttempt(p.progress, { score: world.score, durationMs: Math.round(world.time * 1000), outcome: e.type });
-            const checkpoint = p.progress.epoch ? (submission ? null : p.progress) : guestCheckpoint;
-            const notice = p.progress.epoch ? "" : saveGuest(guestCheckpoint);
+            const guest = p.progress.epoch ? null
+              : saveGuestAttempt(p.progress, { score: world.score, durationMs: Math.round(world.time * 1000), outcome: e.type });
+            const checkpoint = guest ? guest.progress : submission ? null : p.progress;
+            const notice = guest?.notice ?? "";
             setEnding({ kind: e.type, score: world.score, best: Math.max(best, world.score), newBest, submission, checkpoint, notice });
             setAnnounce(
               `${e.type === "won" ? "You won" : "Game over"}. Marble collected: ${world.score.toLocaleString("en")}.`
@@ -651,8 +655,13 @@ export default function OlympusGame(props: OlympusGameProps) {
     // The server's elapsed-time check must start before the game's clock.
     // A slow connection may take a few seconds; never count that as play time.
     const box = statueBox(touchDevice);
-    void Promise.all([loadStatueArt(box), rankedAttemptRef.current]).then(([loaded, attempt]) => {
+    const artLoading = loadStatueArt(box);
+    const begin = () => void Promise.all([artLoading, rankedAttemptRef.current]).then(([loaded, attempt]) => {
       if (disposed) return;
+      // A named player's win could never be saved without a ticket: do not start the clock.
+      startBlocked = attemptBlocker(propsRef.current.progress.epoch, attempt);
+      setStartError(startBlocked);
+      if (startBlocked) return;
       setPreparing(false);
       art = loaded;
       const { w, h } = worldSize(touchDevice);
@@ -673,6 +682,15 @@ export default function OlympusGame(props: OlympusGameProps) {
       last = performance.now();
       raf = requestAnimationFrame(frame);
     });
+    // Retry asks the server for a fresh ticket; the failed one is never reused.
+    retryStartRef.current = () => {
+      if (!startBlocked) return; // already retrying
+      startBlocked = null;
+      setStartError(null);
+      rankedAttemptRef.current = beginRankedAttempt(propsRef.current.progress.resumeLevel, propsRef.current.progress.epoch);
+      begin();
+    };
+    begin();
 
     const pause = (value: boolean) => {
       if (endedRef.current) return;
@@ -690,7 +708,8 @@ export default function OlympusGame(props: OlympusGameProps) {
     // Listens in the capture phase and stops game keys there, so a focused
     // desktop icon or button never also reacts to Space or Enter.
     const onKeyDown = (e: KeyboardEvent) => {
-      if (endedRef.current) return;
+      // The start-error buttons need normal Tab, Enter and Space.
+      if (endedRef.current || startBlocked) return;
       if (e.key === "Escape" || e.key === "p" || e.key === "P") {
         if (e.repeat) return;
         e.preventDefault();
@@ -811,7 +830,21 @@ export default function OlympusGame(props: OlympusGameProps) {
         aria-label="Olympus. Left and right arrows turn, up arrow thrusts, Space fires, P or Escape opens the pause menu."
       />
 
-      {preparing && <p className="olympus-loading" role="status">Preparing your level...</p>}
+      {preparing && !startError && <p className="olympus-loading" role="status">Preparing your level...</p>}
+
+      {startError && (
+        <div className="olympus-paused" role="alertdialog" aria-modal="true" aria-label="Level not started" onKeyDown={trapMenuFocus}>
+          <div className="olympus-pause-menu">
+            <h2>NOT CONNECTED</h2>
+            <p>Level {props.progress.resumeLevel} waits until your save is connected, so this attempt’s marble and progress can be saved.</p>
+            <p role="status">{startError}</p>
+            <div className="olympus-actions">
+              <button type="button" className="olympus-button olympus-button-primary" autoFocus onClick={() => retryStartRef.current?.()}>Retry</button>
+              <button type="button" className="olympus-button" onClick={() => props.onEnd(false)}>Back to desktop</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {statueAwake && <div className="olympus-dark" aria-hidden="true" />}
 
@@ -842,7 +875,7 @@ export default function OlympusGame(props: OlympusGameProps) {
 
         <div className="olympus-corner-row">
           <div className="olympus-power-label" aria-hidden="true">{levelInfo(props.progress.resumeLevel).name}</div>
-          {!paused && !rotateRequired && !ending && (
+          {!paused && !rotateRequired && !ending && !startError && (
             <button type="button" className="olympus-button olympus-pause-trigger" onClick={showPause} aria-label="Pause game">Ⅱ Pause</button>
           )}
         </div>
@@ -892,7 +925,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         </div>
       )}
 
-      {paused && !rotateRequired && !ending && (
+      {paused && !rotateRequired && !ending && !startError && (
         <div className="olympus-paused" role="dialog" aria-modal="true" aria-label="Game paused" onKeyDown={trapMenuFocus}>
           <div className="olympus-pause-menu">
             <p className="olympus-menu-hint">LEVEL {props.progress.resumeLevel} · MARBLE {String(hud.score).padStart(6, "0")}</p>
@@ -910,7 +943,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         </div>
       )}
 
-      {touch && !paused && !rotateRequired && !ending && <TouchPad onPress={press} onMove={steer} />}
+      {touch && !paused && !rotateRequired && !ending && !startError && <TouchPad onPress={press} onMove={steer} />}
 
       {ending && (
         <EndScreen

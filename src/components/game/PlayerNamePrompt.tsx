@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
-import { guestProgress, leaderboardRequest, saveGuest } from "@/lib/olympus/client";
+import { guestProgress, latestGuest, leaderboardRequest, saveGuest } from "@/lib/olympus/client";
 import { levelInfo, parseProgress, progressAt, type Progress } from "@/lib/olympus/levels";
 import StartOver from "./StartOver";
 import { parseName } from "@/lib/olympus/leaderboard";
@@ -58,8 +58,10 @@ export default function PlayerNamePrompt({ onPlay, onBack }: {
   };
 
   const play = (event: MouseEvent<HTMLButtonElement>) => {
-    if (!progress.epoch) setNotice(saveGuest(progress));
-    onPlay(event, progress);
+    // Another tab may have saved since this screen loaded: play from that, never write this older copy over it.
+    const current = progress.epoch ? progress : latestGuest(progress);
+    if (!current.epoch) setNotice(saveGuest(current));
+    onPlay(event, current);
   };
   const label = progress.completed ? `Replay level ${progress.resumeLevel}`
     : progress.highestCompletedLevel > 0 ? `Continue — Level ${progress.resumeLevel}` : "Play — Level 1";

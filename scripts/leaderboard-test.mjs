@@ -76,15 +76,30 @@ try {
     await db.query("UPDATE olympus_sessions SET started_at = now() - $1 * interval '1 second' WHERE token_hash = $2", [seconds, server.tokenHash(token)]);
   }
   const win = { score: 12000, durationMs: 60000, outcome: "won" };
+  // A big haul needs a long fight to fit under the per-level cap.
+  const long = (score) => ({ ...win, score, durationMs: 120000 });
   let cookie, ticket, id, progress;
 
   await test("reject malformed names, non-integral scores and impossible wins", () => {
     assert.equal(validation.parseName(" Isyraf_98 "), "Isyraf_98");
     for (const value of ["<x>", "A".repeat(17), "", null, "A B", "ab", "_player"]) assert.throws(() => validation.parseName(value));
     for (const value of [-10, 1.5, 11, 100010, "12000", null]) assert.throws(() => validation.parseResult({ ...win, score: value }));
-    assert.throws(() => validation.parseResult({ ...win, score: 8000 }));
-    assert.throws(() => validation.parseResult({ ...win, durationMs: 2000 }));
+    assert.throws(() => validation.checkHaul(validation.parseResult({ ...win, score: 8000 }), 1));
+    assert.throws(() => validation.checkHaul({ ...win, score: 9000 }, 2)); // level 2+ statue has 48 hp
+    assert.throws(() => validation.checkHaul(validation.parseResult({ ...win, durationMs: 8000 }), 1));
     assert.deepEqual(validation.parseResult(win), win);
+    validation.checkHaul(win, 1);
+  });
+  await test("per-level haul cap rejects a forged 100000 and accepts real simulated hauls", () => {
+    assert.throws(() => validation.checkHaul({ score: 100000, durationMs: 20000, outcome: "lost" }, 1), /does not match/);
+    assert.throws(() => validation.checkHaul({ score: 50000, durationMs: 20000, outcome: "lost" }, 6));
+    // Best and fastest aggressive-bot runs (full desktop, max upgrades): scripts/olympus-sim.mjs bots.
+    validation.checkHaul({ score: 19040, durationMs: 47267, outcome: "won" }, 1);
+    validation.checkHaul({ score: 18280, durationMs: 20433, outcome: "won" }, 1);
+    validation.checkHaul({ score: 16850, durationMs: 18550, outcome: "won" }, 4);
+    assert.equal(validation.maxHaul(1, 20000), 35850);
+    assert.equal(validation.maxHaul(2, 20000), 36850);
+    assert.equal(validation.maxHaul(1, 3600000), 100000);
   });
   await test("reject cross-origin, oversized and malformed requests before database access", async () => {
     assert.equal((await sessions.POST(request("session", "POST", {}, null, { origin: "https://evil.test" }))).status, 403);
@@ -149,14 +164,47 @@ try {
     assert.equal((await server.progress(id)).resumeLevel, 2);
     const attempts = await Promise.all([1, 2].map(() => server.startSession(id, 2, progress.epoch)));
     for (const next of attempts) await age(next.token);
-    await Promise.all(attempts.map(next => server.finishSession(id, next.token, win)));
+    const finished = await Promise.allSettled(attempts.map(next => server.finishSession(id, next.token, win)));
+    assert.deepEqual(finished.map(r => r.status).sort(), ["fulfilled", "rejected"]);
     assert.equal((await server.progress(id)).resumeLevel, 3);
     assert.equal((await server.scores(id)).length, 1);
     assert.equal((await server.scores(id))[0].level, 2);
     // Reposting an older win cannot overwrite a newer checkpoint.
     await server.finishSession(id, ticket.token, win);
     assert.equal((await server.progress(id)).resumeLevel, 3);
-    assert.equal((await server.progress(id)).resources.marble, 3 * win.score);
+    assert.equal((await server.progress(id)).resources.marble, 2 * win.score);
+  });
+  await test("a new attempt voids older open ones: only the newest of 3 parallel sessions banks marble", async () => {
+    const visitor = randomUUID();
+    await server.reserveName(visitor, "ParallelTabs");
+    const saved = await server.progress(visitor);
+    const opened = await Promise.all([1, 2, 3].map(() => server.startSession(visitor, 1, saved.epoch)));
+    for (const next of opened) await age(next.token);
+    const newest = (await db.query("SELECT token_hash FROM olympus_sessions WHERE player_id = $1 ORDER BY started_at DESC, id DESC LIMIT 1", [visitor])).rows[0].token_hash;
+    const lost = { ...win, outcome: "lost" };
+    const results = await Promise.allSettled(opened.map(next => server.finishSession(visitor, next.token, lost)));
+    assert.deepEqual(results.map((r, i) => r.status === "fulfilled" ? server.tokenHash(opened[i].token) : null).filter(Boolean), [newest]);
+    assert.equal((await server.progress(visitor)).resources.marble, win.score);
+    // A stale tab's win cannot bank again or replay a passed level.
+    const [stale, current] = [await server.startSession(visitor, 1, saved.epoch), await server.startSession(visitor, 1, saved.epoch)];
+    await age(stale.token); await age(current.token);
+    await server.finishSession(visitor, current.token, win);
+    await assert.rejects(server.finishSession(visitor, stale.token, win), /could not update/);
+    const after = await server.progress(visitor);
+    assert.equal(after.resources.marble, 2 * win.score);
+    assert.equal(after.highestCompletedLevel, 1);
+    // The forged leaderboard haul from the audit: 100000 marble for a 20 second loss.
+    const real = await server.startSession(visitor, 2, saved.epoch);
+    await age(real.token, 25);
+    const player = (await players.POST(request("player", "POST", { name: "ForgedHaul" }))).headers.get("set-cookie").split(";")[0];
+    const forgerId = server.player(request("player", "GET", undefined, player));
+    const forgerSession = await server.startSession(forgerId, 1, (await server.progress(forgerId)).epoch);
+    await age(forgerSession.token, 25);
+    const reply = await sessions.PATCH(request("session", "PATCH", { token: forgerSession.token, score: 100000, durationMs: 20000, outcome: "lost" }, player));
+    assert.equal(reply.status, 400);
+    assert.equal((await server.progress(forgerId)).resources.marble, 0);
+    await server.finishSession(visitor, real.token, { score: 18370, durationMs: 24683, outcome: "won" });
+    assert.equal((await server.progress(visitor)).highestCompletedLevel, 2);
   });
   await test("loss, exit and expired attempts keep the saved level", async () => {
     const before = (await server.progress(id)).resources.marble;
@@ -198,7 +246,7 @@ try {
     assert.equal((await server.progress(id)).resumeLevel, 1);
     assert.deepEqual((await server.progress(id)).resources, bank);
     assert.equal((await db.query("SELECT finished_at FROM olympus_sessions WHERE token_hash = $1", [server.tokenHash(old.token)])).rows[0].finished_at, null);
-    assert.equal((await server.scores(id))[0].score, win.score);
+    assert.equal((await server.scores(id)).find(row => row.isYou).score, win.score);
     assert.equal(await server.playerName(id), "Isyraf_98");
     progress = reset;
   });
@@ -241,8 +289,8 @@ try {
     const saved = await server.progress(visitor);
     const attempt = await server.startSession(visitor, 1, saved.epoch);
     await assert.rejects(server.createShare(visitor, attempt.token));
-    await age(attempt.token);
-    await server.finishSession(visitor, attempt.token, { ...win, score: 90000 });
+    await age(attempt.token, 130);
+    await server.finishSession(visitor, attempt.token, long(90000));
     assert.equal((await shares.POST(request("share", "POST", { token: attempt.token }))).status, 401);
     assert.equal((await shares.POST(request("share", "POST", { token: attempt.token }, cookie))).status, 409);
     assert.equal((await shares.POST(request("share", "POST", { token: attempt.token }, cookie, { origin: "https://evil.test" }))).status, 403);
@@ -263,8 +311,8 @@ try {
     await server.reserveName(rival, "ShareRival");
     const rivalSave = await server.progress(rival);
     const rivalAttempt = await server.startSession(rival, 1, rivalSave.epoch);
-    await age(rivalAttempt.token);
-    await server.finishSession(rival, rivalAttempt.token, { ...win, score: 95000 });
+    await age(rivalAttempt.token, 130);
+    await server.finishSession(rival, rivalAttempt.token, long(95000));
     assert.equal((await server.scores(visitor))[0].name, "ShareRival");
     assert.deepEqual(await server.createShare(visitor, attempt.token), first);
     await db.query("UPDATE olympus_sessions SET game_version = 'older:development' WHERE id = $1", [first.id]);
@@ -275,8 +323,8 @@ try {
   await test("a lesser score does not borrow the player's medal; successful share API is idempotent", async () => {
     const current = await server.progress(id);
     const best = await server.startSession(id, current.resumeLevel, current.epoch);
-    await age(best.token);
-    await server.finishSession(id, best.token, { ...win, score: 99000, outcome: "lost" });
+    await age(best.token, 130);
+    await server.finishSession(id, best.token, { ...long(99000), outcome: "lost" });
     const ownerShare = await shares.POST(request("share", "POST", { token: best.token }, cookie));
     assert.equal(ownerShare.status, 200);
     assert.equal((await ownerShare.json()).share.rank, 1);
