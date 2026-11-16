@@ -227,10 +227,7 @@ function drawPower(ctx: CanvasRenderingContext2D, world: World) {
   if (a.state === "rest") return;
   const warning = a.state === "warn";
   const reach = world.w + world.h;
-  const height = world.h - world.shipFloor;
   ctx.save();
-  // Attacks and their cues stop above the touch controls.
-  ctx.beginPath(); ctx.rect(0, 0, world.w, height); ctx.clip();
   ctx.strokeStyle = "#ffdb54"; ctx.lineWidth = 2;
   const ray = (angle: number) => {
     ctx.beginPath(); ctx.moveTo(a.x, a.y);
@@ -246,9 +243,9 @@ function drawPower(ctx: CanvasRenderingContext2D, world: World) {
       const warned = warning && a.lanes.includes(lane);
       const left = lane * world.w / 5;
       ctx.fillStyle = warned ? "rgba(255,216,0,.13)" : "rgba(255,216,0,.04)";
-      ctx.fillRect(left, 0, world.w / 5, height);
+      ctx.fillRect(left, 0, world.w / 5, world.h);
       ctx.setLineDash(warned ? [6, 6] : []);
-      ctx.strokeRect(left + 4, 4, world.w / 5 - 8, height - 8);
+      ctx.strokeRect(left + 4, 4, world.w / 5 - 8, world.h - 8);
       ctx.fillStyle = "#ffdb54"; ctx.font = "14px monospace";
       ctx.textAlign = "center"; ctx.fillText(warned ? "↓ RAIN" : "↓", left + world.w / 10, 24);
     }

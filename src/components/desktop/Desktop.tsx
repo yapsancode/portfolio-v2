@@ -376,10 +376,10 @@ function DesktopRoot({ launchOlympus = false }: { launchOlympus?: boolean }) {
         <ShootingStar />
 
         {/* Wallpaper sculpture (decorative, behind everything else): centred,
-            standing on the taskbar, or on the touch-control strip in touch play. */}
+            standing on the taskbar, or on the screen bottom in touch play. */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 z-0 flex items-end justify-center"
-          style={{ bottom: touchGame ? "var(--olympus-strip)" : TASKBAR_HEIGHT }}
+          style={{ bottom: touchGame ? 0 : TASKBAR_HEIGHT }}
           aria-hidden="true"
         >
           <div

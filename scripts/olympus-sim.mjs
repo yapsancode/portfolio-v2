@@ -36,7 +36,7 @@ function makeWorld(seed, screen, level) {
     statue: g.createStatue(box, COLS, ROWS, solid),
     random: g.seededRandom(seed),
     level,
-    shipFloor: screen.phone ? 136 : 0,
+    touch: Boolean(screen.phone),
     phoneMode: Boolean(screen.phone),
   });
   const targets = [0, 1, 2, 3, 4, 5].map((i) => ({ kind: "icon", id: "i" + i, x: 8, y: 8 + i * 92, w: 88, h: 84 }));

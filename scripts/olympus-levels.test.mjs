@@ -7,7 +7,7 @@ const input = { left: false, right: false, thrust: false, fire: false };
 const dt = 1 / 60;
 function world(level, touch = false) {
   const w = touch ? 667 : 1280, h = touch ? 320 : 764;
-  const result = g.createWorld({ w, h, level, shipFloor: touch ? 136 : 0, phoneMode: touch,
+  const result = g.createWorld({ w, h, level, touch, phoneMode: touch,
     statue: g.createStatue({ x: w * .4, y: h * .5, w: w * .22, h: h * .5 }, 16, 18, Array(288).fill(1)),
     random: g.seededRandom(42), particleScale: 0 });
   result.phase = "boss"; result.statue.wake = 1; result.rocks = [];
