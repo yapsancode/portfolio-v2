@@ -60,6 +60,7 @@ export type Rock = {
   power?: boolean;
   life?: number;
   orbit?: number;
+  /** Level 5: where a shield will fly. Level 3: the gap centre of its ring (for the cue). */
   launchAngle?: number;
 };
 
@@ -225,6 +226,8 @@ export const TUNING = {
     maxSpeed: 520,
     safeTime: 2,
     respawnTime: 1.4,
+    /** Centre to the drawn cursor tip (draw.ts: hypot(4, 11) * 2): the muzzle. */
+    nose: 23,
   },
   bullet: { speed: 700, life: 0.8, max: 6, cooldown: 0.2 },
   rock: {
@@ -373,7 +376,19 @@ function chipFromStatue(world: World): Rock {
   const x = home.x + home.w * between(random, 0.25, 0.75);
   const y = home.y + home.h * between(random, 0.3, 0.45);
   burst(world, x, y, 10, MARBLE, 120, 300);
-  return makeRock(world, 0, x, y, -Math.PI / 2 + between(random, -1.3, 1.3));
+  return keepOut(world, makeRock(world, 0, x, y, -Math.PI / 2 + between(random, -1.3, 1.3)));
+}
+
+/** Never start a hazard on the ship: slide it forward along its path to the edge of a 60px bubble. */
+function keepOut(world: World, rock: Rock) {
+  const { ship } = world;
+  const rx = rock.x - ship.x, ry = rock.y - ship.y, speed = Math.hypot(rock.vx, rock.vy);
+  if (!ship.alive || !speed || rx * rx + ry * ry >= 3600) return rock;
+  const dx = rock.vx / speed, dy = rock.vy / speed, along = rx * dx + ry * dy;
+  const t = Math.sqrt(along * along - rx * rx - ry * ry + 3600) - along;
+  rock.x += dx * t;
+  rock.y += dy * t;
+  return rock;
 }
 
 function addDebris(world: World, t: TargetRect, count: number, colors: string[]) {
@@ -468,8 +483,8 @@ export function resize(world: World, w: number, h: number, statueHome: Rect) {
   world.h = h;
   world.statue.home = statueHome;
   world.scale = Math.max(0.6, Math.min(1, w / 900));
-  // Geometry changed: give every telegraph again in the new playfield.
-  if (world.phase === "boss") clearAttacks(world);
+  // Live attacks carry on; pieces now off the screen leave in step(), a warned origin is pulled back in.
+  clampOrigin(world);
 }
 
 /* ------------------------------------------------------------------ */
@@ -582,7 +597,7 @@ function loseShip(world: World, events: GameEvent[]) {
   burst(world, ship.x, ship.y, 40, SPARK, 260);
   burst(world, ship.x, ship.y, 20, ["#ffffff", "#000000"], 180);
   events.push({ type: "shipLost", livesLeft: world.lives });
-  clearAttacks(world);
+  if (world.phase === "boss") clearAttacks(world);
   if (world.lives <= 0) setPhase(world, "lost");
 }
 
@@ -594,7 +609,8 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
   const stage = bossStage(world);
   if (stage !== statue.stage) {
     statue.stage = stage;
-    if (stage === 3) statue.laser = { state: "rest", t: B.laser.rest, angle: 0 };
+    // No rest first: a good player reaches stage 3 at 9 hp and would win before a full cycle.
+    if (stage === 3) statue.laser = { state: "rest", t: 0, angle: 0 };
     if (stage !== 1) events.push({ type: "bossStage", stage });
   }
 
@@ -614,7 +630,7 @@ function bossAttack(world: World, dt: number, events: GameEvent[]) {
         chunk.vx = Math.cos(aim + turn) * speed;
         chunk.vy = Math.sin(aim + turn) * speed;
         chunk.thrown = true;
-        if (world.rocks.length < TUNING.powers.cap - (statue.laser ? 1 : 0)) world.rocks.push(chunk);
+        if (world.rocks.length < TUNING.powers.cap - (statue.laser ? 1 : 0)) world.rocks.push(keepOut(world, chunk));
       }
     }
   } else {
@@ -668,10 +684,18 @@ function restingPower(touch = false): PowerAttack {
 function clearAttacks(world: World) {
   world.attack = restingPower(world.shipFloor > 0);
   world.rocks = [];
-  world.statue.laser = null;
-  world.statue.stage = 1;
-  world.statue.windup = 0;
-  world.statue.throwIn = TUNING.boss.throwEvery[0];
+  // The stage stays, so its announcement does not replay after a death.
+  const { statue } = world;
+  statue.laser = statue.stage === 3 ? { state: "rest", t: TUNING.boss.laser.rest, angle: 0 } : null;
+  statue.windup = 0;
+  statue.throwIn = TUNING.boss.throwEvery[statue.stage - 1];
+}
+
+/** Keep a power's origin inside the playfield, with room below for the halo's 28px start ring and the 18px floor margin. */
+function clampOrigin(world: World) {
+  const a = world.attack;
+  a.x = Math.max(30, Math.min(world.w - 30, a.x));
+  a.y = Math.max(30, Math.min(world.h - world.shipFloor - 46, a.y));
 }
 
 export function orbitRadius(world: World) {
@@ -684,7 +708,7 @@ export function hazardLimit(world: World) {
   const touch = world.shipFloor > 0;
   if (world.level === 2) return touch ? 9 : 12;
   if (world.level === 3) return touch ? 12 : 16;
-  if (world.level === 4) return 12;
+  if (world.level === 4) return 18; // three warned waves of six can all be falling on a tall screen
   if (world.level === 5) return 3;
   return TUNING.powers.cap;
 }
@@ -694,31 +718,40 @@ export function sweepAngle(world: World) {
   return a.angle + direction * TUNING.powers.sweepArc * (Math.min(1, a.elapsed / TUNING.powers.sweepDuration) - 0.5);
 }
 
+/** Long enough to cross the whole playfield, so pieces never vanish mid-air on a big screen. */
+function pieceLife(world: World, speed: number) {
+  return Math.max(TUNING.powers.lifetime, Math.hypot(world.w, world.h - world.shipFloor) / (speed * world.scale));
+}
+
+/** Halo ring layout. Turning the gap by half a gap plus half a step puts a piece on the line to a still ship. */
+function halo(world: World) {
+  const count = world.shipFloor > 0 ? 6 : 8, gap = Math.PI * 0.4;
+  return { count, gap, step: (Math.PI * 2 - gap) / count };
+}
+
 function fragment(world: World, x: number, y: number, angle: number, speed = TUNING.powers.speed) {
-  if (world.rocks.length >= hazardLimit(world) || y > world.h - world.shipFloor - 18 ||
-    Math.hypot(x - world.ship.x, y - world.ship.y) < 60) return null;
+  if (world.rocks.length >= hazardLimit(world)) return null;
   const rock = makeRock(world, 2, x, y, angle);
   rock.power = true;
-  rock.life = TUNING.powers.lifetime;
+  rock.life = pieceLife(world, speed);
   rock.vx = Math.cos(angle) * speed * world.scale;
   rock.vy = Math.sin(angle) * speed * world.scale;
-  world.rocks.push(rock);
+  world.rocks.push(keepOut(world, rock));
   return rock;
 }
 
 /** Lock a new, visible warning before each wave. Nothing tracks after this point. */
 function warnPower(world: World, events: GameEvent[]) {
   const a = world.attack;
-  const eye = eyePoint(world.statue);
+  const eye = eyePoint(world.statue), ring = halo(world);
   if (a.wave === 0 || world.level === 2) {
     const side = a.direction * (a.wave % 2 ? -1 : 1);
     a.x = world.level === 2 ? world.statue.home.x + world.statue.dx + world.statue.home.w * (0.5 + side * 0.26) : eye.x;
     a.y = world.level === 2 ? world.statue.home.y + world.statue.dy + world.statue.home.h * 0.38 : eye.y;
-    a.x = Math.max(30, Math.min(world.w - 30, a.x));
-    a.y = Math.max(30, Math.min(world.h - world.shipFloor - 36, a.y));
+    clampOrigin(world);
     a.angle = Math.atan2(world.ship.y - a.y, world.ship.x - a.x);
-    if (world.level === 3) a.angle += a.direction * 0.95;
-  } else if (world.level === 3) a.angle += a.direction * 0.65;
+    if (world.level === 3) a.angle += (a.direction * (ring.gap + ring.step)) / 2;
+  } else if (world.level === 3) a.angle += a.direction * ring.step;
   if (world.level === 4) {
     const target = Math.max(0, Math.min(4, Math.floor(world.ship.x / world.w * 5)));
     a.targetX = world.ship.x;
@@ -741,11 +774,11 @@ function launchPower(world: World, events: GameEvent[]) {
     for (const turn of count === 3 ? [-0.32, 0, 0.32] : [-0.45, -0.2, 0, 0.3]) fragment(world, a.x, a.y, a.angle + turn * a.direction);
     if (a.wave < 2) a.t = 0.4;
   } else if (world.level === 3) {
-    const count = touch ? 6 : 8;
-    const gap = Math.PI * 0.4;
+    const { count, gap, step } = halo(world);
     for (let i = 0; i < count; i++) {
-      const angle = a.angle + gap / 2 + (i + 0.5) * ((Math.PI * 2 - gap) / count);
-      fragment(world, a.x + Math.cos(angle) * 28, a.y + Math.sin(angle) * 28, angle, 190);
+      const angle = a.angle + gap / 2 + (i + 0.5) * step;
+      const rock = fragment(world, a.x + Math.cos(angle) * 28, a.y + Math.sin(angle) * 28, angle, 190);
+      if (rock) rock.launchAngle = a.angle;
     }
     if (a.wave === 0) a.t = 0.65;
   } else if (world.level === 4) {
@@ -770,7 +803,7 @@ function launchPower(world: World, events: GameEvent[]) {
         delete rock.orbit;
         rock.vx = Math.cos(angle) * 245 * world.scale;
         rock.vy = Math.sin(angle) * 245 * world.scale;
-        rock.life = P.lifetime;
+        rock.life = pieceLife(world, 245);
       }
     }
   } else if (world.level === 6) {
@@ -812,7 +845,8 @@ function powerAttack(world: World, dt: number, events: GameEvent[]) {
   if (a.t <= 0) {
     const waves = world.level === 2 || world.level === 4 ? 3 : 2;
     if (a.wave + 1 < waves) { a.wave++; warnPower(world, events); }
-    else { world.rocks = []; world.attack = restingPower(world.shipFloor > 0); }
+    // The last wave ends once its pieces have flown off or been shot, not mid-air.
+    else if (world.rocks.length === 0) world.attack = restingPower(world.shipFloor > 0);
   }
 }
 
@@ -834,6 +868,7 @@ function breakTile(world: World, tile: Tile, fromX: number, fromY: number) {
 
 export function step(world: World, input: Input, dt: number): GameEvent[] {
   const events: GameEvent[] = [];
+  dt = Math.min(0.1, Math.max(0, dt));
   const { ship, statue } = world;
   // After a loss the world keeps moving a little longer, so the explosion plays.
   if (world.phase === "won") return events;
@@ -865,7 +900,9 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
       ship.thrusting = input.thrust;
       if (input.thrust) {
         // Accelerate along the current heading without sideways momentum.
-        const speed = Math.min(TUNING.ship.maxSpeed, Math.hypot(ship.vx, ship.vy) + TUNING.ship.thrust * dt);
+        // A phone keeps its slower speed with a Bluetooth keyboard too.
+        const maxSpeed = world.phoneMode ? TUNING.phone.maxSpeed : TUNING.ship.maxSpeed;
+        const speed = Math.min(maxSpeed, Math.hypot(ship.vx, ship.vy) + TUNING.ship.thrust * dt);
         ship.vx = Math.sin(ship.angle) * speed;
         ship.vy = -Math.cos(ship.angle) * speed;
       } else {
@@ -879,19 +916,21 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
     ship.safe = Math.max(0, ship.safe - dt);
 
     world.fireIn -= dt;
-    if (input.fire && world.fireIn <= 0 && world.bullets.length < TUNING.bullet.max) {
-      world.fireIn = TUNING.bullet.cooldown - world.upgrades.blaster * 0.02;
+    if (input.fire && !fightOver(world) && world.fireIn <= 0 && world.bullets.length < TUNING.bullet.max) {
+      // Keep this tick's overshoot (an idle gun starts fresh), so the real rate matches the cooldown.
+      world.fireIn = (world.fireIn > -dt ? world.fireIn : 0) + TUNING.bullet.cooldown - world.upgrades.blaster * 0.02;
       const dx = Math.sin(ship.angle);
       const dy = -Math.cos(ship.angle);
+      const nose = TUNING.ship.nose * (world.phoneMode ? TUNING.phone.shipScale : 1);
       world.bullets.push({
-        x: ship.x + dx * 14,
-        y: ship.y + dy * 14,
+        x: ship.x + dx * nose,
+        y: ship.y + dy * nose,
         vx: dx * TUNING.bullet.speed + ship.vx,
         vy: dy * TUNING.bullet.speed + ship.vy,
         life: TUNING.bullet.life,
       });
       // Keep the muzzle flash without pushing the ship off course.
-      burst(world, ship.x + dx * 18, ship.y + dy * 18, 4, SPARK, 110);
+      burst(world, ship.x + dx * nose, ship.y + dy * nose, 4, SPARK, 110);
       events.push({ type: "shot" });
     }
   } else if (world.lives > 0) {
@@ -899,7 +938,8 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
     if (ship.respawn <= 0) {
       Object.assign(ship, {
         x: world.w / 2,
-        y: (world.h - world.shipFloor) * 0.18,
+        // Below the level-4 rain's 60px keep-out band at the top.
+        y: Math.max(80, (world.h - world.shipFloor) * 0.18),
         vx: 0,
         vy: 0,
         angle: 0,
@@ -984,13 +1024,18 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   /* Bullets */
   const keep: Bullet[] = [];
   for (const b of world.bullets) {
-    b.x += b.vx * dt;
-    b.y += b.vy * dt;
     b.life -= dt;
-    wrap(world, b, 0);
     if (b.life <= 0) continue;
-    if (hitSomething(world, b, events)) continue;
-    keep.push(b);
+    // Short hops, so a fast shot cannot skip a small rock or a phone-sized statue tile.
+    const hops = Math.ceil((Math.hypot(b.vx, b.vy) * dt) / 3) || 1;
+    let hit = false;
+    for (let i = 0; i < hops && !hit; i++) {
+      b.x += (b.vx * dt) / hops;
+      b.y += (b.vy * dt) / hops;
+      wrap(world, b, 0);
+      hit = hitSomething(world, b, events);
+    }
+    if (!hit) keep.push(b);
   }
   world.bullets = keep;
 
@@ -1027,9 +1072,15 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   return events;
 }
 
-/** Bullet collisions, topmost first: rocks, statue, windows, icons. */
+function fightOver(world: World) {
+  return world.phase === "crumbling" || world.phase === "lost";
+}
+
+/** Bullet collisions, topmost first: rocks, the awake statue, windows, icons, the sleeping wallpaper statue. */
 function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
   const { random } = world;
+  // Shots still in flight after the fight score nothing.
+  if (fightOver(world)) return false;
 
   for (let i = 0; i < world.rocks.length; i++) {
     const rock = world.rocks[i];
@@ -1055,19 +1106,10 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
   }
 
   const { statue } = world;
-  // Poking the sleeping statue just makes it angrier.
-  if (world.phase === "play" && attachedTileAt(statue, b.x, b.y)) {
-    world.score += TUNING.statue.pokeScore;
-    addAnger(world, TUNING.statue.pokeAnger);
-    burst(world, b.x, b.y, 5, MARBLE, 90, 400);
+  // Awake, the statue is drawn over the windows; while it wakes it only swallows the shot.
+  if (world.phase !== "play" && attachedTileAt(statue, b.x, b.y)) {
+    if (world.phase === "boss") damageStatue(world, b, events);
     return true;
-  }
-  if (world.phase === "boss") {
-    const tile = attachedTileAt(statue, b.x, b.y);
-    if (tile) {
-      damageStatue(world, b, events);
-      return true;
-    }
   }
 
   for (const t of world.targets) {
@@ -1104,10 +1146,18 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
     return true;
   }
 
+  // Poking the sleeping wallpaper statue (under every window) just makes it angrier.
+  if (world.phase === "play" && attachedTileAt(statue, b.x, b.y)) {
+    world.score += TUNING.statue.pokeScore;
+    addAnger(world, TUNING.statue.pokeAnger);
+    burst(world, b.x, b.y, 5, MARBLE, 90, 400);
+    return true;
+  }
+
   return false;
 }
 
-/** Breaking a shield chips the statue too, so armour adds no extra hit points. */
+/** One bullet on the statue: lose a hit point and shed tiles until the picture matches the health bar. */
 function damageStatue(world: World, b: Bullet, events: GameEvent[]) {
   const { statue } = world;
   statue.hp -= 1;

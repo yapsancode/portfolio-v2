@@ -240,14 +240,17 @@ function drawPower(ctx: CanvasRenderingContext2D, world: World) {
     ctx.beginPath(); ctx.arc(a.x, a.y, radius, start, end); ctx.stroke();
   };
   if (world.level === 4) {
-    for (const lane of a.lanes) {
+    // Earlier waves' lanes stay lit while their rain still falls.
+    const falling = world.rocks.map((r) => Math.max(0, Math.min(4, Math.floor(r.x / world.w * 5))));
+    for (const lane of new Set([...a.lanes, ...falling])) {
+      const warned = warning && a.lanes.includes(lane);
       const left = lane * world.w / 5;
-      ctx.fillStyle = warning ? "rgba(255,216,0,.13)" : "rgba(255,216,0,.04)";
+      ctx.fillStyle = warned ? "rgba(255,216,0,.13)" : "rgba(255,216,0,.04)";
       ctx.fillRect(left, 0, world.w / 5, height);
-      ctx.setLineDash(warning ? [6, 6] : []);
+      ctx.setLineDash(warned ? [6, 6] : []);
       ctx.strokeRect(left + 4, 4, world.w / 5 - 8, height - 8);
       ctx.fillStyle = "#ffdb54"; ctx.font = "14px monospace";
-      ctx.textAlign = "center"; ctx.fillText(warning ? "↓ RAIN" : "↓", left + world.w / 10, 24);
+      ctx.textAlign = "center"; ctx.fillText(warned ? "↓ RAIN" : "↓", left + world.w / 10, 24);
     }
   } else if (world.level === 6) {
     const direction = a.direction * (a.wave === 0 ? 1 : -1);
@@ -271,10 +274,19 @@ function drawPower(ctx: CanvasRenderingContext2D, world: World) {
       ctx.lineWidth = 6; ctx.strokeStyle = "#fff8de"; ray(angle);
     }
   } else if (world.level === 3) {
-    const radius = warning ? 28 : 28 + a.elapsed * 190 * world.scale;
-    ctx.setLineDash([5, 8]); arc(radius, a.angle + Math.PI * 0.2, a.angle + Math.PI * 1.8);
-    ctx.setLineDash([]); ctx.strokeStyle = "#74ffbf"; ctx.lineWidth = 4;
-    arc(radius, a.angle - Math.PI * 0.2, a.angle + Math.PI * 0.2);
+    // One cue per ring still flying (keyed by its gap angle), plus the ring being warned.
+    const rings = new Map<number, number>();
+    for (const r of world.rocks) {
+      if (r.launchAngle === undefined) continue;
+      rings.set(r.launchAngle, Math.min(rings.get(r.launchAngle) ?? Infinity, Math.hypot(r.x - a.x, r.y - a.y)));
+    }
+    if (warning) rings.set(a.angle, 28);
+    for (const [angle, radius] of rings) {
+      ctx.strokeStyle = "#ffdb54"; ctx.lineWidth = 2;
+      ctx.setLineDash([5, 8]); arc(radius, angle + Math.PI * 0.2, angle + Math.PI * 1.8);
+      ctx.setLineDash([]); ctx.strokeStyle = "#74ffbf"; ctx.lineWidth = 4;
+      arc(radius, angle - Math.PI * 0.2, angle + Math.PI * 0.2);
+    }
   } else if (world.level === 5) {
     ctx.setLineDash([5, 10]);
     if (a.wave === 0) arc(orbitRadius(world), 0, Math.PI * 2);
