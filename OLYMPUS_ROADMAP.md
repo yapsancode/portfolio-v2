@@ -4,19 +4,25 @@ Updated: 16 November 2026.
 
 **Status: levels 1–6, resumable progress, the Earth-resource story, unique dialogue, and stronger attack patterns are implemented. The current revision adds the saved marble bank, ten-level refits, mission wording, and desktop movement without drift.** Based on `6b6b16c`. Levels 7–10 are documented concepts below, not implemented. Real-device and human balance playtests remain open.
 
-This is the active plan. The latest clarification prioritizes creative, distinctive, memorable encounters over difficulty progression. It supersedes both the earlier harder-replay targets and the later requirement for equal difficulty, as well as the pre-launch merge restrictions. The original plan and historical simulation results are preserved in [the 14 November archive](docs/archive/OLYMPUS_ROADMAP_2026-11-14.md). Historical numbers are not acceptance targets for the new levels.
+**Planned on 16 November 2026, not implemented:** a Last Stand finale for every power, seasons with a new statue every three months, 50 levels per season built from powers and twists, difficulty that rises with the level number, and the I-beam sword as a refit choice. These sections are marked “planned” below.
+
+This is the active plan. **Latest decision, 16 November 2026: difficulty rises with the level number again, and every level must still have its own identity.** The implemented levels 1–6 do not scale yet; see “Difficulty curve”. The previous clarification prioritized creative, distinctive, memorable encounters over difficulty progression. It supersedes both the earlier harder-replay targets and the later requirement for equal difficulty, as well as the pre-launch merge restrictions. The original plan and historical simulation results are preserved in [the 14 November archive](docs/archive/OLYMPUS_ROADMAP_2026-11-14.md). Historical numbers are not acceptance targets for the new levels.
 
 ## Decisions from the user
 
 - Call progression **levels**, not runs, in the game and its instructions.
 - Level 1 keeps the original statue encounter. Level 2 onward introduces different statue powers.
-- **Creativity, uniqueness, and player enjoyment are the priority. Difficulty is secondary, not forbidden.** A level may be harder when that serves its concept; making the same fight faster or tougher is not enough to define a new level.
+- **Levels get harder as the level number rises** (decided 16 November 2026). This replaces “difficulty is secondary” as the progression rule. Creativity is still required: higher numbers alone do not make a new level.
+- Earlier wording, kept for the creative requirement: **Creativity, uniqueness, and player enjoyment are the priority. Difficulty is secondary, not forbidden.** A level may be harder when that serves its concept; making the same fight faster or tougher is not enough to define a new level.
 - Give every level its own randomized statue dialogue: a theatrical, egotistical guardian with power-specific boasts, reactions such as “ARHHH!”, and occasional topical jokes.
 - Returning players can continue at their saved level.
 - Players can choose Start Over and return to level 1.
-- Collect and save marble as upgrade currency. After every ten cleared levels, allow one upgrade choice: an extra life, faster firing, or longer protection after a hit. Keep unused choices and banked marble for later.
+- Collect and save marble as upgrade currency. After every ten cleared levels, allow one upgrade choice: an extra life, faster firing, or longer protection after a hit. Keep unused choices and banked marble for later. **Planned change:** the I-beam sword replaces longer protection as the third choice; see “The I-beam sword”.
 - Extend the creative plan through level 10. Level 7 uses the user’s idea: three marble duplicates firing lasers simultaneously at different angles.
-- A possible 100-level journey is a later expansion. Design and validate the initial levels first.
+- **Each season has 50 levels**, built from powers and twists with hand-made boss levels every ten. The user judged 100 to be too many. This replaces the earlier “possible 100-level journey” wording. Design and validate the initial levels first; see “Seasons”.
+- **Every power gets a Last Stand:** one signature final attack when the statue is nearly beaten. Levels 2–6 currently repeat one pattern from full health to zero.
+- **A new statue arrives every three months.** Each has its own personality, signature power, and Last Stand. Earlier statues stay playable in a Hall of Statues window.
+- **The sword is earned at level 10** as one of the three refit choices, not as a free reward.
 - Documentation was updated first. The subsequent implementation reuses the new scoreboard identity and database, as requested.
 
 ## Existing features retained
@@ -25,6 +31,7 @@ This is the active plan. The latest clarification prioritizes creative, distinct
 - Arcade Gold start/end buttons, pause/resume, and exit controls.
 - Fixed joystick and separate Fire control on phones/tablets; arrows and Space on computers.
 - Phone movement is slower, the pointer and its collision radius are smaller, and releasing the joystick brakes quickly.
+- Touch play uses the full screen height. The ship is kept out of the measured joystick and Fire boxes only, and the statue stands on the screen bottom between them. Any new touch button must be measured the same way.
 - Landscape play on touch devices; fullscreen requests where supported, full-viewport fallback, and protection against long-press selection.
 - Olympus Home Screen icons, installation guidance, and edge-to-edge layout with safe areas.
 - A story and device-specific instructions.
@@ -67,7 +74,40 @@ These six profiles are implemented. Complete level 1 to unlock level 2, and so o
 
 Each profile **replaces** the appropriate part of the previous attack schedule. It does not inherit every earlier power. In particular, level 2 does not add a swarm on top of level 1's simultaneous spreads and laser. This is the current baseline for levels 2–6. Future levels may use deliberately coordinated combinations, such as the three-clone volley, when they support the creative concept and leave readable counterplay and recovery.
 
+## Last Stand finales (planned)
+
+**Status: approved concept, not implemented.** Level 1 already changes as the guardian is hurt: faster spreads at 60% health and the laser eye at 25%. Levels 2–6 run one repeating cycle with no health stages, so their fights have no ending moment.
+
+A **Last Stand** is one signature final attack per power. When the statue's health is low it stops its normal cycle, announces itself, and repeats the finale until it is beaten. The Last Stand belongs to the power, not the level number, so a power keeps its finale wherever it appears in a season.
+
+| Power | Last Stand | What happens | Player response |
+| --- | --- | --- | --- |
+| Marble Swarm | Marble Fist | All fragments join into one giant fist that punches along a marked path. | Leave the path; shoot the fist for bonus marble. |
+| Shattered Halo | Closing Crown | A ring forms at the screen edge and closes inward with one turning gap. | Fly out through the gap before it closes. |
+| Meteor Rain | The Sky Falls | One huge meteor falls; its shadow grows over the middle lanes. | Shoot it to crack it, or reach an edge lane. |
+| Orbiting Armour | Full Plate | Shields form a full spinning shell with one missing plate, then burst outward. | Shoot through the hole, then shelter where the hole was. |
+| Sweeping Gaze | Double Vision | Both eyes fire; two beams close like scissors. | Reach the marked safe pocket. |
+
+Level 1 keeps its laser eye as its finale. Mirage, Borrowed Time, Gates, and Leviathan get their Last Stand when each is designed.
+
+### Last Stand rules
+
+- The finale **replaces** the normal cycle. It is not stacked on top of it, and no other power runs during it.
+- Start from the level-1 threshold of 25% health, then tune. **The player must see at least one full finale.** At 48 health, 25% is 12 hits, about 2.4 seconds of held fire, so the threshold alone is not enough. Decide per power between a higher threshold, a short period where the statue swallows shots during the reveal, or cover provided by the attack itself.
+- Each finale has its own locked warning of at least the standard 1.0 second on desktop and 1.2 seconds on touch, readable with sound muted.
+- Hazards are bounded and have finite lifetimes. Everything clears on death, victory, retry, exit, and level transition. Losing a ship during the finale does not replay its announcement.
+- Add a dialogue event for the finale reveal, with lines per power, under the existing cooldown and priority rules.
+- Detailed specifications for each finale are written when levels 2–6 are redesigned.
+
+### Last Stand acceptance
+
+- A test bot that reads only the on-screen warnings clears every finale without being hit, at 667×320 with phone speed, across 30 seeds.
+- A first-time player can say what the finale wants from them without opening the guide.
+- Playtest questions stay the same as for levels: Did it feel different? Was the reveal memorable? Would they replay it?
+
 ## Planned expansion: levels 7–10
+
+In the season structure these are the rest of chapter 1 for the first statue. Level 10 is the first hand-made boss level and the first refit milestone.
 
 These concepts extend the lineup without changing the six currently playable levels. Level 7 comes from the user's clone idea; levels 8–10 are the suggested follow-ups from the design discussion. Record them as planned content, not completed implementation or verified balance.
 
@@ -129,7 +169,26 @@ These concepts extend the lineup without changing the six currently playable lev
 - Apply the profile’s active-hazard budget, including existing fragments, before spawning another wave. Despawn expired fragments and clear all attack state on retry, exit, and level transition.
 - The boss remains beatable through both shooting and movement. Reject a pattern that forces unavoidable damage or rewards only standing still and holding Fire.
 
+### Difficulty curve (planned)
+
+**Status: approved direction, not implemented. The numbers below are starting points to tune with the test bot, not measured values.** Today every level uses fixed tuning, and levels 2–6 share the same health.
+
+- Each level has a **difficulty value from 0 at level 1 to 1 at level 50**, set by its level number.
+- Each power has two hand-tuned settings, **easy** and **hard**. The difficulty value blends between them. This keeps tuning explicit per power: there is no single hidden multiplier applied to every level.
+- The dials a power may move: statue health, hazard speed, hazard count within its budget, and warning and recovery time.
+- **The curve is a rising sawtooth.** Difficulty climbs through a chapter, peaks at its boss level, and the next chapter opens slightly below that peak before climbing higher. Level 50 is the hardest.
+- **Fairness limits never move with difficulty:** every attack keeps a readable warning, a reachable escape route at phone speed, the 60px spawn bubble, and three base lives. Each power states its shortest allowed warning, with a longer one for touch. Harder means less spare time and more to read, never an unavoidable hit.
+- Refits at levels 10, 20, 30, 40, and 50 partly offset the climb. That is intended.
+
+Acceptance for the curve:
+
+- The warning-only bot still clears every power at its hard setting without being hit, at 667×320 with phone speed.
+- A naive bot that does not read warnings loses more often as the level number rises. This shows the climb is real.
+- A test verifies that no level passes a fairness limit.
+
 ### Creative identity first; difficulty second
+
+The section below records the earlier direction. Its creative requirements still apply. Where it says difficulty need not rise, the difficulty curve above now takes priority.
 
 The desired reaction is “I want to see what the statue does next.” Each level should offer a recognizable transformation, mechanic, rhythm, or personality moment. Difficulty can rise, fall, or vary across the journey; it is a supporting design tool, not the primary progression system.
 
@@ -236,9 +295,13 @@ The scoreboard now supplies the identity and Neon connection. Named players use 
 3. **Complete: revised Marble Swarm.** Three separately warned shoulder volleys, shootable non-splitting fragments, profile-specific hazard budget, finite lifetime and recovery.
 4. **Complete: revised levels 3–6.** Two halo rings with shifting gaps; three targeted rain waves; shields that absorb shots and then launch after warning; wider outbound/return laser sweeps. Breaking a shield no longer awards free statue damage. All use bounded hazards and explicit cleanup.
 5. **Open: human playtest and polish.** Test keyboard, phone/tablet joystick, real iPhone Safari and its Home Screen app. Prioritize distinctiveness, enjoyment, clarity, and memorable reveals. Use challenge and encounter duration to refine the experience, not to enforce equal difficulty.
-6. **Planned next: levels 7–10.** Marble Mirage, Borrowed Time, Gates of Olympus, and The Marble Leviathan, as specified above. Implement and validate one profile at a time.
-7. **Complete for levels 1–6: statue dialogue and Earth mission story.** Per-level event pools, repetition control, dramatic barks, simulation-time cooldowns. Levels 7–10 dialogue and curated topical rotations remain planned.
-8. **Later: levels 11–100.** Expand after the initial ten are stable. The number 100 remains future scope, not shipped content.
+6. **Planned next: redesign levels 2–6 with their Last Stands and the difficulty curve.** One power at a time, each with the warning-only bot check.
+7. **Planned: levels 7–10.** Marble Mirage, Borrowed Time, Gates of Olympus, and The Marble Leviathan, as specified above. Implement and validate one profile at a time. Level 10 makes the first refit reachable.
+8. **Planned: the I-beam sword** as the third refit choice, once level 10 ships.
+9. **Planned: twist prototype.** Build two or three twists and playtest them before committing to 50 levels.
+10. **Planned: season catalogue and Hall of Statues**, then the second statue.
+11. **Complete for levels 1–6: statue dialogue and Earth mission story.** Per-level event pools, repetition control, dramatic barks, simulation-time cooldowns. Levels 7–10 dialogue and curated topical rotations remain planned.
+12. **Later: levels 11–50 of the first season.** Add chapters after the initial ten are stable. The number 50 is the season's size, not shipped content.
 
 ## Marble resources and ten-level refits
 
@@ -250,6 +313,7 @@ The user approved marble as a persistent resource that can be spent on ship upgr
 - The bank, lifetime collected total, purchased upgrades, and highest-ever cleared level survive Start Over. The campaign epoch still rotates. Replaying a milestone or resetting a campaign cannot unlock the same upgrade allowance twice.
 - Clearing levels **10, 20, 30, ... 100** earns one refit allowance per milestone. Unused allowances remain available. A refit spends marble on one upgrade choice; a player may save it for later. The choices are an extra life (maximum three purchases), faster firing (maximum four purchases), or longer protection after a hit (maximum four purchases). Cost is 10,000 marble times the next total purchase number. No purchase is possible without an earned allowance and sufficient banked marble.
 - Upgrades apply to the next attempt: each extra-life purchase adds one starting life, each firing purchase reduces the 0.20-second cooldown by 0.02 seconds, and each protection purchase adds 0.5 seconds to the base two-second protection. Starting a named attempt takes its upgrade snapshot from the server. Movement speed is unaffected.
+- **Planned:** the I-beam sword replaces longer protection as the third refit choice. No player can own a protection purchase yet, because level 10 is not playable, so nothing needs converting. See “The I-beam sword”.
 - **Only levels 1–6 are currently playable.** Display the bank and explain the first refit at level 10; do not unlock missing levels or imply the milestone can already be reached. Levels 7–10 remain the separately planned expansion above. Refit prices and effects are initial tuning to revisit with that expansion.
 - Every shipped level has its own short Earth mission briefing, victory line, and retry line, alongside the existing randomized statue dialogue. Display the briefing on the player screen and in the pause menu, and show the next briefing on victory before continuing. Do not add a timed interruption during combat.
 
@@ -264,11 +328,57 @@ The user approved marble as a persistent resource that can be spent on ship upgr
 
 Verification must cover wallet persistence, win/loss banking, duplicate/concurrent result handling, reset retention and stale-attempt rejection, environment isolation, milestone/replay gates, insufficient funds, concurrent purchases, guest migration, and upgrade effects. Review wording on the HUD, pause/results screens, guide, player screen, leaderboard, and shared cards on desktop and short landscape phones.
 
-## Future 100-level direction
+## The I-beam sword (planned)
 
-A possible structure is ten themed chapters of ten levels. Chapters organize different powers, visual motifs, personalities, and pattern variations. They may also vary in challenge, but creative identity is the reason to progress. Reuse validated mechanics through new arrangements, rhythms, and combinations that feel distinct.
+**Status: approved concept, not implemented.** The ship is a mouse pointer, so its sword is the text cursor: the I-beam already looks like a blade.
 
-Level 100 should have a distinctive finale and story payoff. It may be harder, combine familiar powers, or introduce a new transformation when that serves the experience. Build readable combinations and satisfying recovery; extra health alone is not a memorable finale. Save a checkpoint at every level rather than requiring 100 consecutive wins.
+- The sword spins around the ship for a few seconds and can be used **once per level attempt**. Start tuning from about three seconds.
+- It is one of the three refit choices at levels 10, 20, 30 and so on, alongside the extra life and faster firing. It replaces longer protection after a hit. The base two-second protection stays.
+- Choosing it again makes it stronger, to a maximum of three purchases:
+
+| Purchase | Effect |
+| --- | --- |
+| 1 | The blade blocks marble and beams that touch it. |
+| 2 | Marble it cuts is collected as haul. |
+| 3 | A beam it cuts bounces back and damages the statue. |
+
+- It is a timing decision, not a passive bonus. The intended best use is during a Last Stand.
+- Touch needs a third button and the keyboard needs one key. The key is not chosen yet. The new button joins the measured control boxes that the ship avoids.
+- Open tuning: the exact duration, how much damage a returned beam does, and whether cut marble counts toward the server's haul limit. The scoreboard rules version changes when the sword ships, as with other rule changes.
+- A season of 50 levels gives five refits. The caps total ten purchases (three lives, four firing ranks, three sword ranks), so two full seasons fill every upgrade. What seasons after that award is undecided.
+
+## Seasons (planned)
+
+**Status: approved concept, not implemented.** A season lasts about three months and brings a new statue. The first season is the current marble guardian. Its start and end dates are not decided.
+
+### What a season contains
+
+- **A new guardian:** its own picture, name, personality and dialogue, one signature power, and its own Last Stand.
+- **50 levels** in five chapters of ten. Each level is harder than the one before; see “Difficulty curve”.
+- **A fresh scoreboard.** The marble bank and purchased upgrades carry over; the ship belongs to the player.
+- **A place in the Hall of Statues:** a desktop window where earlier statues and their levels stay playable, each with its own saved progress.
+
+Later options, not part of this decision: switching seasons by date without a release, engraving a season's top three names on its statue, and showing the next statue's shadow before it arrives.
+
+Candidate statues, as ideas only: Medusa (the ship freezes while it faces her, but it shoots where it faces), Winged Victory (wind pushes the ship), and Atlas (throws the globe; gravity pulls). Statue pictures must be public-domain or made for the project.
+
+### 50 levels from powers and twists
+
+Fifty hand-made levels every three months is not realistic, and a new name with higher stats is not a new level. Levels are therefore built from parts: ten powers and five twists give fifty combinations.
+
+- A **power** is an attack profile with its own Last Stand. The first season has ten: Marble Guardian, Swarm, Halo, Rain, Armour, Gaze, Mirage, Borrowed Time, Gates, and Leviathan.
+- A **twist** is a small rule change applied to a power, such as wind, darkness, a mirrored arena, low gravity, or two powers taking turns. These examples are candidates, not commitments.
+- **A twist must change what the player does.** A twist that only raises speed, health, or hazard counts is rejected, in line with the creative-identity rule above.
+- Levels 10, 20, 30, 40, and 50 are **hand-made boss levels** and the refit milestones. Level 50 is the statue's grand finale with a story payoff; extra health alone is not a finale.
+- A new season adds its statue, about three new powers, and a few new twists, and reuses the tested library.
+- **Prototype two or three twists and playtest them before committing to 50 levels.** If twists do not make levels feel different, revisit the season size.
+- A season may open with its first chapter and add chapters later. The catalogue lists shipped levels only; these docs do not unlock anything. Save a checkpoint at every level; never require consecutive wins.
+
+### Season engineering notes
+
+- Add a season catalogue alongside the level catalogue, so a new season is mostly data: one picture, the eye position, a dialogue file, its powers, and its twists.
+- The scoreboard already shows “Season N” from the rules version (`olympus-5`). Separate the season from the rules version, so a rule change and a new statue are different events.
+- Progress, checkpoints, and refit milestones become per-season. The current refit contract counts milestones up to level 100 across one campaign; it and the rule that a milestone cannot be earned twice must be restated per 50-level season.
 
 ## Engineering map
 
@@ -302,8 +412,9 @@ Prefer the existing canvas/React/Web Audio implementation and avoid new dependen
 
 - Level 2 has a distinct swarm with a warning, destructible non-splitting fragments, recovery time, and no surprise concurrent laser.
 - Each level has a distinct power, presentation, or interaction. Per-level difficulty tuning supports its identity; higher stats alone do not satisfy the creative requirement.
-- A test verifies that increasing the level ID alone does not scale global enemy stats or shorten warnings.
+- Implemented today: a test verifies that increasing the level ID alone does not scale global enemy stats or shorten warnings. When the difficulty curve ships, replace it with the curve's acceptance tests.
 - Every pattern leaves a reachable escape route on the smaller landscape playfield, respecting the phone's slower movement and the control area.
+- Every Last Stand passes the warning-only bot check and cannot be skipped by fast firing.
 - Retry, death, pause/resume, rotation, exit, and level transitions never leak projectiles, attack timers, audio, input, or save events.
 - Compare fight duration, win rate, and player feedback across profiles and devices. Existing simulation bots need adaptation for new powers; historical percentages alone are not evidence of fairness.
 
