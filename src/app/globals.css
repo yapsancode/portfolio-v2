@@ -682,7 +682,8 @@ body {
 .olympus-button:disabled { opacity: 0.55; cursor: wait; }
 .olympus-title.olympus-scores-screen { justify-content: flex-start; gap: 12px; }
 .olympus-scores-screen > .olympus-scores { flex: 1; min-height: 0; }
-.olympus-scores-screen > button { flex-shrink: 0; }
+/* Stacked layout: the landscape `.olympus-title .olympus-button { flex: 1 }` row rule would grow it over the table. */
+.olympus-title.olympus-scores-screen > .olympus-button { flex: none; }
 .olympus-scores {
   display: flex;
   flex-direction: column;
