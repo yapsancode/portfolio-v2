@@ -42,7 +42,7 @@ test("the Last Stand starts once at 35% health, and its reveal swallows shots an
 });
 
 test("levels without a finale yet keep their normal cycle at low health", () => {
-  const w = finaleWorld(4);
+  const w = finaleWorld(3);
   for (let i = 0; i < 120; i++) g.step(w, still, dt);
   assert.equal(w.finale, null);
   assert.notEqual(w.attack.state, "rest");
