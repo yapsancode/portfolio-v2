@@ -2,8 +2,8 @@
 // hundred times with fixed seeds and check the balance numbers.
 // Run: node scripts/olympus-sim.mjs
 import { loadTs } from "./load-ts.mjs";
-const g = loadTs("src/components/game/olympus.ts");
-const { LEVELS } = loadTs("src/lib/olympus/levels.ts");
+const g = loadTs("src/components/games/olympus/olympus.ts");
+const { LEVELS } = loadTs("src/lib/games/olympus/levels.ts");
 // Try other numbers without editing the game:
 //   OLYMPUS_TUNING='{"boss.spread":0.1,"statue.hp":80}' node scripts/olympus-sim.mjs
 for (const [path, value] of Object.entries(JSON.parse(process.env.OLYMPUS_TUNING ?? "{}"))) {

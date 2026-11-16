@@ -21,7 +21,7 @@ This is the active plan. The latest clarification prioritizes creative, distinct
 
 ## Existing features retained
 
-- `/olympus` opens the game's start screen directly.
+- `/games/olympus` opens the game's start screen directly.
 - Arcade Gold start/end buttons, pause/resume, and exit controls.
 - Fixed joystick and separate Fire control on phones/tablets; arrows and Space on computers.
 - Phone movement is slower, the pointer and its collision radius are smaller, and releasing the joystick brakes quickly.
@@ -145,7 +145,7 @@ The desired reaction is “I want to see what the statue does next.” Each leve
 
 ## Statue personality and per-level dialogue
 
-**Status: levels 1–6 now have 15 authored lines each in `src/components/game/dialogue.ts` (90 total).** Levels 7–10 and topical rotations remain planned. The shared generic lines and the competing hint/wakeup speech timers have been removed. Gameplay hints remain in the guide, pause menu, and accessibility announcements.
+**Status: levels 1–6 now have 15 authored lines each in `src/components/games/olympus/dialogue.ts` (90 total).** Levels 7–10 and topical rotations remain planned. The shared generic lines and the competing hint/wakeup speech timers have been removed. Gameplay hints remain in the guide, pause menu, and accessibility announcements.
 
 The guardian has an enormous ego and takes a tiny desktop pointer far too personally. It boasts, overreacts, invents excuses, and treats every new power as proof of its own greatness. Humour should make players enjoy provoking it. Mix short emotional barks (“ARHHH!”, “AGAIN?!”, “MY FACE!”) with lines that reference the current transformation.
 
@@ -274,13 +274,13 @@ Level 100 should have a distinctive finale and story payoff. It may be harder, c
 
 | Area | Expected work |
 | --- | --- |
-| `src/components/game/olympus.ts` | Level/power selection, attack state, consistent tuning, shared hazard limits. Remove old progression multipliers. |
-| `src/components/game/draw.ts` | Distinct warnings, destructible swarm visuals, safe gaps, per-power effects. |
-| `src/components/game/OlympusGame.tsx` | HUD/announcements, level endings, checkpoint event timing, retries, cleanup. |
+| `src/components/games/olympus/olympus.ts` | Level/power selection, attack state, consistent tuning, shared hazard limits. Remove old progression multipliers. |
+| `src/components/games/olympus/draw.ts` | Distinct warnings, destructible swarm visuals, safe gaps, per-power effects. |
+| `src/components/games/olympus/OlympusGame.tsx` | HUD/announcements, level endings, checkpoint event timing, retries, cleanup. |
 | `src/components/desktop/Desktop.tsx` | Start a selected/saved level; separate attempt/remount ID from progression; preserve desktop and fullscreen cleanup. |
-| `src/components/game/GameContext.tsx` and a focused progress helper | Storage schema, validation, migration, save-result handling, start/continue controls. |
+| `src/components/games/olympus/GameContext.tsx` and a focused progress helper | Storage schema, validation, migration, save-result handling, start/continue controls. |
 | `src/components/window/OlympusWindow.tsx` | Continue / Play / Start Over choices and saved-level information. |
-| `src/config/site.ts`, `src/components/game/dialogue.ts` | Earth mission story, power instructions, per-level dialogue pools and speech scheduling. |
+| `src/config/site.ts`, `src/components/games/olympus/dialogue.ts` | Earth mission story, power instructions, per-level dialogue pools and speech scheduling. |
 | `src/app/globals.css`, joystick, fullscreen and Home Screen helpers | Preserve current mobile layout, safe areas, no-selection behavior, readable/scrollable menus, and installation experience. |
 | `scripts/olympus-sim.mjs` and focused tests | Per-profile scenarios, save transitions, difficulty comparisons; retire historical “later runs must be harder” expectations. |
 

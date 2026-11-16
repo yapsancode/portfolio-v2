@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadTs } from "./load-ts.mjs";
-const { emptyResources, collectMarble, parseResources, purchaseRefit, refitAllowances, refitCost } = loadTs("src/lib/olympus/resources.ts");
-const { progressAt, parseProgress } = loadTs("src/lib/olympus/levels.ts");
-const client = loadTs("src/lib/olympus/client.ts");
-const { createWorld, createStatue, seededRandom, step, TUNING } = loadTs("src/components/game/olympus.ts");
-const { missionInfo } = loadTs("src/lib/olympus/missions.ts");
+const { emptyResources, collectMarble, parseResources, purchaseRefit, refitAllowances, refitCost } = loadTs("src/lib/games/olympus/resources.ts");
+const { progressAt, parseProgress } = loadTs("src/lib/games/olympus/levels.ts");
+const client = loadTs("src/lib/games/olympus/client.ts");
+const { createWorld, createStatue, seededRandom, step, TUNING } = loadTs("src/components/games/olympus/olympus.ts");
+const { missionInfo } = loadTs("src/lib/games/olympus/missions.ts");
 
 test("marble banks across wins and losses; legacy guest saves start with an empty bank", () => {
   const old = { version: 1, highestCompletedLevel: 2, resumeLevel: 3, completed: false, epoch: null };
@@ -101,9 +101,9 @@ test("a named player cannot start the level clock without a ticket; guests need 
 });
 
 test("server haul limits mirror the real game's tuning, desktop and fastest blaster", () => {
-  const { HAUL } = loadTs("src/lib/olympus/leaderboard.ts");
+  const { HAUL } = loadTs("src/lib/games/olympus/leaderboard.ts");
   const { desktopIcons, windowDefaults } = loadTs("src/config/site.ts");
-  const { UPGRADES } = loadTs("src/lib/olympus/resources.ts");
+  const { UPGRADES } = loadTs("src/lib/games/olympus/resources.ts");
   assert.deepEqual(HAUL, {
     guardianHp: TUNING.statue.hp, powersHp: TUNING.powers.hp, hitScore: TUNING.statue.hitScore, crumbleScore: TUNING.statue.crumbleScore,
     windows: Object.keys(windowDefaults).length, windowHp: TUNING.window.hp, windowHitScore: TUNING.window.hitScore,
