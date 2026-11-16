@@ -1,3 +1,4 @@
+import { finaleFor } from "./finales/index";
 import { EYE, eyePoint, orbitRadius, powerWarning, sweepAngle, throwPoint, tileOrigin, TUNING, type Rock, type Ship, type World } from "./olympus";
 
 /** The statue picture and the part of it the wallpaper shows. */
@@ -180,7 +181,23 @@ function drawStatue(ctx: CanvasRenderingContext2D, world: World, art: StatueArt)
 
 /** The statue's attacks: the warning before a throw, and the laser eye. */
 function drawAttacks(ctx: CanvasRenderingContext2D, world: World) {
-  if (world.level > 1) { drawPower(ctx, world); return; }
+  if (world.level > 1) {
+    drawPower(ctx, world);
+    const run = world.finale;
+    if (!run) return;
+    finaleFor(world.level)?.draw(ctx, world, run.data, run);
+    if (run.state === "stun") {
+      // Stars circling the head: the statue is open.
+      const eye = eyePoint(world.statue);
+      ctx.fillStyle = "#ffd800"; ctx.font = "16px monospace"; ctx.textAlign = "center";
+      for (let i = 0; i < 3; i++) {
+        const a = world.time * 5 + i * Math.PI * 2 / 3;
+        ctx.fillText("*", eye.x + Math.cos(a) * 26, eye.y - 18 + Math.sin(a) * 7);
+      }
+      ctx.textAlign = "start";
+    }
+    return;
+  }
   const { statue } = world;
 
   // Warning before a throw: a square that closes in on the throwing hand.

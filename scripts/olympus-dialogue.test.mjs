@@ -3,17 +3,17 @@ import { test } from "node:test";
 import { loadTs } from "./load-ts.mjs";
 const { DIALOGUE, createDialogue } = loadTs("src/components/game/dialogue.ts");
 
-test("each playable level has fifteen distinct, short, event-specific lines", () => {
+test("each playable level has eighteen distinct, short, event-specific lines", () => {
   const all = [];
   for (let level = 1; level <= 6; level++) {
     const pools = DIALOGUE[level];
-    assert.equal(Object.keys(pools).length, 5);
+    assert.equal(Object.keys(pools).length, 6);
     const lines = Object.values(pools).flat();
-    assert.equal(new Set(lines).size, 15);
+    assert.equal(new Set(lines).size, 18);
     assert.ok(lines.every(line => line.length <= 65));
     all.push(...lines);
   }
-  assert.equal(new Set(all).size, 90);
+  assert.equal(new Set(all).size, 108);
 });
 
 test("shuffle bags use every alternative before repeating and avoid repeat on a new attempt", () => {

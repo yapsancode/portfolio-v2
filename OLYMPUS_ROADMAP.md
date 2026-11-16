@@ -31,7 +31,7 @@ This is the active plan. **Latest decision, 16 November 2026: difficulty rises w
 - Arcade Gold start/end buttons, pause/resume, and exit controls.
 - Fixed joystick and separate Fire control on phones/tablets; arrows and Space on computers.
 - Phone movement is slower, the pointer and its collision radius are smaller, and releasing the joystick brakes quickly.
-- Touch play uses the full screen height. The ship is kept out of the measured joystick and Fire boxes only, and the statue stands on the screen bottom between them. Any new touch button must be measured the same way.
+- Touch play uses the full screen height. The ship is kept out of the measured joystick and Fire boxes only, and the statue stands on the screen bottom between them. Any new touch button must be measured the same way. After playtest feedback the controls sit away from the corners where thumbs rest, the joystick is larger with a curved response (a small push moves slowly; a full push keeps full speed), and big moments vibrate on Android. iPhone Safari has no web vibration.
 - Landscape play on touch devices; fullscreen requests where supported, full-viewport fallback, and protection against long-press selection.
 - Olympus Home Screen icons, installation guidance, and edge-to-edge layout with safe areas.
 - A story and device-specific instructions.
@@ -76,7 +76,7 @@ Each profile **replaces** the appropriate part of the previous attack schedule. 
 
 ## Last Stand finales (planned)
 
-**Status: approved concept, not implemented.** Level 1 already changes as the guardian is hurt: faster spreads at 60% health and the laser eye at 25%. Levels 2–6 run one repeating cycle with no health stages, so their fights have no ending moment.
+**Status: the shared Last Stand base and level 2's Marble Fist are implemented (17 November 2026). Levels 3–6 are approved specifications, not built.** Each finale lives in its own file under `src/components/game/finales/`, with its tests under `scripts/finales/`. Level 1 already changes as the guardian is hurt: faster spreads at 60% health and the laser eye at 25%. Levels 2–6 run one repeating cycle with no health stages, so their fights have no ending moment.
 
 A **Last Stand** is one signature final attack per power. When the statue's health is low it stops its normal cycle, announces itself, and repeats the finale until it is beaten. The Last Stand belongs to the power, not the level number, so a power keeps its finale wherever it appears in a season.
 
@@ -109,7 +109,8 @@ All five follow the shared rules above. “Harder version” is the hard setting
 - Warning: a wide gold lane marks the punch path and locks before the punch.
 - Attack: the fist flies down the lane, returns to the other shoulder, and repeats.
 - Risk: stay near the lane and shoot the fist. Each hit chips off bonus marble; enough hits break it and stun the statue.
-- Harder version: two fists, one from each shoulder, staggered.
+- Harder version: two fists, one from each shoulder, staggered. Not built.
+- As built: after a miss the fist forms again at the other shoulder and keeps its damage, instead of flying back. It takes eight hits. A ship hugging the shoulder is still punched: the fist winds up from further back.
 
 **Level 3 · Shattered Halo → Closing Crown**
 
@@ -243,7 +244,7 @@ The desired reaction is “I want to see what the statue does next.” Each leve
 
 ## Statue personality and per-level dialogue
 
-**Status: levels 1–6 now have 15 authored lines each in `src/components/game/dialogue.ts` (90 total).** Levels 7–10 and topical rotations remain planned. The shared generic lines and the competing hint/wakeup speech timers have been removed. Gameplay hints remain in the guide, pause menu, and accessibility announcements.
+**Status: levels 1–6 now have 18 authored lines each in `src/components/game/dialogue.ts` (108 total), including three finale-reveal lines per level.** Levels 7–10 and topical rotations remain planned. The shared generic lines and the competing hint/wakeup speech timers have been removed. Gameplay hints remain in the guide, pause menu, and accessibility announcements.
 
 The guardian has an enormous ego and takes a tiny desktop pointer far too personally. It boasts, overreacts, invents excuses, and treats every new power as proof of its own greatness. Humour should make players enjoy provoking it. Mix short emotional barks (“ARHHH!”, “AGAIN?!”, “MY FACE!”) with lines that reference the current transformation.
 

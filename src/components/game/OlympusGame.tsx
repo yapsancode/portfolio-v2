@@ -442,6 +442,8 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (reducedMotion) return;
       shakeSize = size;
       shakeUntil = performance.now() + ms;
+      // Big moments also buzz the phone; small hits would buzz five times a second.
+      if (size >= 4) navigator.vibrate?.(Math.min(ms, 200));
     };
 
     const say = (event: DialogueEvent) => {
@@ -529,8 +531,19 @@ export default function OlympusGame(props: OlympusGameProps) {
             break;
           case "bossStage":
             shake(6, 500);
-            say("attack");
+            say(e.stage === 3 ? "finale" : "attack");
             setAnnounce(e.stage === 2 ? "The statue throws faster." : "The statue's eye is charging a laser. Keep moving.");
+            break;
+          case "lastStand":
+            shake(8, 600);
+            say("finale");
+            playSound("rumble");
+            setAnnounce(`Last Stand: ${e.name}. ${e.hint}`);
+            break;
+          case "statueStunned":
+            say("hurt");
+            shake(4, 200);
+            setAnnounce("The statue is stunned. Attack now.");
             break;
           case "powerWarn":
             say("attack");

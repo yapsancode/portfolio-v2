@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:leaderboard": "node scripts/leaderboard-test.mjs",
-    "test:game": "node --test scripts/olympus-controls.test.mjs scripts/olympus-levels.test.mjs scripts/olympus-dialogue.test.mjs scripts/olympus-resources.test.mjs scripts/olympus-fairness.test.mjs",
+    "test:game": "node --test scripts/olympus-controls.test.mjs scripts/olympus-levels.test.mjs scripts/olympus-dialogue.test.mjs scripts/olympus-resources.test.mjs scripts/olympus-fairness.test.mjs scripts/olympus-finales.test.mjs",
     "db:migrate": "node scripts/leaderboard-migrate.mjs"
   },
   "dependencies": {

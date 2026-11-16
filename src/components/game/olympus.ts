@@ -9,6 +9,8 @@
  */
 
 import { validLevel } from "../../lib/olympus/levels";
+import { finaleFor } from "./finales/index";
+import { FINALE, type FinaleKit, type FinaleRun } from "./finales/types";
 import { emptyResources, type Upgrades } from "../../lib/olympus/resources";
 
 export type Phase = "play" | "awakening" | "boss" | "crumbling" | "won" | "lost";
@@ -58,6 +60,8 @@ export type Rock = {
   thrown?: boolean;
   /** New powers use pale, shootable fragments with a finite lifetime. */
   power?: boolean;
+  /** Hits it still takes before it breaks (default one). */
+  hp?: number;
   life?: number;
   orbit?: number;
   /** Level 5: where a shield will fly. Level 3: the gap centre of its ring (for the cue). */
@@ -161,6 +165,8 @@ export type GameEvent =
   | { type: "statueAwake" }
   | { type: "statueHit" }
   | { type: "bossStage"; stage: 2 | 3 }
+  | { type: "lastStand"; name: string; hint: string }
+  | { type: "statueStunned" }
   | { type: "powerWarn" }
   | { type: "throwWarn" }
   | { type: "laserCharge" }
@@ -198,6 +204,8 @@ export type World = {
   /** Selects an attack profile, never a difficulty multiplier. */
   level: number;
   attack: PowerAttack;
+  /** The power's Last Stand, once the statue is nearly beaten. */
+  finale: FinaleRun | null;
   fireIn: number;
   spawnIn: number;
   /** Below 1 on small screens: rocks are smaller and slower there. */
@@ -454,6 +462,7 @@ export function createWorld(opts: {
     score: 0,
     level: validLevel(opts.level) ? opts.level : 1,
     attack: restingPower(opts.touch ?? false),
+    finale: null,
     fireIn: 0,
     spawnIn: TUNING.rock.spawnEvery,
     scale: Math.max(0.6, Math.min(1, opts.w / 900)),
@@ -700,6 +709,9 @@ function restingPower(touch = false): PowerAttack {
 function clearAttacks(world: World) {
   world.attack = restingPower(world.touch);
   world.rocks = [];
+  // A lost ship restarts the finale quietly: no second reveal.
+  const finale = world.finale && world.statue.hp > 0 ? finaleFor(world.level) : null;
+  world.finale = finale ? { state: "rest", t: world.attack.t, data: finale.start(world, KIT) } : null;
   // The stage stays, so its announcement does not replay after a death.
   const { statue } = world;
   statue.laser = statue.stage === 3 ? { state: "rest", t: TUNING.boss.laser.rest, angle: 0 } : null;
@@ -826,6 +838,57 @@ function launchPower(world: World, events: GameEvent[]) {
     a.t = P.sweepDuration;
     events.push({ type: "laserFire" });
   }
+}
+
+const KIT: FinaleKit = {
+  rock(world, size, x, y) {
+    const rock = makeRock(world, size, x, y, 0);
+    rock.power = true; rock.vx = 0; rock.vy = 0;
+    return rock;
+  },
+  keepOut,
+  burst: (world, x, y, count, speed) => burst(world, x, y, count, MARBLE, speed),
+  eye: (world) => eyePoint(world.statue),
+  shoulder: (world, side) => ({
+    x: world.statue.home.x + world.statue.dx + world.statue.home.w * (0.5 + side * 0.26),
+    y: world.statue.home.y + world.statue.dy + world.statue.home.h * 0.38,
+  }),
+  shipRadius: (world) => TUNING.ship.radius * (world.phoneMode ? TUNING.phone.shipScale : 1),
+  loseShip,
+};
+
+/** The Last Stand replaces the normal cycle once the statue is nearly beaten. False = not yet (or this power has none). */
+function lastStand(world: World, dt: number, events: GameEvent[]): boolean {
+  const finale = finaleFor(world.level);
+  if (!finale) return false;
+  const run = world.finale;
+  if (!run) {
+    if (world.statue.hp / world.statue.maxHp > FINALE.at) return false;
+    world.attack = restingPower(world.touch);
+    world.finale = { state: "reveal", t: FINALE.reveal, data: finale.start(world, KIT) };
+    events.push({ type: "lastStand", name: finale.name, hint: finale.hint });
+    return true;
+  }
+  run.t -= dt;
+  if (run.state === "active") {
+    const result = finale.step(world, run.data, dt, events, KIT);
+    if (result === "beaten") {
+      run.state = "stun"; run.t = FINALE.stun;
+      events.push({ type: "statueStunned" });
+    } else if (result === "done") {
+      run.state = "rest"; run.t = restingPower(world.touch).t;
+    }
+  } else if (run.t <= 0) {
+    if (run.state === "warn") {
+      finale.launch(world, run.data, KIT);
+      run.state = "active";
+    } else {
+      finale.warn(world, run.data, KIT);
+      run.state = "warn"; run.t = powerWarning(world);
+      events.push({ type: "powerWarn" });
+    }
+  }
+  return true;
 }
 
 /** Distinct multi-wave patterns: each launch has its own locked warning and a bounded budget. */
@@ -1026,7 +1089,7 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   }
   if (world.phase === "boss" && ship.alive) {
     if (world.level === 1) bossAttack(world, dt, events);
-    else powerAttack(world, dt, events);
+    else if (!lastStand(world, dt, events)) powerAttack(world, dt, events);
   }
   for (const tile of statue.tiles) {
     if (tile.attached) continue;
@@ -1056,8 +1119,8 @@ export function step(world: World, input: Input, dt: number): GameEvent[] {
   }
   world.bullets = keep;
 
-  /* Ship vs rocks (not while the chips fly home: that would be unfair) */
-  if (ship.alive && ship.safe <= 0 && world.phase !== "awakening") {
+  /* Ship vs rocks (not while the chips fly home, or a Last Stand is revealed: that would be unfair) */
+  if (ship.alive && ship.safe <= 0 && world.phase !== "awakening" && world.finale?.state !== "reveal") {
     for (const rock of world.rocks) {
       const reach = rock.r * 0.85 + TUNING.ship.radius * (world.phoneMode ? TUNING.phone.shipScale : 1);
       if ((rock.x - ship.x) ** 2 + (rock.y - ship.y) ** 2 < reach * reach) {
@@ -1107,6 +1170,14 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
       burst(world, b.x, b.y, 4, SPARK, 120);
       return true;
     }
+    // A tough piece only chips: bonus marble, and it flies on.
+    if (rock.hp && rock.hp > 1) {
+      rock.hp -= 1;
+      world.score += TUNING.rock.score[2];
+      burst(world, b.x, b.y, 6, MARBLE, 140);
+      events.push({ type: "rockBroken", size: 2 });
+      return true;
+    }
     world.rocks.splice(i, 1);
     world.score += TUNING.rock.score[rock.size];
     addAnger(world, TUNING.rock.anger[rock.size]);
@@ -1125,7 +1196,8 @@ function hitSomething(world: World, b: Bullet, events: GameEvent[]): boolean {
   const { statue } = world;
   // Awake, the statue is drawn over the windows; while it wakes it only swallows the shot.
   if (world.phase !== "play" && attachedTileAt(statue, b.x, b.y)) {
-    if (world.phase === "boss") damageStatue(world, b, events);
+    // The reveal of a Last Stand swallows shots too, so fast fire cannot skip the finale.
+    if (world.phase === "boss" && world.finale?.state !== "reveal") damageStatue(world, b, events);
     return true;
   }
 

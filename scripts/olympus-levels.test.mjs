@@ -157,6 +157,7 @@ test("death and victory clear active hazards before another attempt (resize keep
     g.step(w, input, dt);
     assert.equal(w.lives, 2); assert.equal(w.rocks.length, 0); assert.equal(w.attack.state, "rest");
     w.ship.alive = true; w.ship.safe = 100; w.statue.hp = 1;
+    advance(w, 1.3); // past the shot-proof reveal of a Last Stand
     const tile = w.statue.tiles.find(t => t.attached && t.solid);
     const p = g.tileOrigin(w.statue, tile);
     w.bullets = [{ x: p.x + p.w / 2, y: p.y + p.h / 2, vx: 0, vy: 0, life: 1 }];
