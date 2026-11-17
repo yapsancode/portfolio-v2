@@ -170,7 +170,17 @@ export const site = {
       back: "Back",
       play: "Play Olympus",
     },
-    hint: "← → turn · ↑ thrust · Space fire · P pause · Esc menu",
+    /** Level 1 tips for players who never cleared it: [keyboard, touch], or one text for both. */
+    flightSchool: {
+      title: "Flight School",
+      skip: "Skip",
+      steps: [
+        ["← → to turn, hold ↑ to fly", "Drag the stick to fly"],
+        ["Hold Space to fire", "Hold FIRE to shoot"],
+        "Break the desktop to fill the ANGER meter and wake the statue.",
+        "Shoot the statue until its health is zero. Move when you see a warning.",
+      ],
+    },
     crash: "{name} has performed an illegal operation and will be shut down.",
     win: {
       title: "It is now safe to turn off your statue.",

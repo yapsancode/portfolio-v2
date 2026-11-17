@@ -946,6 +946,26 @@ html:has(.olympus-playing) body { overscroll-behavior: none; }
   text-align: center;
 }
 
+/* Touch: top left, away from the joystick, FIRE and the HUD on the right. */
+.olympus-hint.olympus-hint-top {
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  max-width: min(280px, 40vw);
+  transform: none;
+  text-align: left;
+}
+
+.olympus-hint-skip {
+  margin-left: 8px;
+  padding: 0 6px;
+  border: 1px solid #000;
+  background: var(--color-win-face);
+  font: inherit;
+  text-decoration: underline;
+  pointer-events: auto;
+}
+.olympus-hint-top .olympus-hint-skip { min-height: 32px; min-width: 44px; }
+
 .olympus-paused {
   position: fixed;
   inset: 0;

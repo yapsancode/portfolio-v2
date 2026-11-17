@@ -14,6 +14,7 @@ import TouchJoystick from "./TouchJoystick";
 import FullscreenHelp from "./FullscreenHelp";
 import { isPhoneTouchDevice, type StickVector } from "./touch-controls";
 import { enterGameFullscreen } from "./fullscreen";
+import { LESSON_DONE, nextLessonStep } from "./flight-school";
 import { LAST_LEVEL, levelInfo, type Progress } from "@/lib/games/olympus/levels";
 import { missionInfo } from "@/lib/games/olympus/missions";
 import MarbleBank from "./MarbleBank";
@@ -77,6 +78,11 @@ const KEYS: Record<string, Control> = {
 };
 
 const NO_INPUT: Input = { left: false, right: false, thrust: false, fire: false };
+
+function lessonTip(step: number, touch: boolean): string {
+  const tip = copy.flightSchool.steps[step];
+  return typeof tip === "string" ? tip : tip[touch ? 1 : 0];
+}
 
 /* ------------------------------------------------------------------ */
 /* Reading the desktop                                                 */
@@ -371,8 +377,12 @@ export default function OlympusGame(props: OlympusGameProps) {
   const [ending, setEnding] = useState<Ending | null>(null);
   const [crashes, setCrashes] = useState<Crash[]>([]);
   const [speech, setSpeech] = useState<{ text: string; x: number; y: number } | null>(null);
-  const [hint, setHint] = useState(true);
-  const [announce, setAnnounce] = useState("Olympus started.");
+  // Flight School: only for players who have never cleared level 1, even before a Start Over.
+  const [lesson, setLesson] = useState(() =>
+    props.progress.resumeLevel === 1 && props.progress.resources.furthestLevel === 0 ? 0 : LESSON_DONE);
+  const lessonRef = useRef(lesson);
+  const [announce, setAnnounce] = useState(() =>
+    lesson < LESSON_DONE ? `Olympus started. ${copy.flightSchool.title}. ${lessonTip(0, touchDevice)}` : "Olympus started.");
   const { volume } = useMusic();
 
   // Game sounds follow the Music player's volume slider.
@@ -460,6 +470,14 @@ export default function OlympusGame(props: OlympusGameProps) {
       hintAnnounced = true;
       const info = levelInfo(propsRef.current.progress.resumeLevel);
       setAnnounce(`${info.name}. ${info.hint}`);
+    };
+
+    const learn = (type: string) => {
+      const next = nextLessonStep(lessonRef.current, type);
+      if (next === lessonRef.current) return;
+      lessonRef.current = next;
+      setLesson(next);
+      if (next < LESSON_DONE) setAnnounce(`${copy.flightSchool.title}. ${lessonTip(next, touchRef.current)}`);
     };
 
     const handle = (events: GameEvent[]) => {
@@ -600,6 +618,8 @@ export default function OlympusGame(props: OlympusGameProps) {
             break;
           }
         }
+        // After the switch's own announcements, so the new tip is the one read out.
+        learn(e.type);
       }
     };
 
@@ -623,6 +643,7 @@ export default function OlympusGame(props: OlympusGameProps) {
         const input = inputRef.current;
         // A held arrow key steers even while the touch controls are shown.
         const keySteer = input.left || input.right || input.thrust;
+        if (keySteer || (touchRef.current && (input.joystick?.x || input.joystick?.y))) learn("steer");
         while (acc >= DT) {
           acc -= DT;
           handle(step(world, {
@@ -741,7 +762,6 @@ export default function OlympusGame(props: OlympusGameProps) {
       e.preventDefault();
       e.stopPropagation();
       unlockSound();
-      setHint(false);
       inputRef.current = { ...inputRef.current, [control]: true };
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -817,6 +837,12 @@ export default function OlympusGame(props: OlympusGameProps) {
   const steer = (joystick: StickVector) => {
     if (pausedRef.current || rotateRequiredRef.current || endedRef.current) return;
     inputRef.current = { ...inputRef.current, joystick };
+  };
+
+  const skipLesson = () => {
+    lessonRef.current = LESSON_DONE;
+    setLesson(LESSON_DONE);
+    canvasRef.current?.focus();
   };
 
   const showPause = () => {
@@ -915,9 +941,15 @@ export default function OlympusGame(props: OlympusGameProps) {
         </div>
       )}
 
-      {hint && !touch && !ending && (
-        <div className="olympus-hint tray-tip" style={{ bottom: TASKBAR_HEIGHT + 12 }} aria-hidden="true">
-          {copy.hint}
+      {/* Touch: top left, clear of the joystick, FIRE and the HUD. The status line reads each tip. */}
+      {lesson < LESSON_DONE && !preparing && !paused && !rotateRequired && !ending && !startError && (
+        <div className={`olympus-hint tray-tip${touch ? " olympus-hint-top" : ""}`} style={touch ? undefined : { bottom: TASKBAR_HEIGHT + 12 }}>
+          <span aria-hidden="true">
+            <b>{copy.flightSchool.title} {lesson + 1}/{LESSON_DONE}</b> · {lessonTip(lesson, touch)}
+          </span>
+          <button type="button" className="olympus-hint-skip" onClick={skipLesson} aria-label={`${copy.flightSchool.skip} ${copy.flightSchool.title}`}>
+            {copy.flightSchool.skip}
+          </button>
         </div>
       )}
 
