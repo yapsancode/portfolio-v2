@@ -946,6 +946,29 @@ html:has(.olympus-playing) body { overscroll-behavior: none; }
   text-align: center;
 }
 
+/* Flight School: Skip stays on the tip's line. */
+.olympus-hint.tray-tip { display: flex; align-items: center; gap: 8px; }
+
+/* Touch: a row of the HUD column (.olympus-corner), so it can never overlap the HUD or Pause. */
+.olympus-hint.olympus-hint-corner {
+  position: static;
+  max-width: min(300px, 45vw);
+  padding: 2px 2px 2px 7px;
+  transform: none;
+  text-align: left;
+}
+
+.olympus-hint-skip {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid #000;
+  background: var(--color-win-face);
+  font: inherit;
+  text-decoration: underline;
+  pointer-events: auto;
+}
+.olympus-hint-corner .olympus-hint-skip { min-height: 40px; min-width: 44px; }
+
 .olympus-paused {
   position: fixed;
   inset: 0;
