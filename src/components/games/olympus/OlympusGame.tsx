@@ -477,7 +477,10 @@ export default function OlympusGame(props: OlympusGameProps) {
       if (next === lessonRef.current) return;
       lessonRef.current = next;
       setLesson(next);
-      if (next < LESSON_DONE) setAnnounce(`${copy.flightSchool.title}. ${lessonTip(next, touchRef.current)}`);
+      if (next === LESSON_DONE) return;
+      const tip = `${copy.flightSchool.title}. ${lessonTip(next, touchRef.current)}`;
+      // The wake-up just announced the level hint: read the tip after it, not instead of it.
+      setAnnounce((said) => (type === "statueAwake" ? `${said} ${tip}` : tip));
     };
 
     const handle = (events: GameEvent[]) => {
@@ -854,6 +857,17 @@ export default function OlympusGame(props: OlympusGameProps) {
 
   const statueAwake = hud.phase !== "play";
   const meter = statueAwake ? hud.statue : hud.anger / 100;
+  // Keyboard: above the taskbar. Touch: under Pause in the HUD column, clear of the icons, joystick and FIRE.
+  const lessonBox = lesson < LESSON_DONE && !preparing && !paused && !rotateRequired && !ending && !startError && (
+    <div className={`olympus-hint tray-tip${touch ? " olympus-hint-corner" : ""}`} style={touch ? undefined : { bottom: TASKBAR_HEIGHT + 12 }}>
+      <span aria-hidden="true">
+        <b>{copy.flightSchool.title} {lesson + 1}/{LESSON_DONE}</b> · {lessonTip(lesson, touch)}
+      </span>
+      <button type="button" className="olympus-hint-skip" onClick={skipLesson} aria-label={`${copy.flightSchool.skip} ${copy.flightSchool.title}`}>
+        {copy.flightSchool.skip}
+      </button>
+    </div>
+  );
 
   return (
     <div className="olympus">
@@ -916,6 +930,7 @@ export default function OlympusGame(props: OlympusGameProps) {
             <button type="button" className="olympus-button olympus-pause-trigger" onClick={showPause} aria-label="Pause game">Ⅱ Pause</button>
           )}
         </div>
+        {touch && lessonBox}
       </div>
 
       {crashes.map((c) => (
@@ -941,17 +956,8 @@ export default function OlympusGame(props: OlympusGameProps) {
         </div>
       )}
 
-      {/* Touch: top left, clear of the joystick, FIRE and the HUD. The status line reads each tip. */}
-      {lesson < LESSON_DONE && !preparing && !paused && !rotateRequired && !ending && !startError && (
-        <div className={`olympus-hint tray-tip${touch ? " olympus-hint-top" : ""}`} style={touch ? undefined : { bottom: TASKBAR_HEIGHT + 12 }}>
-          <span aria-hidden="true">
-            <b>{copy.flightSchool.title} {lesson + 1}/{LESSON_DONE}</b> · {lessonTip(lesson, touch)}
-          </span>
-          <button type="button" className="olympus-hint-skip" onClick={skipLesson} aria-label={`${copy.flightSchool.skip} ${copy.flightSchool.title}`}>
-            {copy.flightSchool.skip}
-          </button>
-        </div>
-      )}
+      {/* The status line reads each tip. */}
+      {!touch && lessonBox}
 
       {rotateRequired && !ending && (
         <div className="olympus-rotate">

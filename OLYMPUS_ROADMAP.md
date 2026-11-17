@@ -53,7 +53,7 @@ This is the active plan. **Latest decision, 16 November 2026: difficulty rises w
 - **Who sees it:** players on level 1 who have never cleared it: `resumeLevel` is 1 and the marble bank’s highest-ever cleared level (`resources.furthestLevel`) is 0. A player who cleared level 1 and then chose Start Over does not see it again. No database column or API change.
 - A boss event skips a stale tip, so a tip about flying never stays up during the fight. Early hits before the first steer do not skip the flying tip.
 - **Skip** ends the lesson for that attempt. Nothing is stored: the lesson returns on the next level 1 attempt until level 1 is cleared.
-- On keyboards the tip sits above the taskbar, where the old hint was. On touch it sits top left, clear of the joystick, FIRE and the HUD. Each new tip is also read out through the screen-reader status line.
+- On keyboards the tip sits above the taskbar, where the old hint was. On touch it sits under Pause in the HUD column, clear of the desktop icons, the joystick and FIRE. Each new tip is also read out through the screen-reader status line; when the statue wakes, the level hint is read first and the tip after it.
 - The step rules live in `src/components/games/olympus/flight-school.ts`, tested by `scripts/olympus-flight-school.test.mjs`. The wording is in `site.olympus.flightSchool`.
 
 ## Experience and terminology
